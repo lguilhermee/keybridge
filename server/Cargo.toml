@@ -59,6 +59,13 @@ url = "2"
 uuid = { version = "1", features = ["v4"] }
 x509-parser = "0.18"
 zip = { version = "4", default-features = false, features = ["deflate"] }
+
+# reqwest's native-tls feature needs OpenSSL on Linux. Vendor it so release
+# builds do not depend on the runner's system libssl and the bare Linux binary
+# carries its own TLS library.
+[target.'cfg(target_os = "linux")'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
+
 [build-dependencies]
 prost-build = "0.13"
 protoc-bin-vendored = "3"
