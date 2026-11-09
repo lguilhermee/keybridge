@@ -19,7 +19,7 @@ export const TOKEN_URL = "https://api.anthropic.com/v1/oauth/token";
 export const USAGE_URL = "https://api.anthropic.com/api/oauth/usage";
 export const PROFILE_URL = "https://api.anthropic.com/api/oauth/profile";
 export const OAUTH_SCOPES = "org:create_api_key user:profile user:inference";
-export const CLAUDE_CLI_VERSION = "2.1.280";
+export const CLAUDE_CLI_VERSION = "2.1.321";
 export const ANTHROPIC_VERSION = "2023-06-01";
 export const OAUTH_BETA = "oauth-2025-04-20";
 

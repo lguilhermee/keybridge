@@ -289,7 +289,7 @@ Deno.test("Request building injects Claude Code identity and cloaks tool names",
   const parsed = JSON.parse(body);
   const system = parsed.system as { text: string }[];
   assert(
-    system[0].text.startsWith("x-anthropic-billing-header: cc_version=2.1.280."),
+    system[0].text.startsWith("x-anthropic-billing-header: cc_version=2.1.321."),
     "billing header must be the first system block",
   );
   equal(
