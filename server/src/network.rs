@@ -93,11 +93,35 @@ impl NetworkClients {
     }
 }
 
+/// TLS backend per platform. Windows and macOS keep native-tls for provider
+/// gateways that only offer legacy TLS 1.2 cipher suites unsupported by
+/// rustls. Linux uses rustls because wreq's BoringSSL is linked under the
+/// same `ssl`/`crypto` names and collides with OpenSSL at link time.
+pub fn tls_builder() -> reqwest::ClientBuilder {
+    #[cfg(target_os = "linux")]
+    {
+        reqwest::Client::builder().use_rustls_tls()
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        reqwest::Client::builder().use_native_tls()
+    }
+}
+
+pub fn blocking_tls_builder() -> reqwest::blocking::ClientBuilder {
+    #[cfg(target_os = "linux")]
+    {
+        reqwest::blocking::Client::builder().use_rustls_tls()
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        reqwest::blocking::Client::builder().use_native_tls()
+    }
+}
+
 pub async fn client_builder(store: &Store) -> Result<reqwest::ClientBuilder> {
     let settings = store.proxy_settings_secret().await?;
-    // Use the platform TLS stack for compatibility with provider gateways that
-    // only offer legacy TLS 1.2 cipher suites unsupported by rustls.
-    let mut builder = reqwest::Client::builder().use_native_tls();
+    let mut builder = tls_builder();
     if settings.mode.is_custom() {
         builder = builder.proxy(custom_proxy(&settings)?);
     }
@@ -226,7 +250,7 @@ fn emulated_custom_proxy(settings: &ProxySettingsSecret) -> Result<wreq::Proxy> 
 
 pub async fn blocking_client_builder(store: &Store) -> Result<reqwest::blocking::ClientBuilder> {
     let settings = store.proxy_settings_secret().await?;
-    let mut builder = reqwest::blocking::Client::builder().use_native_tls();
+    let mut builder = blocking_tls_builder();
     if settings.mode.is_custom() {
         builder = builder.proxy(custom_proxy(&settings)?);
     }
