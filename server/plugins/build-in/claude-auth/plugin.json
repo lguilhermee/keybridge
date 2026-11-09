@@ -1,0 +1,16 @@
+{
+  "apiVersion": 1,
+  "id": "dev.cursorbyok.providers.claude",
+  "name": "Claude",
+  "version": "0.1.5",
+  "author": "Local development",
+  "minAppVersion": "1.0.1",
+  "icon": "assets/claude.svg",
+  "entry": "main.ts",
+  "permissions": {
+    "network": [
+      "claude.ai",
+      "api.anthropic.com"
+    ]
+  }
+}

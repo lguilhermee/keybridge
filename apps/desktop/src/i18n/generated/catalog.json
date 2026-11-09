@@ -1,0 +1,6726 @@
+{
+  "entries": {
+    "000eab79d8c95312": {
+      "source": "All statistics cleared",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 101,
+          "column": 38
+        }
+      ]
+    },
+    "002c7c68468b4f55": {
+      "source": "Direct",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 59,
+          "column": 63
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 31,
+          "column": 35
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 59,
+          "column": 41
+        }
+      ]
+    },
+    "01e93bf5df3af78e": {
+      "source": "{name} accounts",
+      "kind": "template",
+      "placeholders": [
+        "name"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 78,
+          "column": 11
+        }
+      ]
+    },
+    "023b0cd290862624": {
+      "source": "Initialize plugins",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 112,
+          "column": 113
+        }
+      ]
+    },
+    "0251e9d1a97afd1c": {
+      "source": "Restore window",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/WindowControls.tsx",
+          "line": 38,
+          "column": 37
+        }
+      ]
+    },
+    "0276e801e7cf6d3d": {
+      "source": "Delete this model?",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 370,
+          "column": 266
+        }
+      ]
+    },
+    "02cdaabfca805d6a": {
+      "source": "Duplicate",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 172,
+          "column": 64
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 286,
+          "column": 70
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 236,
+          "column": 33
+        }
+      ]
+    },
+    "04d7b48339271ea6": {
+      "source": "Messages",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 43,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 132,
+          "column": 15
+        }
+      ]
+    },
+    "0546c1c662bcddb6": {
+      "source": "To add",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 70,
+          "column": 61
+        }
+      ]
+    },
+    "05bebd9bb4e951d0": {
+      "source": "Requesting an authorization code...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 241,
+          "column": 34
+        }
+      ]
+    },
+    "0618a0d35b9b41b8": {
+      "source": "{calls} call records - {traces} trace records",
+      "kind": "template",
+      "placeholders": [
+        "calls",
+        "traces"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 285,
+          "column": 31
+        }
+      ]
+    },
+    "067f32cd8713e7eb": {
+      "source": "Cursor official",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 15,
+          "column": 61
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 16,
+          "column": 53
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 60,
+          "column": 48
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 66,
+          "column": 44
+        }
+      ]
+    },
+    "07ae7fd684564e68": {
+      "source": "Installing...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 158,
+          "column": 27
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 133,
+          "column": 17
+        }
+      ]
+    },
+    "08b8199f7a1684e5": {
+      "source": "Default {defaultRate} / include creation {reuseRate}",
+      "kind": "template",
+      "placeholders": [
+        "defaultRate",
+        "reuseRate"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 83,
+          "column": 5
+        }
+      ]
+    },
+    "08f19df7c179bd75": {
+      "source": "Response content was not recorded. Enable detailed records and try again.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 65,
+          "column": 44
+        }
+      ]
+    },
+    "0933098796867330": {
+      "source": "Prompt {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 156,
+          "column": 46
+        }
+      ]
+    },
+    "0a597385b8bebf6f": {
+      "source": "Existing",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 71,
+          "column": 66
+        }
+      ]
+    },
+    "0a645edd18712787": {
+      "source": "Provider call sequence",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 19,
+          "column": 6
+        }
+      ]
+    },
+    "0bdbb750609ca61c": {
+      "source": "First page",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 24,
+          "column": 30
+        },
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 24,
+          "column": 99
+        }
+      ]
+    },
+    "0e91610117029a62": {
+      "source": "Refresh",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 94,
+          "column": 28
+        },
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 94,
+          "column": 94
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 504,
+          "column": 84
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 75,
+          "column": 64
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 75,
+          "column": 130
+        }
+      ]
+    },
+    "0ee8df60090cca7b": {
+      "source": "Settings copied. Paste them into this SSH host's remote settings; they have not been applied automatically.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 39,
+          "column": 38
+        }
+      ]
+    },
+    "0f10dae0b567badd": {
+      "source": "Leave blank to use adaptive thinking",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 171,
+          "column": 162
+        }
+      ]
+    },
+    "0f964a49d61e3fe1": {
+      "source": "Choose how Cursor connects to TAB endpoints.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 52,
+          "column": 21
+        }
+      ]
+    },
+    "101e84c195957683": {
+      "source": "Failed to check for updates: {error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 99,
+          "column": 15
+        }
+      ]
+    },
+    "10780280bdb0d78a": {
+      "source": "Software updates",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 151,
+          "column": 18
+        }
+      ]
+    },
+    "10a6c5127e06b472": {
+      "source": "For example: 2026-08-23 09:00, 1 hour ago",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 121,
+          "column": 76
+        }
+      ]
+    },
+    "11a045e402c30753": {
+      "source": "Display language",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 250,
+          "column": 22
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 256,
+          "column": 26
+        }
+      ]
+    },
+    "11a6767d5674c7e4": {
+      "source": "Done",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 278,
+          "column": 45
+        }
+      ]
+    },
+    "11b5e553bf8cf8db": {
+      "source": "Overview time range",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 76,
+          "column": 51
+        }
+      ]
+    },
+    "1208ec01f223c616": {
+      "source": "Previous page",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 473,
+          "column": 102
+        },
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 25,
+          "column": 30
+        },
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 25,
+          "column": 102
+        }
+      ]
+    },
+    "127c21b3e151496c": {
+      "source": "Requires Cursor 3.21.16 or newer. Keep cursor-byok running on your local machine and complete local CA and model setup first.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 24,
+          "column": 11
+        }
+      ]
+    },
+    "128269f39edfd1a7": {
+      "source": "Total requests",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 105,
+          "column": 14
+        }
+      ]
+    },
+    "13690808199d1d28": {
+      "source": "TAB settings saved",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 150,
+          "column": 15
+        }
+      ]
+    },
+    "13ce492397287fbd": {
+      "source": "Only request, response, and trace attachments are deleted; call summaries, metrics, and configuration are kept.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 160,
+          "column": 7
+        }
+      ]
+    },
+    "13e31b5986917729": {
+      "source": "Install the headroom-ai[proxy] CLI via uv or pipx.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 130,
+          "column": 17
+        }
+      ]
+    },
+    "1411b824310b9a07": {
+      "source": "No plugins installed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 123,
+          "column": 16
+        }
+      ]
+    },
+    "141e588d002b25d0": {
+      "source": "Commit message prompt",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 225,
+          "column": 23
+        }
+      ]
+    },
+    "141fe45989539916": {
+      "source": "All call summaries, detailed content, and trace records will be deleted. Model configuration, CA, and application settings are unaffected. This action cannot be undone.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 159,
+          "column": 7
+        }
+      ]
+    },
+    "1453001f58209c1d": {
+      "source": "Enable Headroom",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 95,
+          "column": 18
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 99,
+          "column": 16
+        }
+      ]
+    },
+    "14e40df4ec732909": {
+      "source": "{label} must be a non-negative number",
+      "kind": "template",
+      "placeholders": [
+        "label"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 33,
+          "column": 21
+        }
+      ]
+    },
+    "1509f561f2416598": {
+      "source": "Save",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 349,
+          "column": 443
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 357,
+          "column": 203
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 169,
+          "column": 41
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 213,
+          "column": 22
+        },
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 41,
+          "column": 32
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 87,
+          "column": 123
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 92,
+          "column": 36
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 33,
+          "column": 108
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 181,
+          "column": 138
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 37,
+          "column": 108
+        },
+        {
+          "file": "shared/ui/Modal.tsx",
+          "line": 42,
+          "column": 227
+        }
+      ]
+    },
+    "1567e1dadfa15b87": {
+      "source": "Syncing...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 376,
+          "column": 20
+        }
+      ]
+    },
+    "16f0ee47f993d627": {
+      "source": "API key",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 52,
+          "column": 25
+        }
+      ]
+    },
+    "1733ca7989eb4632": {
+      "source": "Edit model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 349,
+          "column": 62
+        }
+      ]
+    },
+    "178fc649dbff0b0a": {
+      "source": "Copy failed. Select and copy the JSON above manually, or retry in the desktop app.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 40,
+          "column": 38
+        }
+      ]
+    },
+    "17c92c02d1b81ddb": {
+      "source": "Configured models",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 69,
+          "column": 56
+        }
+      ]
+    },
+    "18216b490497e3ef": {
+      "source": "Cache hit rate {rate}",
+      "kind": "template",
+      "placeholders": [
+        "rate"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/CacheHitRateChart.tsx",
+          "line": 58,
+          "column": 62
+        }
+      ]
+    },
+    "18b68180d7b82826": {
+      "source": "Unable to connect to the local management service",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/api.ts",
+          "line": 474,
+          "column": 21
+        }
+      ]
+    },
+    "18fdd549b2ed367a": {
+      "source": "New",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 80,
+          "column": 58
+        }
+      ]
+    },
+    "19766ed6ccb2f4a3": {
+      "source": "Cancel",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 125,
+          "column": 105
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 339,
+          "column": 20
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 370,
+          "column": 84
+        },
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 58,
+          "column": 20
+        },
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 278,
+          "column": 72
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 167,
+          "column": 78
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 214,
+          "column": 21
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 86,
+          "column": 128
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 90,
+          "column": 64
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 32,
+          "column": 66
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 180,
+          "column": 81
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 300,
+          "column": 22
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 36,
+          "column": 66
+        },
+        {
+          "file": "shared/ui/ConfirmDialog.tsx",
+          "line": 4,
+          "column": 86
+        },
+        {
+          "file": "shared/ui/Modal.tsx",
+          "line": 42,
+          "column": 200
+        }
+      ]
+    },
+    "19d66a2331b54332": {
+      "source": "Restore default",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 217,
+          "column": 14
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 89,
+          "column": 72
+        }
+      ]
+    },
+    "1aa3ee86364075f2": {
+      "source": "Bulk import",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 178,
+          "column": 52
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 142,
+          "column": 42
+        }
+      ]
+    },
+    "1b0235b4b5e13a39": {
+      "source": "Callable",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 370,
+          "column": 32
+        }
+      ]
+    },
+    "1b252203d6149d70": {
+      "source": "Input (non-cached)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 106,
+          "column": 46
+        },
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 146,
+          "column": 15
+        }
+      ]
+    },
+    "1daf2a32f2477c87": {
+      "source": "The standard endpoint path is appended automatically for the selected protocol.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 155,
+          "column": 231
+        }
+      ]
+    },
+    "1e345bfc6ef528b9": {
+      "source": "Token usage: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/charts/ContributionCalendarChart.tsx",
+          "line": 128,
+          "column": 16
+        }
+      ]
+    },
+    "1ea442a134b2a184": {
+      "source": "No",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 28,
+          "column": 63
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 45,
+          "column": 56
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 53,
+          "column": 74
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 143,
+          "column": 53
+        }
+      ]
+    },
+    "1f870b8dcb1cb96c": {
+      "source": "Proxy settings saved",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 126,
+          "column": 15
+        }
+      ]
+    },
+    "1fc3b155bc35ca55": {
+      "source": "Authorization was denied or failed.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 202,
+          "column": 36
+        }
+      ]
+    },
+    "1fc9a387654d410f": {
+      "source": "Select all",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 409,
+          "column": 106
+        },
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 232,
+          "column": 102
+        }
+      ]
+    },
+    "1fe40a442aa28589": {
+      "source": "Installed plugins will appear here.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 124,
+          "column": 14
+        }
+      ]
+    },
+    "20d57200f8abaf7e": {
+      "source": "Total: {cost}",
+      "kind": "template",
+      "placeholders": [
+        "cost"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 133,
+          "column": 5
+        }
+      ]
+    },
+    "21b111cbfe6e8fca": {
+      "source": "Default",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 29,
+          "column": 80
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 46,
+          "column": 135
+        }
+      ]
+    },
+    "2259099d26145b1d": {
+      "source": "For example: now, 2026-08-23 18:00",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 122,
+          "column": 74
+        }
+      ]
+    },
+    "227523b407ca5e35": {
+      "source": "I've initialized it - refresh",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 22,
+          "column": 162
+        }
+      ]
+    },
+    "232df4337df282bc": {
+      "source": "Failed calls: {count}",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 93,
+          "column": 5
+        }
+      ]
+    },
+    "2397660de92a5bd3": {
+      "source": "Try initializing again",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 103,
+          "column": 7
+        },
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 301,
+          "column": 70
+        }
+      ]
+    },
+    "247ed0e89f9e000a": {
+      "source": "Local: off",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 309,
+          "column": 87
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 63,
+          "column": 68
+        }
+      ]
+    },
+    "276fcdb7e5918158": {
+      "source": "Account saved and the model catalog is synced.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 245,
+          "column": 64
+        }
+      ]
+    },
+    "2898036528bb37ca": {
+      "source": "Granted: {time}",
+      "kind": "template",
+      "placeholders": [
+        "time"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 536,
+          "column": 84
+        }
+      ]
+    },
+    "28b2aeb30c06c74f": {
+      "source": "Maximum output tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 166,
+          "column": 27
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 169,
+          "column": 27
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 399,
+          "column": 93
+        }
+      ]
+    },
+    "28c83220eb3316b6": {
+      "source": "System settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 37,
+          "column": 47
+        }
+      ]
+    },
+    "2b7f6a84de917e38": {
+      "source": "Display name",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 26,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 30,
+          "column": 15
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 161,
+          "column": 25
+        }
+      ]
+    },
+    "2cff9baabf56ca00": {
+      "source": "Import",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 236,
+          "column": 78
+        }
+      ]
+    },
+    "2d08c01266393683": {
+      "source": "Only clear detailed records",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 310,
+          "column": 42
+        }
+      ]
+    },
+    "2e146b50a578f197": {
+      "source": "Call information",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 51,
+          "column": 29
+        }
+      ]
+    },
+    "2e46006a5eebb262": {
+      "source": "End time",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 122,
+          "column": 21
+        }
+      ]
+    },
+    "2e5f79bb94a8c40b": {
+      "source": "Checking...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 112,
+          "column": 19
+        },
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 162,
+          "column": 25
+        }
+      ]
+    },
+    "2ee9ab5e2d25b9b7": {
+      "source": "Local port the Headroom proxy listens on.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 108,
+          "column": 17
+        }
+      ]
+    },
+    "2f343666aaa88c44": {
+      "source": "Format",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/JsonEditor.tsx",
+          "line": 228,
+          "column": 79
+        }
+      ]
+    },
+    "2f6dc10f0ea19eea": {
+      "source": "Expires: {time}",
+      "kind": "template",
+      "placeholders": [
+        "time"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 537,
+          "column": 84
+        }
+      ]
+    },
+    "2fd2438a1ba6aded": {
+      "source": "The account was saved, but model sync failed: {error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 159,
+          "column": 17
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 83,
+          "column": 15
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 194,
+          "column": 22
+        }
+      ]
+    },
+    "307aad088d3746d0": {
+      "source": "Last calendar day",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 35,
+          "column": 30
+        }
+      ]
+    },
+    "314ae71b8c8dc9c9": {
+      "source": "Artifacts",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 71,
+          "column": 55
+        }
+      ]
+    },
+    "31e392d1c0378bec": {
+      "source": "Apply",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 126,
+          "column": 109
+        }
+      ]
+    },
+    "3236aeec43e563ca": {
+      "source": "Reasoning effort",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 27,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 47,
+          "column": 15
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 167,
+          "column": 27
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 167,
+          "column": 70
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 170,
+          "column": 27
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 170,
+          "column": 70
+        }
+      ]
+    },
+    "330010f40240ecd8": {
+      "source": "Not ready",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 370,
+          "column": 48
+        }
+      ]
+    },
+    "339b038dd64cd771": {
+      "source": "Failed to cancel test: {error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 138,
+          "column": 15
+        }
+      ]
+    },
+    "33b93476cf597a33": {
+      "source": "Time",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 36,
+          "column": 15
+        }
+      ]
+    },
+    "33ec83f98fa9c230": {
+      "source": "Last 4 hours",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 41,
+          "column": 35
+        }
+      ]
+    },
+    "34671d4267b6d26e": {
+      "source": "{count} per page",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 22,
+          "column": 169
+        }
+      ]
+    },
+    "349456979688d8be": {
+      "source": "Shown in the Cursor model description.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 162,
+          "column": 72
+        }
+      ]
+    },
+    "3644cea4d0449eac": {
+      "source": "Local integration status describes only the local proxy configuration, not SSH readiness. Test Agent, tool calls, MCP, Skills, Tab, and commit generation separately.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 44,
+          "column": 11
+        }
+      ]
+    },
+    "3729f9c348dff8b9": {
+      "source": "Call type",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 15,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 58,
+          "column": 15
+        }
+      ]
+    },
+    "37dfc7b43173db9d": {
+      "source": "Use system language",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 258,
+          "column": 43
+        }
+      ]
+    },
+    "3b41ba9c7cb8c5d6": {
+      "source": "No data",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 26,
+          "column": 27
+        },
+        {
+          "file": "shared/ui/DataTable.tsx",
+          "line": 15,
+          "column": 77
+        }
+      ]
+    },
+    "3b9b6125060b73f0": {
+      "source": "Page {page} / {total}",
+      "kind": "template",
+      "placeholders": [
+        "page",
+        "total"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 474,
+          "column": 16
+        }
+      ]
+    },
+    "3c0d69f6a8f29727": {
+      "source": "Connectivity tests succeeded for all {count} models",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 201,
+          "column": 13
+        }
+      ]
+    },
+    "3c1682de29f4a23c": {
+      "source": "Default dark",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 276,
+          "column": 40
+        }
+      ]
+    },
+    "3d5f5fa1b483d3f0": {
+      "source": "Prompt settings saved",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 149,
+          "column": 15
+        }
+      ]
+    },
+    "3de3c1d0964b55ff": {
+      "source": "Cache read price ($/1M)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 123,
+          "column": 31
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 153,
+          "column": 24
+        }
+      ]
+    },
+    "3f8644f2516f3229": {
+      "source": "Cursor tracing",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 69,
+          "column": 62
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 74,
+          "column": 20
+        }
+      ]
+    },
+    "40fe274cc5f876d9": {
+      "source": "Downloaded {downloaded} / {total}",
+      "kind": "template",
+      "placeholders": [
+        "downloaded",
+        "total"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 298,
+          "column": 20
+        }
+      ]
+    },
+    "4187ebbed415ab51": {
+      "source": "Leave blank to keep unchanged",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 363,
+          "column": 35
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 366,
+          "column": 41
+        }
+      ]
+    },
+    "424a2551d356754c": {
+      "source": "Expired",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 576,
+          "column": 28
+        }
+      ]
+    },
+    "42632b9e1872778a": {
+      "source": "Cursor integration is active. Add a model configuration to use a BYOK model.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 37,
+          "column": 12
+        }
+      ]
+    },
+    "426e6e8d6b78499d": {
+      "source": "Bulk export",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 188,
+          "column": 20
+        }
+      ]
+    },
+    "448aae21b6255945": {
+      "source": "Storage management",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 281,
+          "column": 26
+        }
+      ]
+    },
+    "4529dd70d527b2cf": {
+      "source": "Proxy settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 41,
+          "column": 29
+        }
+      ]
+    },
+    "4543708d11967ea1": {
+      "source": "Last page",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 27,
+          "column": 30
+        },
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 27,
+          "column": 98
+        }
+      ]
+    },
+    "4589eade4f2f531f": {
+      "source": "Unable to load call details",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetailsPage.tsx",
+          "line": 29,
+          "column": 26
+        }
+      ]
+    },
+    "45c892de4963e29c": {
+      "source": "Main menu",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 42,
+          "column": 54
+        }
+      ]
+    },
+    "45d239697ed00d46": {
+      "source": "Maximize window",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/WindowControls.tsx",
+          "line": 38,
+          "column": 59
+        }
+      ]
+    },
+    "461b49d3f69379cc": {
+      "source": "Copy remote settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 36,
+          "column": 56
+        }
+      ]
+    },
+    "464c4ffd019e1e96": {
+      "source": "Edit",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 171,
+          "column": 64
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 285,
+          "column": 70
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 178,
+          "column": 10
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 90,
+          "column": 112
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 96,
+          "column": 75
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 37,
+          "column": 8
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 184,
+          "column": 82
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 40,
+          "column": 98
+        }
+      ]
+    },
+    "475fe24a4c2d9df3": {
+      "source": "Hide the main window on startup and keep only the tray icon.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 128,
+          "column": 17
+        }
+      ]
+    },
+    "47d2a515ef2f05b8": {
+      "source": "Loading...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 528,
+          "column": 50
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 164,
+          "column": 8
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 124,
+          "column": 40
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 69,
+          "column": 141
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 81,
+          "column": 81
+        }
+      ]
+    },
+    "47ed270754ab7003": {
+      "source": "Disable Cursor takeover?",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 338,
+          "column": 14
+        }
+      ]
+    },
+    "4822c187e6783f4d": {
+      "source": "The original endpoint path is appended to this service address.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 68,
+          "column": 21
+        }
+      ]
+    },
+    "48318624209c0b5a": {
+      "source": "Output price ($/1M)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 114,
+          "column": 31
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 149,
+          "column": 24
+        }
+      ]
+    },
+    "4895f73177ab5d67": {
+      "source": "Not set",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 213,
+          "column": 41
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 75,
+          "column": 140
+        }
+      ]
+    },
+    "48e81f4eb2da6e78": {
+      "source": "Validating the plugin runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 313,
+          "column": 31
+        }
+      ]
+    },
+    "494ca78f7374e46f": {
+      "source": "Custom",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 92,
+          "column": 9
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 29,
+          "column": 95
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 46,
+          "column": 177
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 32,
+          "column": 12
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 60,
+          "column": 41
+        }
+      ]
+    },
+    "49f29b3f352fd16c": {
+      "source": "Launch at login enabled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 59,
+          "column": 25
+        }
+      ]
+    },
+    "4a8707f98d85924f": {
+      "source": "Using this card consumes it immediately and cannot be undone. Continue?",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 564,
+          "column": 11
+        }
+      ]
+    },
+    "4bdd511d381bfb91": {
+      "source": "View instructions",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 54,
+          "column": 17
+        }
+      ]
+    },
+    "4bfd5b85c670a196": {
+      "source": "Plugin runtime initialized",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 270,
+          "column": 7
+        }
+      ]
+    },
+    "4c347bb577fb7426": {
+      "source": "TAB service address",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 67,
+          "column": 22
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 73,
+          "column": 25
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 84,
+          "column": 20
+        }
+      ]
+    },
+    "4c8982fbd71080ae": {
+      "source": "Start Cursor BYOK automatically after signing in.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 116,
+          "column": 17
+        }
+      ]
+    },
+    "4ca48b4230a55dc0": {
+      "source": "Confirm import",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 59,
+          "column": 21
+        }
+      ]
+    },
+    "4d8000301fccdede": {
+      "source": "Bytes",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 56,
+          "column": 39
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 63,
+          "column": 72
+        }
+      ]
+    },
+    "4e1536189e94ceff": {
+      "source": "Request content was not recorded. Enable detailed records and try again.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 59,
+          "column": 44
+        }
+      ]
+    },
+    "4f033edb07a7efc2": {
+      "source": "Commit Message Model Settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 185,
+          "column": 26
+        }
+      ]
+    },
+    "4f3264a549f645bc": {
+      "source": "Plugin runtime initialization failed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 98,
+          "column": 9
+        },
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 272,
+          "column": 9
+        }
+      ]
+    },
+    "4fa6fdeab0dc0ad9": {
+      "source": "Initialize CA",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 22,
+          "column": 253
+        }
+      ]
+    },
+    "4fc52a3c4c558b51": {
+      "source": "Duration",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 33,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 82,
+          "column": 15
+        }
+      ]
+    },
+    "50e4e5471e5d9bb1": {
+      "source": "No usage",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 135,
+          "column": 15
+        }
+      ]
+    },
+    "519c55c94d3b48ee": {
+      "source": "Checking the plugin runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 96,
+          "column": 7
+        },
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 309,
+          "column": 29
+        }
+      ]
+    },
+    "519f32d716ba891f": {
+      "source": "Detailed records",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 45,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 142,
+          "column": 15
+        }
+      ]
+    },
+    "51ac2e272de0cdc5": {
+      "source": "Error: {error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 35,
+          "column": 7
+        }
+      ]
+    },
+    "51e3a01219f28962": {
+      "source": "Not tested",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 24,
+          "column": 112
+        }
+      ]
+    },
+    "51edadded9ce1ae9": {
+      "source": "Port must be an integer between 1 and 65535",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 62,
+          "column": 15
+        }
+      ]
+    },
+    "527062573862fd8a": {
+      "source": "Prompt settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 175,
+          "column": 10
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 207,
+          "column": 16
+        }
+      ]
+    },
+    "529aacfdfd2b17bf": {
+      "source": "{count} selected",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 120,
+          "column": 45
+        }
+      ]
+    },
+    "532eaabd9574880d": {
+      "source": "Test",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 170,
+          "column": 105
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 193,
+          "column": 105
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 284,
+          "column": 111
+        }
+      ]
+    },
+    "5593d36fbffd3075": {
+      "source": "The local proxy port used by Cursor. Enter 0 to select a random port at startup.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 190,
+          "column": 21
+        }
+      ]
+    },
+    "55c93e5830ff4a9f": {
+      "source": "Input price ($/1M)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 105,
+          "column": 31
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 145,
+          "column": 24
+        }
+      ]
+    },
+    "56970699d6b9e78d": {
+      "source": "TAB settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 44,
+          "column": 90
+        }
+      ]
+    },
+    "569ca49f4aaf7846": {
+      "source": "Install",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 133,
+          "column": 38
+        }
+      ]
+    },
+    "56b24f485c6a73b4": {
+      "source": "Token pricing",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 100,
+          "column": 24
+        }
+      ]
+    },
+    "578898555e391e3d": {
+      "source": "This plugin does not need any resources.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 39,
+          "column": 56
+        }
+      ]
+    },
+    "57c82546ee40ed6b": {
+      "source": "This operating system or CPU architecture is not currently supported",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 105,
+          "column": 25
+        }
+      ]
+    },
+    "57e6bd9924952947": {
+      "source": "Local: on",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 309,
+          "column": 70
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 63,
+          "column": 51
+        }
+      ]
+    },
+    "582d11a7269e6e0f": {
+      "source": "Confirm legacy model configuration import",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 55,
+          "column": 14
+        }
+      ]
+    },
+    "58726e5dd993a1ae": {
+      "source": "Test failed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 50,
+          "column": 80
+        }
+      ]
+    },
+    "58c9724822b49cfa": {
+      "source": "Request protocol",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 149,
+          "column": 59
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 149,
+          "column": 199
+        }
+      ]
+    },
+    "596380cb6aa386c2": {
+      "source": "Version {version} is available",
+      "kind": "template",
+      "placeholders": [
+        "version"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 96,
+          "column": 29
+        }
+      ]
+    },
+    "59f03d642b41e22f": {
+      "source": "Request",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 54,
+          "column": 32
+        }
+      ]
+    },
+    "5b8c83cd899ddd10": {
+      "source": "Current version {version}",
+      "kind": "template",
+      "placeholders": [
+        "version"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 154,
+          "column": 13
+        }
+      ]
+    },
+    "5bce2dc78686fb7d": {
+      "source": "{label} must be valid JSON",
+      "kind": "template",
+      "placeholders": [
+        "label"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 413,
+          "column": 70
+        }
+      ]
+    },
+    "5c37cf8f018b4ac5": {
+      "source": "Last 24 hours",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 42,
+          "column": 42
+        }
+      ]
+    },
+    "5cc895a388da2a8f": {
+      "source": "All {count} models in this configuration already exist; nothing needs to be imported",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 43,
+          "column": 11
+        }
+      ]
+    },
+    "5cd543869aa4dee0": {
+      "source": "Minimize window",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/WindowControls.tsx",
+          "line": 44,
+          "column": 19
+        },
+        {
+          "file": "shell/WindowControls.tsx",
+          "line": 45,
+          "column": 14
+        }
+      ]
+    },
+    "5cde55597b656f95": {
+      "source": "Clear all statistics?",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 157,
+          "column": 45
+        }
+      ]
+    },
+    "5e2c614c23f02239": {
+      "source": "Model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 123,
+          "column": 77
+        }
+      ]
+    },
+    "5e9008a1c1b8bcbc": {
+      "source": "Open terminal to install CA",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 22,
+          "column": 218
+        }
+      ]
+    },
+    "5f7864d17c245382": {
+      "source": "LLM calls",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 143,
+          "column": 40
+        }
+      ]
+    },
+    "5fa7aac5375c5815": {
+      "source": "Ready",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 573,
+          "column": 30
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 592,
+          "column": 42
+        }
+      ]
+    },
+    "60348f2eae876af1": {
+      "source": "This address is used exactly as entered without changing or appending the request path.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 155,
+          "column": 136
+        }
+      ]
+    },
+    "60bfdbe9fa80eb2d": {
+      "source": "Complete request URL",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 155,
+          "column": 54
+        }
+      ]
+    },
+    "61987e602bc4705c": {
+      "source": "Detailed records cleared",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 101,
+          "column": 68
+        }
+      ]
+    },
+    "624031b8fbab816a": {
+      "source": "Hide the Dock icon when disabled. You can still open the app from the menu bar icon.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 140,
+          "column": 17
+        }
+      ]
+    },
+    "626f456565077ce3": {
+      "source": "Port settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 178,
+          "column": 26
+        }
+      ]
+    },
+    "6271c0fe59d1fb60": {
+      "source": "Confirm clear",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 301,
+          "column": 23
+        }
+      ]
+    },
+    "6312bf1392031bcb": {
+      "source": "Only determines the request and response format; it does not change the request URL.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 149,
+          "column": 88
+        }
+      ]
+    },
+    "635f3b82b4866843": {
+      "source": "The local CA must be trusted by the system",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 20,
+          "column": 33
+        }
+      ]
+    },
+    "63a0958b1626d3ce": {
+      "source": "Non-cached input: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 102,
+          "column": 5
+        }
+      ]
+    },
+    "63b70c784699ba49": {
+      "source": "Connect to your SSH host. In Cursor Settings, select Remote [SSH: host] and open that host's remote settings JSON. Configure each SSH host separately.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 26,
+          "column": 14
+        }
+      ]
+    },
+    "63c59596323cbe7f": {
+      "source": "{label}: {percent}% left",
+      "kind": "template",
+      "placeholders": [
+        "label",
+        "percent"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 497,
+          "column": 13
+        }
+      ]
+    },
+    "6608bab9ab43b98b": {
+      "source": "Quick time ranges",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 113,
+          "column": 56
+        }
+      ]
+    },
+    "6614cc1c28369550": {
+      "source": "Read models from the local legacy configuration. New and existing models are shown before confirmation.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 240,
+          "column": 21
+        }
+      ]
+    },
+    "6619d254cda4f858": {
+      "source": "Uses the operating system language by default; unsupported languages fall back to English. Current: {language}",
+      "kind": "template",
+      "placeholders": [
+        "language"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 251,
+          "column": 21
+        }
+      ]
+    },
+    "666e73d8f72f5422": {
+      "source": "Device code",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 233,
+          "column": 15
+        }
+      ]
+    },
+    "66880d2d8216260d": {
+      "source": "Authentication",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 54,
+          "column": 22
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 72,
+          "column": 48
+        }
+      ]
+    },
+    "66e041fd6ee95547": {
+      "source": "Leave blank to use adaptive thinking.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 171,
+          "column": 62
+        }
+      ]
+    },
+    "67908a8d41024d69": {
+      "source": "Token usage",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 153,
+          "column": 40
+        }
+      ]
+    },
+    "67df9ad18ed89a41": {
+      "source": "Enter a model ID directly or load models returned by the API.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 160,
+          "column": 48
+        }
+      ]
+    },
+    "693197e2e4fffc2a": {
+      "source": "Regular input: {tokens} x ${price}/1M = {cost}",
+      "kind": "template",
+      "placeholders": [
+        "tokens",
+        "price",
+        "cost"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 112,
+          "column": 5
+        }
+      ]
+    },
+    "696f59c1ba50670c": {
+      "source": "Connectivity tests completed: {successful} succeeded, {failed} failed",
+      "kind": "template",
+      "placeholders": [
+        "successful",
+        "failed"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 202,
+          "column": 13
+        }
+      ]
+    },
+    "69d2daed978a7b05": {
+      "source": "Refreshing...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 22,
+          "column": 121
+        }
+      ]
+    },
+    "6a1dd70992e3227b": {
+      "source": "Silent start enabled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 72,
+          "column": 25
+        }
+      ]
+    },
+    "6a3c661185d0bfd7": {
+      "source": "No resources yet. Add one first.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 470,
+          "column": 66
+        }
+      ]
+    },
+    "6acabc40acc6a2d9": {
+      "source": "Leave blank to use the default.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 164,
+          "column": 59
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 166,
+          "column": 61
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 169,
+          "column": 61
+        }
+      ]
+    },
+    "6b2d7e83eefc41b8": {
+      "source": "TAB connection",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 51,
+          "column": 22
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 56,
+          "column": 24
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 80,
+          "column": 20
+        }
+      ]
+    },
+    "6b6a8270dd7de1da": {
+      "source": "Clear scope",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 308,
+          "column": 24
+        }
+      ]
+    },
+    "6b9b2a6190f55415": {
+      "source": "For example: Primary model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 161,
+          "column": 165
+        }
+      ]
+    },
+    "6c02a28421f8ad91": {
+      "source": "Testing...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 20,
+          "column": 66
+        },
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 21,
+          "column": 95
+        }
+      ]
+    },
+    "6cb61807cb8de372": {
+      "source": "By provider",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 324,
+          "column": 136
+        }
+      ]
+    },
+    "6dc217262b435056": {
+      "source": "The install command has been copied. Click 'Open terminal', paste it into the terminal, and enter your password when prompted.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 355,
+          "column": 121
+        }
+      ]
+    },
+    "6dc5a051aee166b4": {
+      "source": "{label} must be an integer greater than 0",
+      "kind": "template",
+      "placeholders": [
+        "label"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 400,
+          "column": 89
+        }
+      ]
+    },
+    "6df16d8875b69584": {
+      "source": "Disabling this will remove Cursor's local proxy configuration. If you need to sign in to an official account, you usually do not need to disable it. You can sign in directly because BYOK models and official-account models now work together seamlessly. Do you want to continue disabling and clearing the proxy configuration?",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 347,
+          "column": 11
+        }
+      ]
+    },
+    "6e4461e5aeef54ff": {
+      "source": "Test failed: {error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 45,
+          "column": 7
+        }
+      ]
+    },
+    "6e9248030861e3ea": {
+      "source": "Formula: cache read / (cache read + non-cached input)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 82,
+          "column": 5
+        }
+      ]
+    },
+    "6f191ff7f89eaaac": {
+      "source": "Initializing...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 112,
+          "column": 53
+        }
+      ]
+    },
+    "6f300fee169a15cf": {
+      "source": "Thinking budget tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 171,
+          "column": 27
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 399,
+          "column": 207
+        }
+      ]
+    },
+    "6f3ae8603456d2cd": {
+      "source": "Existing, skipped",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 80,
+          "column": 33
+        }
+      ]
+    },
+    "704e245c4fe16957": {
+      "source": "{count} total",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 20,
+          "column": 12
+        }
+      ]
+    },
+    "70589413a3c97933": {
+      "source": "Base URL",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 57,
+          "column": 18
+        }
+      ]
+    },
+    "70a8291640b47e10": {
+      "source": "Default light",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 276,
+          "column": 60
+        }
+      ]
+    },
+    "727bfdaa7b05f9ff": {
+      "source": "Enable external API",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 46,
+          "column": 20
+        },
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 49,
+          "column": 24
+        }
+      ]
+    },
+    "72bdb2f14b607f6d": {
+      "source": "Estimated using configured token pricing.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 109,
+          "column": 5
+        }
+      ]
+    },
+    "731489c6416909c2": {
+      "source": "{name} model management",
+      "kind": "template",
+      "placeholders": [
+        "name"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 402,
+          "column": 12
+        }
+      ]
+    },
+    "743641a10389f4e1": {
+      "source": "The model configuration changed. Refresh and try again.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/store/appStore.ts",
+          "line": 218,
+          "column": 23
+        },
+        {
+          "file": "shared/store/appStore.ts",
+          "line": 225,
+          "column": 25
+        }
+      ]
+    },
+    "745851b9dd845568": {
+      "source": "Cache read: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 103,
+          "column": 5
+        }
+      ]
+    },
+    "74a883a037bc227f": {
+      "source": "Settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 194,
+          "column": 64
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 320,
+          "column": 30
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 35,
+          "column": 29
+        }
+      ]
+    },
+    "75081b593d15cf6e": {
+      "source": "Disabled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 16,
+          "column": 21
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 72,
+          "column": 148
+        }
+      ]
+    },
+    "75a4d63d6608db8e": {
+      "source": "Dock icon shown",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 85,
+          "column": 25
+        }
+      ]
+    },
+    "75be541aa9a4d36f": {
+      "source": "No reset cards available.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 530,
+          "column": 100
+        }
+      ]
+    },
+    "762ebb70ef0ea2e8": {
+      "source": "Group name",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 359,
+          "column": 27
+        }
+      ]
+    },
+    "766a02e0125f1841": {
+      "source": "Items per page",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 22,
+          "column": 59
+        }
+      ]
+    },
+    "767ead4f65d8eb62": {
+      "source": "Pricing settings saved",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 74,
+          "column": 17
+        }
+      ]
+    },
+    "768f1f993823a0d2": {
+      "source": "Reading...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 40,
+          "column": 101
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 243,
+          "column": 27
+        }
+      ]
+    },
+    "79760978399e02ee": {
+      "source": "Waiting for browser authorization...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 241,
+          "column": 100
+        }
+      ]
+    },
+    "79c5b83805747507": {
+      "source": "Models not synced yet",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 368,
+          "column": 96
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 430,
+          "column": 72
+        }
+      ]
+    },
+    "7a694902149dbae9": {
+      "source": "Save and test",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 349,
+          "column": 744
+        }
+      ]
+    },
+    "7ad4a60a9a56aeac": {
+      "source": "Review and import",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 243,
+          "column": 45
+        }
+      ]
+    },
+    "7af01e98f04839e4": {
+      "source": "Compress request context sent to models through the Headroom proxy; requests are sent unchanged when it is not installed or unavailable.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 96,
+          "column": 17
+        }
+      ]
+    },
+    "7b6bcb693c59cf86": {
+      "source": "Connectivity test cancelled: {successful} succeeded, {failed} failed",
+      "kind": "template",
+      "placeholders": [
+        "successful",
+        "failed"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 199,
+          "column": 11
+        }
+      ]
+    },
+    "7bda976b79329bd1": {
+      "source": "Version {version} is ready to install",
+      "kind": "template",
+      "placeholders": [
+        "version"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 153,
+          "column": 13
+        }
+      ]
+    },
+    "7c6a9cd24fd643a2": {
+      "source": "Failed to install update: {error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 108,
+          "column": 15
+        }
+      ]
+    },
+    "7ce3ea7e4614ca63": {
+      "source": "Use the desktop app to copy to the system clipboard",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/api.ts",
+          "line": 535,
+          "column": 43
+        }
+      ]
+    },
+    "7d9eb7acb13e2462": {
+      "source": "Close",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 354,
+          "column": 89
+        },
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 22,
+          "column": 88
+        },
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 278,
+          "column": 86
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 525,
+          "column": 82
+        }
+      ]
+    },
+    "7e350f535e559368": {
+      "source": "Local proxy configuration only; Remote SSH is not verified.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 308,
+          "column": 32
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 61,
+          "column": 24
+        }
+      ]
+    },
+    "7e7397ea94a4e66b": {
+      "source": "Cache read: {tokens} x ${price}/1M = {cost}",
+      "kind": "template",
+      "placeholders": [
+        "tokens",
+        "price",
+        "cost"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 122,
+          "column": 5
+        }
+      ]
+    },
+    "7f88308e1fcda4ca": {
+      "source": "Launch at login",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 115,
+          "column": 18
+        },
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 121,
+          "column": 16
+        }
+      ]
+    },
+    "812c98c992c65bc6": {
+      "source": "Fetch models",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 160,
+          "column": 382
+        }
+      ]
+    },
+    "81837d4e53e2020d": {
+      "source": "Generation model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 189,
+          "column": 24
+        },
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 197,
+          "column": 24
+        }
+      ]
+    },
+    "81dc8e777dbe8456": {
+      "source": "Importing the same configuration again will not create duplicate models. Existing models are skipped automatically.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 84,
+          "column": 41
+        }
+      ]
+    },
+    "825db31eec7f2128": {
+      "source": "Connectivity test for {model} succeeded ({duration} ms)",
+      "kind": "template",
+      "placeholders": [
+        "model",
+        "duration"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 155,
+          "column": 27
+        }
+      ]
+    },
+    "82e8ae83d85249a1": {
+      "source": "Remote SSH setup guide",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 22,
+          "column": 29
+        }
+      ]
+    },
+    "8300820b62ab2438": {
+      "source": "Unable to save model order",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 259,
+          "column": 47
+        }
+      ]
+    },
+    "8343ce1f094e956e": {
+      "source": "Silent start disabled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 72,
+          "column": 53
+        }
+      ]
+    },
+    "83669f49b4abc45c": {
+      "source": "Cursor Assistant v{version}",
+      "kind": "template",
+      "placeholders": [
+        "version"
+      ],
+      "refs": [
+        {
+          "file": "shell/AppHeader.tsx",
+          "line": 34,
+          "column": 18
+        }
+      ]
+    },
+    "839076fbb08361b4": {
+      "source": "Reinitialize plugins",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 112,
+          "column": 85
+        }
+      ]
+    },
+    "83ceae7197e574d1": {
+      "source": "Call history",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 32,
+          "column": 44
+        }
+      ]
+    },
+    "848cf08625ad9385": {
+      "source": "Proxy mode",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 45,
+          "column": 20
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 46,
+          "column": 62
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 69,
+          "column": 46
+        }
+      ]
+    },
+    "84aebc69a1bf739a": {
+      "source": "Configured",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 216,
+          "column": 25
+        }
+      ]
+    },
+    "84c2e09d3390dc3f": {
+      "source": "Last week",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 37,
+          "column": 29
+        }
+      ]
+    },
+    "8517d512587265d3": {
+      "source": "Cache write: {tokens} x ${price}/1M = {cost}",
+      "kind": "template",
+      "placeholders": [
+        "tokens",
+        "price",
+        "cost"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 127,
+          "column": 5
+        }
+      ]
+    },
+    "85a39ab345d672ff": {
+      "source": "Yes",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 28,
+          "column": 52
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 45,
+          "column": 45
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 53,
+          "column": 63
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 143,
+          "column": 42
+        }
+      ]
+    },
+    "861a6d434bdbf2d8": {
+      "source": "Clear {label} filter",
+      "kind": "template",
+      "placeholders": [
+        "label"
+      ],
+      "refs": [
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 168,
+          "column": 21
+        }
+      ]
+    },
+    "861fbb9c5f2229fe": {
+      "source": "Service port",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 72,
+          "column": 46
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 202,
+          "column": 22
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 217,
+          "column": 58
+        }
+      ]
+    },
+    "87234608c09b4d12": {
+      "source": "Test cancelled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 28,
+          "column": 63
+        },
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 29,
+          "column": 92
+        }
+      ]
+    },
+    "873fef760e5d001b": {
+      "source": "Sunday",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 54,
+          "column": 25
+        }
+      ]
+    },
+    "876a4379087b6181": {
+      "source": "Cached input",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 107,
+          "column": 50
+        },
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 155,
+          "column": 15
+        }
+      ]
+    },
+    "879f977dac66759d": {
+      "source": "Use complete request URL",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 156,
+          "column": 61
+        }
+      ]
+    },
+    "88274a9a0bee21e7": {
+      "source": "Use reset card",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 554,
+          "column": 14
+        }
+      ]
+    },
+    "88e6495e8a339137": {
+      "source": "All external requests must provide this key when enabled.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 52,
+          "column": 45
+        }
+      ]
+    },
+    "89351e9fa364e0de": {
+      "source": "{count} models",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 368,
+          "column": 39
+        }
+      ]
+    },
+    "89904b8cdcc01aa6": {
+      "source": "Cache statistics policy: default ({rate})",
+      "kind": "template",
+      "placeholders": [
+        "rate"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 110,
+          "column": 5
+        }
+      ]
+    },
+    "89a38d317081759b": {
+      "source": "Enable {model}",
+      "kind": "template",
+      "placeholders": [
+        "model"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 424,
+          "column": 22
+        }
+      ]
+    },
+    "89e8bf409a8d2600": {
+      "source": " (estimated)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 42,
+          "column": 50
+        }
+      ]
+    },
+    "8a7525b1492fb848": {
+      "source": "Notes",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 117,
+          "column": 88
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 162,
+          "column": 54
+        }
+      ]
+    },
+    "8b9de9c0c0a0b3b3": {
+      "source": "Close window",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/WindowControls.tsx",
+          "line": 62,
+          "column": 19
+        },
+        {
+          "file": "shell/WindowControls.tsx",
+          "line": 63,
+          "column": 14
+        }
+      ]
+    },
+    "8be89710b2f1d0c5": {
+      "source": "Server address",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 155,
+          "column": 82
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 362,
+          "column": 27
+        }
+      ]
+    },
+    "8c0f6d3ebfe7ba3a": {
+      "source": "Provider type",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 21,
+          "column": 6
+        }
+      ]
+    },
+    "8c43d9f62c17a9dc": {
+      "source": "Default layout",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 323,
+          "column": 105
+        }
+      ]
+    },
+    "8ca6afed1205b5c7": {
+      "source": "{name} Copy",
+      "kind": "template",
+      "placeholders": [
+        "name"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 210,
+          "column": 22
+        }
+      ]
+    },
+    "8d525e5f158b9afe": {
+      "source": "Copied",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 236,
+          "column": 19
+        }
+      ]
+    },
+    "8dec2f39b28d375d": {
+      "source": "Cooling down",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 587,
+          "column": 81
+        }
+      ]
+    },
+    "8e405d610599b96c": {
+      "source": "Server address or complete request URL, API Key, model name, display name, and note are required",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 398,
+          "column": 123
+        }
+      ]
+    },
+    "8e76a94ac8320d51": {
+      "source": "Summary",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/HomePage.tsx",
+          "line": 201,
+          "column": 25
+        }
+      ]
+    },
+    "904ed60e4ac74da7": {
+      "source": "Silent start",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 127,
+          "column": 18
+        },
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 133,
+          "column": 16
+        }
+      ]
+    },
+    "915f5482d235ed7a": {
+      "source": "Estimated output: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 101,
+          "column": 5
+        }
+      ]
+    },
+    "920e413c7d411b61": {
+      "source": "Status",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 29,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 16,
+          "column": 15
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 120,
+          "column": 18
+        }
+      ]
+    },
+    "92c1cdfdf4cb9cf6": {
+      "source": "Enabled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 414,
+          "column": 75
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 72,
+          "column": 133
+        }
+      ]
+    },
+    "92dee8c9a6a4659f": {
+      "source": "If a connection to 127.0.0.1 fails, localhost in a remote process refers to the remote host, not your desktop. Check that the remote setting took effect. Diagnose certificate errors separately using the failing process and destination; keep TLS verification enabled and never copy CA private keys.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 45,
+          "column": 11
+        }
+      ]
+    },
+    "93062e80072d54ae": {
+      "source": "Initialize the plugin runtime first",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 101,
+          "column": 11
+        }
+      ]
+    },
+    "94f3dd73fda672db": {
+      "source": "Loading call details...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetailsPage.tsx",
+          "line": 32,
+          "column": 77
+        }
+      ]
+    },
+    "95099ea8479ff66a": {
+      "source": "Start sign-in",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 241,
+          "column": 144
+        }
+      ]
+    },
+    "9514b7ff4860ead7": {
+      "source": "Plugins",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 65,
+          "column": 14
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 36,
+          "column": 46
+        }
+      ]
+    },
+    "954f93fe1c66ae44": {
+      "source": "Presets",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorPresetChips.tsx",
+          "line": 8,
+          "column": 37
+        }
+      ]
+    },
+    "967549497036d513": {
+      "source": "Deselect all",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 410,
+          "column": 107
+        },
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 233,
+          "column": 67
+        }
+      ]
+    },
+    "96c34a0719eb565c": {
+      "source": "Invalid",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 590,
+          "column": 81
+        }
+      ]
+    },
+    "96fbbba8616f54e1": {
+      "source": "Total requests: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 99,
+          "column": 5
+        }
+      ]
+    },
+    "984b84c29bb83658": {
+      "source": "Download progress",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 287,
+          "column": 23
+        }
+      ]
+    },
+    "985a580ee2006f8f": {
+      "source": "Leave blank to keep the current password",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 64,
+          "column": 169
+        }
+      ]
+    },
+    "9879b8c9dc6fd136": {
+      "source": "Response stream",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 61,
+          "column": 33
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 64,
+          "column": 32
+        }
+      ]
+    },
+    "99ef1587b857cc82": {
+      "source": "Failed to start",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 14,
+          "column": 27
+        }
+      ]
+    },
+    "9a29d0d35f5f3d30": {
+      "source": "Use public service",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 30,
+          "column": 35
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 58,
+          "column": 41
+        }
+      ]
+    },
+    "9b5cda12f462cbd5": {
+      "source": "Total calls: {count}",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 91,
+          "column": 5
+        }
+      ]
+    },
+    "9b636795be0a9cd2": {
+      "source": "Model duplicated",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 222,
+          "column": 26
+        }
+      ]
+    },
+    "9bc348a5b4e1f9f2": {
+      "source": "Local port",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 107,
+          "column": 18
+        }
+      ]
+    },
+    "9bf0485a230d68b4": {
+      "source": "Last 10 minutes",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 36,
+          "column": 36
+        }
+      ]
+    },
+    "9c399fdedcd152af": {
+      "source": "No models are available to Cursor yet",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 36,
+          "column": 14
+        }
+      ]
+    },
+    "9c6ac7faabef2ec6": {
+      "source": "Custom overview filters",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 102,
+          "column": 19
+        }
+      ]
+    },
+    "9db70467e7c52134": {
+      "source": "Custom Headers",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 175,
+          "column": 16
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 406,
+          "column": 36
+        }
+      ]
+    },
+    "9e32397c72523481": {
+      "source": "Disable takeover",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 340,
+          "column": 21
+        }
+      ]
+    },
+    "9f94433e65bd4144": {
+      "source": "Downloading the plugin runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 310,
+          "column": 32
+        }
+      ]
+    },
+    "9fd728c66c9a256b": {
+      "source": "Add",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 136,
+          "column": 10
+        }
+      ]
+    },
+    "9fe7958f1731531f": {
+      "source": "Successful calls: {count}",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 92,
+          "column": 5
+        }
+      ]
+    },
+    "a0a1074faa44dfa0": {
+      "source": "Output Tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/TokenTrendChart.tsx",
+          "line": 17,
+          "column": 15
+        }
+      ]
+    },
+    "a0bbd2fe58536c0f": {
+      "source": "Save, then run Developer: Reload Window from the command palette.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 31,
+          "column": 14
+        }
+      ]
+    },
+    "a1a2ceda9448b299": {
+      "source": "All custom Header values must be strings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 407,
+          "column": 89
+        }
+      ]
+    },
+    "a213ce364019d004": {
+      "source": "Token usage over the past year",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/ContributionCalendarChart.tsx",
+          "line": 252,
+          "column": 50
+        }
+      ]
+    },
+    "a28156f8bf044457": {
+      "source": "Plugin runtime {version} is installed and ready to use.",
+      "kind": "template",
+      "placeholders": [
+        "version"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 302,
+          "column": 44
+        }
+      ]
+    },
+    "a2d1649e7b6ac563": {
+      "source": "Open model list",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/Select.tsx",
+          "line": 142,
+          "column": 90
+        }
+      ]
+    },
+    "a394d2c9753144e7": {
+      "source": "Cache hit rate",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 139,
+          "column": 40
+        }
+      ]
+    },
+    "a3c3370cc7323c71": {
+      "source": "Model name",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 41,
+          "column": 15
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 160,
+          "column": 25
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 414,
+          "column": 37
+        }
+      ]
+    },
+    "a44a35d3f5ffc17c": {
+      "source": "Downloaded {downloaded}",
+      "kind": "template",
+      "placeholders": [
+        "downloaded"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 298,
+          "column": 129
+        }
+      ]
+    },
+    "a4bafd94d99a0e99": {
+      "source": "Import complete: added {imported} models and skipped {skipped} existing models",
+      "kind": "template",
+      "placeholders": [
+        "imported",
+        "skipped"
+      ],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 42,
+          "column": 11
+        }
+      ]
+    },
+    "a4fe65264ef7dbb3": {
+      "source": "Language",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 247,
+          "column": 26
+        }
+      ]
+    },
+    "a52ace420f2175d0": {
+      "source": "All",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 120,
+          "column": 34
+        }
+      ]
+    },
+    "a5b68bbdefa4a15c": {
+      "source": "Show sensitive content",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/FormControls.tsx",
+          "line": 15,
+          "column": 111
+        }
+      ]
+    },
+    "a619c449788c1fdd": {
+      "source": "Preparing the plugin runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 314,
+          "column": 21
+        }
+      ]
+    },
+    "a656107e99c71dea": {
+      "source": "Statistics",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 284,
+          "column": 22
+        }
+      ]
+    },
+    "a6f192ccc79eaa5d": {
+      "source": "Initialize plugin runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 277,
+          "column": 12
+        }
+      ]
+    },
+    "a72a5db5354f1a3e": {
+      "source": "Final request type",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 23,
+          "column": 6
+        }
+      ]
+    },
+    "a7f720fda5cf1ea2": {
+      "source": "Proxy requires authentication",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 55,
+          "column": 59
+        }
+      ]
+    },
+    "a8dfe9d8018890cf": {
+      "source": "Last hour",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 34,
+          "column": 29
+        }
+      ]
+    },
+    "a99dd514fa4c9267": {
+      "source": "Open authorization page",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 243,
+          "column": 147
+        }
+      ]
+    },
+    "a9b31e3716c01a6b": {
+      "source": "Request body",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 58,
+          "column": 14
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 58,
+          "column": 60
+        }
+      ]
+    },
+    "a9cc335a54c85518": {
+      "source": "Port settings saved. Restart the app to apply them.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 77,
+          "column": 17
+        }
+      ]
+    },
+    "ab139551403ffc02": {
+      "source": "Initialize the local CA first",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 20,
+          "column": 83
+        }
+      ]
+    },
+    "ab272c7fcc3f57dd": {
+      "source": "Also store complete requests and streamed responses; by default only timing, status, and usage are stored.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 168,
+          "column": 16
+        }
+      ]
+    },
+    "ac1175362b3e99c5": {
+      "source": "Merge this setting, preserving your existing configuration. Changing only local User or workspace settings is not enough.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 28,
+          "column": 15
+        }
+      ]
+    },
+    "ac4682ad215ad891": {
+      "source": "Install Headroom",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 129,
+          "column": 18
+        }
+      ]
+    },
+    "ac8ca067dfb1b447": {
+      "source": "Confirm use",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 556,
+          "column": 21
+        }
+      ]
+    },
+    "acb1f43d2899ca05": {
+      "source": "Open terminal",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 354,
+          "column": 115
+        }
+      ]
+    },
+    "ad61bfb2b34887a0": {
+      "source": "Copying...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 36,
+          "column": 38
+        }
+      ]
+    },
+    "adc74704d65d5cc9": {
+      "source": "Route",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 16,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 64,
+          "column": 15
+        }
+      ]
+    },
+    "ae7d8dfac9ff5e0f": {
+      "source": "Used",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 575,
+          "column": 25
+        }
+      ]
+    },
+    "aeed4d26bb5f0c31": {
+      "source": "Starting",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 13,
+          "column": 29
+        }
+      ]
+    },
+    "afd410d654e10016": {
+      "source": "Start a new chat, explicitly select a configured BYOK model, and send a request. Do not continue an old chat or select Auto.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 32,
+          "column": 14
+        }
+      ]
+    },
+    "b1a3261714214cd7": {
+      "source": "Applies to every model in this group and is used as the badge label in Cursor's model picker; clear it to fall back to the server domain.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 359,
+          "column": 50
+        }
+      ]
+    },
+    "b2609f7d7b0979ee": {
+      "source": "Add model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 39,
+          "column": 77
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 332,
+          "column": 40
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 332,
+          "column": 139
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 349,
+          "column": 80
+        }
+      ]
+    },
+    "b27e31d9ef70625c": {
+      "source": "Last month",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 38,
+          "column": 30
+        }
+      ]
+    },
+    "b2dee88ab8913393": {
+      "source": "The local management service port used by the desktop frontend. Enter 0 to select a random port at startup.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 203,
+          "column": 21
+        }
+      ]
+    },
+    "b37e2fc666aed55e": {
+      "source": "Chunks",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 63,
+          "column": 39
+        }
+      ]
+    },
+    "b38ae2c5b84529e8": {
+      "source": "Average",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 187,
+          "column": 24
+        }
+      ]
+    },
+    "b3f3ae7c68360b5c": {
+      "source": "Cache write price ($/1M)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 132,
+          "column": 31
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 157,
+          "column": 24
+        }
+      ]
+    },
+    "b3f64eaa9062da18": {
+      "source": "Token usage calendar for the past year",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/ContributionCalendarChart.tsx",
+          "line": 258,
+          "column": 23
+        }
+      ]
+    },
+    "b697d4f9d76a4183": {
+      "source": "Download and install",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 158,
+          "column": 48
+        }
+      ]
+    },
+    "b6ae91e261440a39": {
+      "source": "Cache write price",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 43,
+          "column": 72
+        }
+      ]
+    },
+    "b6f6f3ad07b3c05f": {
+      "source": "Set",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 75,
+          "column": 129
+        }
+      ]
+    },
+    "b73a5e2ca6458665": {
+      "source": "Calls",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 33,
+          "column": 36
+        }
+      ]
+    },
+    "b7828ba00ee15c11": {
+      "source": "Delete model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 370,
+          "column": 52
+        }
+      ]
+    },
+    "b7a3cd401b23dd41": {
+      "source": "Importing...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 178,
+          "column": 32
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 142,
+          "column": 22
+        }
+      ]
+    },
+    "b850fc3d83889041": {
+      "source": "Installing the plugin runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 312,
+          "column": 31
+        }
+      ]
+    },
+    "b9a4c38179678d83": {
+      "source": "Successful {successful} / failed {failed}",
+      "kind": "template",
+      "placeholders": [
+        "successful",
+        "failed"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 146,
+          "column": 46
+        }
+      ]
+    },
+    "ba4062f844a984f5": {
+      "source": "Group settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 137,
+          "column": 10
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 357,
+          "column": 49
+        }
+      ]
+    },
+    "ba4aa101dfc281cd": {
+      "source": "Speed: {speed} tokens/s",
+      "kind": "template",
+      "placeholders": [
+        "speed"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 34,
+          "column": 7
+        }
+      ]
+    },
+    "ba4e71fc24e4bd3f": {
+      "source": "Used only for display and does not change the model name sent to the model service.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 161,
+          "column": 50
+        }
+      ]
+    },
+    "ba754dd60b576a27": {
+      "source": "If a port is occupied, a new random port is selected and saved automatically. Restart the app after changing these settings.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 222,
+          "column": 16
+        }
+      ]
+    },
+    "babe9dda85036fe4": {
+      "source": "Start time",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "line": 121,
+          "column": 21
+        }
+      ]
+    },
+    "bb2b304b6f63e83a": {
+      "source": "Paste a key or credential...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 130,
+          "column": 22
+        }
+      ]
+    },
+    "be58f9baaca7362c": {
+      "source": "Plugin runtime is not supported on this system",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 100,
+          "column": 11
+        }
+      ]
+    },
+    "bec126aa4e12b071": {
+      "source": "Paste the authorization command into the terminal and enter your password, then click the button below",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 21,
+          "column": 31
+        }
+      ]
+    },
+    "befe514bdf8face8": {
+      "source": "Paste credential",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 129,
+          "column": 21
+        }
+      ]
+    },
+    "c089bbf4b60887a8": {
+      "source": "Legacy configuration",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 239,
+          "column": 22
+        }
+      ]
+    },
+    "c08ac736a5e29c29": {
+      "source": "Next page",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 475,
+          "column": 110
+        },
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 26,
+          "column": 30
+        },
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 26,
+          "column": 98
+        }
+      ]
+    },
+    "c13603d39842be8e": {
+      "source": " must be an integer from 0 to 65535",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 64,
+          "column": 34
+        }
+      ]
+    },
+    "c29051cfc9598fa9": {
+      "source": "Filter: {label}, {summary}",
+      "kind": "template",
+      "placeholders": [
+        "label",
+        "summary"
+      ],
+      "refs": [
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 156,
+          "column": 21
+        }
+      ]
+    },
+    "c3b059b298c57777": {
+      "source": "Remote SSH guide",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 331,
+          "column": 127
+        }
+      ]
+    },
+    "c3e446ef62b7abd9": {
+      "source": "Provider URL",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 22,
+          "column": 6
+        }
+      ]
+    },
+    "c54a41f6d6262498": {
+      "source": "Input Tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/TokenTrendChart.tsx",
+          "line": 16,
+          "column": 15
+        }
+      ]
+    },
+    "c5cfb642ded824ec": {
+      "source": "Estimated value",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 160,
+          "column": 40
+        }
+      ]
+    },
+    "c608a8db4ad45b53": {
+      "source": "{accounts} accounts - {models} models",
+      "kind": "template",
+      "placeholders": [
+        "accounts",
+        "models"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 221,
+          "column": 12
+        }
+      ]
+    },
+    "c7544625e7402a83": {
+      "source": "Applies to every model in this group when changed; leave blank to keep each model's current configuration.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 362,
+          "column": 54
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 365,
+          "column": 42
+        }
+      ]
+    },
+    "ca17b54a12d3936f": {
+      "source": "Authorization is required to install the certificate",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 355,
+          "column": 47
+        }
+      ]
+    },
+    "caaf42b6940ebf37": {
+      "source": "Call details",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetailsPage.tsx",
+          "line": 32,
+          "column": 28
+        },
+        {
+          "file": "features/calls/CallDetailsPage.tsx",
+          "line": 36,
+          "column": 41
+        }
+      ]
+    },
+    "cb2cafa7541ea438": {
+      "source": "Import finished: {added} added, {updated} updated",
+      "kind": "template",
+      "placeholders": [
+        "added",
+        "updated"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 157,
+          "column": 23
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 81,
+          "column": 21
+        }
+      ]
+    },
+    "cbffc1adb519780a": {
+      "source": "Request headers",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 57,
+          "column": 14
+        },
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 57,
+          "column": 63
+        }
+      ]
+    },
+    "ccfa2274f15c8601": {
+      "source": "Show in Dock",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 139,
+          "column": 18
+        },
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 145,
+          "column": 16
+        }
+      ]
+    },
+    "cd012da5535b015b": {
+      "source": "{label} must be a JSON object",
+      "kind": "template",
+      "placeholders": [
+        "label"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 414,
+          "column": 87
+        }
+      ]
+    },
+    "cec8ad2139b3bd81": {
+      "source": "Proxy port",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 71,
+          "column": 42
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 189,
+          "column": 22
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 216,
+          "column": 58
+        }
+      ]
+    },
+    "cfd9c021146b0ccd": {
+      "source": "The CA is stored only on this device and is used to securely inspect Cursor HTTPS requests.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 21,
+          "column": 141
+        }
+      ]
+    },
+    "d05b4dc1d872b5fa": {
+      "source": "Cancel all tests",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 326,
+          "column": 199
+        }
+      ]
+    },
+    "d177cdc09a4ea3f3": {
+      "source": "Not installed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 15,
+          "column": 34
+        }
+      ]
+    },
+    "d17d2d78d76e6a6c": {
+      "source": "Models",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 33,
+          "column": 29
+        }
+      ]
+    },
+    "d1bf045bb524dae5": {
+      "source": "View details",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 186,
+          "column": 32
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 189,
+          "column": 25
+        },
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 58,
+          "column": 86
+        }
+      ]
+    },
+    "d1feda53add8b2d3": {
+      "source": "Connectivity test failed: {error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 164,
+          "column": 27
+        }
+      ]
+    },
+    "d220a8db01b3f74d": {
+      "source": "Output price",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 41,
+          "column": 62
+        }
+      ]
+    },
+    "d29afbd9fa8aab31": {
+      "source": "Disable local Cursor integration",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 50,
+          "column": 43
+        }
+      ]
+    },
+    "d2c9a11a72846b34": {
+      "source": "Model type",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 148,
+          "column": 25
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 148,
+          "column": 61
+        }
+      ]
+    },
+    "d346e39511d4e3fe": {
+      "source": "Sync models",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 376,
+          "column": 38
+        }
+      ]
+    },
+    "d47d7cb0e4f8fd2b": {
+      "source": "More",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 246,
+          "column": 32
+        }
+      ]
+    },
+    "d4b1ea5708dd5329": {
+      "source": "Overview",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 31,
+          "column": 39
+        }
+      ]
+    },
+    "d4c7f34c79754b7f": {
+      "source": "Detailed mode",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 166,
+          "column": 22
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 172,
+          "column": 20
+        }
+      ]
+    },
+    "d4ceaa57fa4ec3e8": {
+      "source": "Fetching...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 160,
+          "column": 363
+        }
+      ]
+    },
+    "d5ad0a70d0af2aaa": {
+      "source": "Calculating...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 285,
+          "column": 144
+        }
+      ]
+    },
+    "d5e21b47460555b0": {
+      "source": "Initialize the CA first",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 332,
+          "column": 57
+        }
+      ]
+    },
+    "d6b460c54c610315": {
+      "source": "Anthropic extra parameters",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 188,
+          "column": 16
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 396,
+          "column": 73
+        }
+      ]
+    },
+    "d7a25c73f9482c7b": {
+      "source": "Speed {speed} tokens/s - first token {firstText} ms - total {duration} ms - output {tokens} tokens{estimated} - response: {output}",
+      "kind": "template",
+      "placeholders": [
+        "speed",
+        "firstText",
+        "duration",
+        "tokens",
+        "estimated",
+        "output"
+      ],
+      "refs": [
+        {
+          "file": "features/models/CursorModelTestResult.tsx",
+          "line": 37,
+          "column": 7
+        }
+      ]
+    },
+    "d7a8974566f771f1": {
+      "source": "No options",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 194,
+          "column": 49
+        }
+      ]
+    },
+    "d8d36f868e2d1790": {
+      "source": "Open a terminal from the desktop app to install the CA",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/api.ts",
+          "line": 530,
+          "column": 43
+        }
+      ]
+    },
+    "d91bc00d6bed8da8": {
+      "source": "Call statistics",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 137,
+          "column": 50
+        }
+      ]
+    },
+    "daba934def236da0": {
+      "source": "Current: {rate}",
+      "kind": "template",
+      "placeholders": [
+        "rate"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 81,
+          "column": 5
+        }
+      ]
+    },
+    "daeaf38abf628351": {
+      "source": "Manage accounts",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 240,
+          "column": 20
+        }
+      ]
+    },
+    "db588384668f89e1": {
+      "source": "Version {version} is available in Settings",
+      "kind": "template",
+      "placeholders": [
+        "version"
+      ],
+      "refs": [
+        {
+          "file": "App.tsx",
+          "line": 62,
+          "column": 21
+        }
+      ]
+    },
+    "db9c0b2de5dece8b": {
+      "source": "Model output: {tokens} x ${price}/1M = {cost}",
+      "kind": "template",
+      "placeholders": [
+        "tokens",
+        "price",
+        "cost"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 117,
+          "column": 5
+        }
+      ]
+    },
+    "dba97df7f8090783": {
+      "source": "Proxy address",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 50,
+          "column": 22
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 71,
+          "column": 48
+        }
+      ]
+    },
+    "dbe35c7363c2f7ec": {
+      "source": "Saturday",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 53,
+          "column": 25
+        }
+      ]
+    },
+    "dc85af8f2b1d0d67": {
+      "source": "Saving...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/CommitSettingsCard.tsx",
+          "line": 169,
+          "column": 24
+        },
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 41,
+          "column": 15
+        },
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 87,
+          "column": 106
+        },
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 92,
+          "column": 19
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 33,
+          "column": 91
+        },
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 181,
+          "column": 121
+        },
+        {
+          "file": "features/settings/TabSettingsCard.tsx",
+          "line": 37,
+          "column": 91
+        }
+      ]
+    },
+    "dd1841d295024256": {
+      "source": "Not configured",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 216,
+          "column": 43
+        }
+      ]
+    },
+    "dd6880b6d63714d0": {
+      "source": "Launch at login disabled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 59,
+          "column": 56
+        }
+      ]
+    },
+    "dd886aee85fbabbe": {
+      "source": "Search resources",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 457,
+          "column": 32
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 457,
+          "column": 68
+        }
+      ]
+    },
+    "de2f27954f5a7a48": {
+      "source": "Final request URL",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 24,
+          "column": 6
+        }
+      ]
+    },
+    "df03ee78b5cafd91": {
+      "source": "By type",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 325,
+          "column": 124
+        }
+      ]
+    },
+    "df7d1cc1aa81245a": {
+      "source": "You're up to date",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 96,
+          "column": 93
+        }
+      ]
+    },
+    "df91b66490647a1c": {
+      "source": "Initialization downloads and installs the plugin runtime.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 106,
+          "column": 9
+        }
+      ]
+    },
+    "e0beec38b8847ca5": {
+      "source": "Get key",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 139,
+          "column": 10
+        }
+      ]
+    },
+    "e0f029f2f28fef4d": {
+      "source": "Allow local apps to call configured models, including plugin models, with an API key.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 47,
+          "column": 19
+        }
+      ]
+    },
+    "e1180bf1ac36bb19": {
+      "source": "Dock icon hidden",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 85,
+          "column": 48
+        }
+      ]
+    },
+    "e1f7b28ccb440344": {
+      "source": "Success rate: {rate}",
+      "kind": "template",
+      "placeholders": [
+        "rate"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 94,
+          "column": 5
+        }
+      ]
+    },
+    "e23f70dd55991055": {
+      "source": "Leave blank to use the default",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 164,
+          "column": 153
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 166,
+          "column": 155
+        },
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 169,
+          "column": 155
+        }
+      ]
+    },
+    "e249e0db4a8c353a": {
+      "source": "Cache read price",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 42,
+          "column": 70
+        }
+      ]
+    },
+    "e29374df70b8b0d1": {
+      "source": "TAB service address is required",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 144,
+          "column": 83
+        }
+      ]
+    },
+    "e2d0a54968ead24e": {
+      "source": "Delete",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 173,
+          "column": 96
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 287,
+          "column": 102
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 370,
+          "column": 111
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 505,
+          "column": 68
+        }
+      ]
+    },
+    "e3b89e9d33f88e52": {
+      "source": "Username",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 59,
+          "column": 24
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 74,
+          "column": 50
+        }
+      ]
+    },
+    "e50cc1e72e2a5ddd": {
+      "source": "Add {name} account",
+      "kind": "template",
+      "placeholders": [
+        "name"
+      ],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 79,
+          "column": 11
+        }
+      ]
+    },
+    "e5d548f1f352d8de": {
+      "source": "The key required to access the model service.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 158,
+          "column": 40
+        }
+      ]
+    },
+    "e67889a21f7fc6d0": {
+      "source": "Enable local Cursor integration",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 50,
+          "column": 83
+        }
+      ]
+    },
+    "e6e283499c38fe99": {
+      "source": "Test all",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 326,
+          "column": 223
+        }
+      ]
+    },
+    "e7a85607901ec8f6": {
+      "source": "Enter model notes",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 162,
+          "column": 142
+        }
+      ]
+    },
+    "e7ad522ea327e5ba": {
+      "source": "Application",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 112,
+          "column": 29
+        }
+      ]
+    },
+    "e7b47d4eb537bedb": {
+      "source": "OpenAI extra parameters",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 182,
+          "column": 16
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 394,
+          "column": 67
+        }
+      ]
+    },
+    "e7cf3ef4f17c3999": {
+      "source": "Password",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 63,
+          "column": 24
+        },
+        {
+          "file": "features/settings/ProxySettingsCard.tsx",
+          "line": 75,
+          "column": 50
+        }
+      ]
+    },
+    "e7fc264359d68205": {
+      "source": "Cache write",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 108,
+          "column": 51
+        },
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 164,
+          "column": 15
+        }
+      ]
+    },
+    "e80db00f5ef175ea": {
+      "source": "Page {page} of {count}",
+      "kind": "template",
+      "placeholders": [
+        "page",
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "shared/ui/Pagination.tsx",
+          "line": 23,
+          "column": 14
+        }
+      ]
+    },
+    "e86985124c840a91": {
+      "source": "Cache write: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 104,
+          "column": 5
+        }
+      ]
+    },
+    "e8edb05a23dfd6fc": {
+      "source": "Total request Tokens include the prompt and model output.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 97,
+          "column": 5
+        }
+      ]
+    },
+    "e91349fe65be5827": {
+      "source": "Install local CA",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 354,
+          "column": 53
+        }
+      ]
+    },
+    "e94479b2726f3d51": {
+      "source": "Clear storage",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 292,
+          "column": 14
+        }
+      ]
+    },
+    "e94e91518c1cf744": {
+      "source": "Verifying the plugin runtime download",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 311,
+          "column": 30
+        }
+      ]
+    },
+    "ea93d6a262ecb87a": {
+      "source": "Tools",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 44,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 137,
+          "column": 15
+        }
+      ]
+    },
+    "ebe5b269a680d868": {
+      "source": "Prompt: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 100,
+          "column": 5
+        }
+      ]
+    },
+    "ec1b155c0cd55526": {
+      "source": "Context window tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelEditor.tsx",
+          "line": 164,
+          "column": 25
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 399,
+          "column": 34
+        }
+      ]
+    },
+    "ed1f88240f6c39a2": {
+      "source": "Cache reads and writes are included in prompt-side statistics.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 106,
+          "column": 5
+        }
+      ]
+    },
+    "ee7ee5830f091690": {
+      "source": "Add account",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 234,
+          "column": 18
+        }
+      ]
+    },
+    "eebdd24a77d9ad32": {
+      "source": "Confirm",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginManagementPage.tsx",
+          "line": 82,
+          "column": 20
+        },
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 406,
+          "column": 18
+        },
+        {
+          "file": "shared/ui/ConfirmDialog.tsx",
+          "line": 4,
+          "column": 114
+        }
+      ]
+    },
+    "ef86a0ed928794a4": {
+      "source": "Drag to reorder",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 266,
+          "column": 113
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 266,
+          "column": 142
+        }
+      ]
+    },
+    "efb52e7172b77731": {
+      "source": "Theme",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 268,
+          "column": 26
+        }
+      ]
+    },
+    "eff0a224fc9633f1": {
+      "source": "Model output",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 109,
+          "column": 47
+        },
+        {
+          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "line": 173,
+          "column": 15
+        }
+      ]
+    },
+    "f145149881c27f78": {
+      "source": "Clear detailed records?",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 157,
+          "column": 74
+        }
+      ]
+    },
+    "f1c216ddf2b88463": {
+      "source": "Configuration file",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/LegacyModelImport.tsx",
+          "line": 65,
+          "column": 20
+        }
+      ]
+    },
+    "f2530a91f09f32db": {
+      "source": "Aggregated from historical LLM calls; in-progress calls are excluded.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 89,
+          "column": 5
+        }
+      ]
+    },
+    "f26f3275e735bdf6": {
+      "source": "Check for updates",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/AppLifecycleSettingsCard.tsx",
+          "line": 162,
+          "column": 44
+        }
+      ]
+    },
+    "f2c860c46c0a1b40": {
+      "source": "Clear all statistics",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 311,
+          "column": 38
+        }
+      ]
+    },
+    "f40a853e58a18759": {
+      "source": "Processing...",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 349,
+          "column": 688
+        },
+        {
+          "file": "shared/ui/Modal.tsx",
+          "line": 100,
+          "column": 153
+        }
+      ]
+    },
+    "f4ccae29e1bb0c20": {
+      "source": "Running",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/HeadroomSettingsCard.tsx",
+          "line": 12,
+          "column": 28
+        }
+      ]
+    },
+    "f4f8e0c15de222f9": {
+      "source": "This routes remote inference through the Cursor client to local cursor-byok. No SSH tunnel or local CA installation on the remote host is needed. Tools still run in the SSH workspace.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/RemoteSshHelp.tsx",
+          "line": 43,
+          "column": 11
+        }
+      ]
+    },
+    "f5337196b6d00151": {
+      "source": "External API settings saved",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 29,
+          "column": 15
+        }
+      ]
+    },
+    "f68efe76d7c43c2f": {
+      "source": "Import legacy configuration",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorGates.tsx",
+          "line": 40,
+          "column": 119
+        }
+      ]
+    },
+    "f730c75d143a2827": {
+      "source": "Cancel test",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 170,
+          "column": 86
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 193,
+          "column": 86
+        },
+        {
+          "file": "features/models/CursorModelCards.tsx",
+          "line": 284,
+          "column": 92
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 349,
+          "column": 725
+        }
+      ]
+    },
+    "f7ee082377b763bf": {
+      "source": "Token unit prices used for the home page estimated value. Unit: USD per million tokens.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 102,
+          "column": 17
+        }
+      ]
+    },
+    "f9fabcf7eddcb2a9": {
+      "source": "Input price",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/PricingSettingsCard.tsx",
+          "line": 40,
+          "column": 60
+        }
+      ]
+    },
+    "fb0e781e0a998249": {
+      "source": "Cache I/O {cost}",
+      "kind": "template",
+      "placeholders": [
+        "cost"
+      ],
+      "refs": [
+        {
+          "file": "features/home/metrics/HomeMetrics.tsx",
+          "line": 163,
+          "column": 46
+        }
+      ]
+    },
+    "fbae290f791177b8": {
+      "source": "Model management",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 374,
+          "column": 102
+        }
+      ]
+    },
+    "fc56b8ecc7ef34c2": {
+      "source": "Call observability",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/SettingsPage.tsx",
+          "line": 163,
+          "column": 26
+        }
+      ]
+    },
+    "fcc85ad6d8ce48b4": {
+      "source": "External API",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 40,
+          "column": 29
+        }
+      ]
+    },
+    "fcdcdd5afa3310ca": {
+      "source": "Total duration",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/home/charts/LatencyChart.tsx",
+          "line": 18,
+          "column": 15
+        }
+      ]
+    },
+    "fdf37225813f9f85": {
+      "source": "Resource details",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/plugins/PluginResourcePanels.tsx",
+          "line": 521,
+          "column": 111
+        }
+      ]
+    },
+    "feebd68445bd049a": {
+      "source": "Hide sensitive content",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/FormControls.tsx",
+          "line": 15,
+          "column": 81
+        }
+      ]
+    },
+    "ff8059dc6752afdd": {
+      "source": "Actions",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallTable.tsx",
+          "line": 183,
+          "column": 15
+        },
+        {
+          "file": "features/models/CursorSettingsPage.tsx",
+          "line": 322,
+          "column": 98
+        }
+      ]
+    }
+  }
+}

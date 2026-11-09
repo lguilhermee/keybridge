@@ -1,0 +1,96 @@
+import type { ModelDefinition, ModelSupport } from "cursor-byok:model";
+import { accountData } from "./resources.ts";
+
+const LANGUAGE_MODELS_URL = "https://api.x.ai/v1/language-models";
+const MODELS_URL = "https://api.x.ai/v1/models";
+
+/** Free accounts cannot call the model list endpoint (403 spending-limit); falls back to known models. */
+export const FALLBACK_MODELS: ModelDefinition[] = [
+  {
+    id: "grok-4.6",
+    displayName: "Grok 4.6",
+    capabilities: { images: true },
+  },
+  {
+    id: "grok-4.5",
+    displayName: "Grok 4.5",
+    capabilities: { images: true },
+  },
+];
+
+function object(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function text(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function modalities(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.flatMap((item) => (typeof item === "string" ? [item.toLowerCase()] : []))
+    : [];
+}
+
+/** Turns a model ID into a readable name, e.g. grok-4-fast -> Grok 4 Fast. */
+function displayName(id: string): string {
+  return id
+    .split("-")
+    .map((part) => (/^\d/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)))
+    .join(" ");
+}
+
+/** Accepts both the /v1/language-models models array and the /v1/models data array. */
+export function parseGrokModels(body: unknown): ModelDefinition[] {
+  const root = object(body);
+  const source = root?.models ?? root?.data ?? body;
+  if (!Array.isArray(source)) {
+    throw new Error("Grok model discovery response does not contain a model list");
+  }
+  const seen = new Set<string>();
+  const models: ModelDefinition[] = [];
+  for (const raw of source) {
+    const model = object(raw);
+    const id = model ? text(model.id ?? model.name) : null;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const inputs = modalities(model?.input_modalities ?? model?.inputModalities);
+    models.push({
+      id,
+      displayName: displayName(id),
+      capabilities: {
+        images: inputs.length === 0 || inputs.includes("image"),
+      },
+    });
+  }
+  return models;
+}
+
+export const grokModels: ModelSupport = {
+  list: async ({ resource }, context): Promise<ModelDefinition[]> => {
+    if (!resource) throw new Error("add a Grok account before syncing models");
+    const data = accountData(resource);
+    const headers = {
+      accept: "application/json",
+      authorization: `Bearer ${data.accessToken}`,
+    };
+    // language-models carries modality and context metadata; falls back to the standard list when unavailable.
+    let response = await context.network.fetch(LANGUAGE_MODELS_URL, { method: "GET", headers });
+    if (response.status < 200 || response.status >= 300) {
+      response = await context.network.fetch(MODELS_URL, { method: "GET", headers });
+    }
+    if (response.status < 200 || response.status >= 300) {
+      return FALLBACK_MODELS;
+    }
+    let body: unknown;
+    try {
+      body = JSON.parse(response.body);
+    } catch {
+      throw new Error("Grok model discovery returned invalid JSON");
+    }
+    const models = parseGrokModels(body);
+    return models.length > 0 ? models : FALLBACK_MODELS;
+  },
+};

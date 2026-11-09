@@ -1,0 +1,321 @@
+import { useEffect, useState } from "react";
+import { api, type ProxySettings, type ProxySettingsInput, type StatisticsStorage, type StatisticsStorageScope, type TabSettings } from "../../shared/api";
+import { PageContent } from "../../shell/layout/PageContent";
+import { LegacyModelImport } from "../models/LegacyModelImport";
+import { AppLifecycleSettingsCard } from "./AppLifecycleSettingsCard";
+import { CommitSettingsCard } from "./CommitSettingsCard";
+import { ExternalApiSettingsCard } from "./ExternalApiSettingsCard";
+import { HeadroomSettingsCard } from "./HeadroomSettingsCard";
+import { PricingSettingsCard } from "./PricingSettingsCard";
+import { ProxySettingsCard } from "./ProxySettingsCard";
+import { TabSettingsCard } from "./TabSettingsCard";
+import { Button } from "../../shared/ui/Button";
+import { Checkbox } from "../../shared/ui/Checkbox";
+import { ConfirmDialog } from "../../shared/ui/ConfirmDialog";
+import { FormField, TextInput } from "../../shared/ui/FormControls";
+import { Select } from "../../shared/ui/Select";
+import { TitledCard } from "../../shared/ui/TitledCard";
+import { setLocalePreference, useI18n, type LocalePreference } from "../../i18n/store";
+import { useMessage } from "../../shared/ui/message";
+import { appStore, useAppStore } from "../../shared/store/appStore";
+import { themeOptions } from "../../shared/theme/theme";
+import styles from "./SettingsPage.module.scss";
+
+export function SettingsPage() {
+  const { detailed, ports, theme } = useAppStore();
+  const { preference, locale } = useI18n();
+  const message = useMessage();
+  const [proxyPort, setProxyPort] = useState(String(ports.proxy_port));
+  const [servicePort, setServicePort] = useState(String(ports.service_port));
+  const [editingPorts, setEditingPorts] = useState(false);
+  const [savingPorts, setSavingPorts] = useState(false);
+  const [storage, setStorage] = useState<StatisticsStorage | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearScope, setClearScope] = useState<StatisticsStorageScope>("details");
+  const [clearing, setClearing] = useState(false);
+  const [outboundProxy, setOutboundProxy] = useState<ProxySettings | null>(null);
+  const [proxyDraft, setProxyDraft] = useState<ProxySettingsInput>({ mode: "default", address: "", auth_enabled: false, username: "", password: "" });
+  const [editingProxy, setEditingProxy] = useState(false);
+  const [savingProxy, setSavingProxy] = useState(false);
+  const [tabSettings, setTabSettings] = useState<TabSettings | null>(null);
+  const [tabDraft, setTabDraft] = useState<TabSettings>({ mode: "public", address: "" });
+  const [editingTab, setEditingTab] = useState(false);
+  const [savingTab, setSavingTab] = useState(false);
+  useEffect(() => {
+    const report = (cause: unknown) => message(cause instanceof Error ? cause.message : String(cause));
+    void api.statisticsStorage().then(setStorage).catch(report);
+    void api.proxySettings().then((next) => {
+      setOutboundProxy(next);
+      setProxyDraft({ mode: next.mode, address: next.address, auth_enabled: next.auth_enabled, username: next.username, password: "" });
+    }).catch(report);
+    void api.tabSettings().then((next) => {
+      setTabSettings(next);
+      setTabDraft(next);
+    }).catch(report);
+  }, [message]);
+  useEffect(() => {
+    setProxyPort(String(ports.proxy_port));
+    setServicePort(String(ports.service_port));
+  }, [ports.proxy_port, ports.service_port]);
+
+  const parsePort = (value: string, label: string) => {
+    const port = Number(value);
+    if (!Number.isInteger(port) || port < 0 || port > 65_535) {
+      throw new Error(`${label}${t(" must be an integer from 0 to 65535")}`);
+    }
+    return port;
+  };
+  const savePorts = async () => {
+    try {
+      const next = {
+        proxy_port: parsePort(proxyPort, t("Proxy port")),
+        service_port: parsePort(servicePort, t("Service port")),
+      };
+      setSavingPorts(true);
+      if (await appStore.updatePorts(next)) {
+        setEditingPorts(false);
+        message(t("Port settings saved. Restart the app to apply them."), { duration: 4_000 });
+      }
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSavingPorts(false);
+    }
+  };
+  const editPorts = () => {
+    setProxyPort(String(ports.proxy_port));
+    setServicePort(String(ports.service_port));
+    setEditingPorts(true);
+  };
+  const cancelPortEdit = () => {
+    setProxyPort(String(ports.proxy_port));
+    setServicePort(String(ports.service_port));
+    setEditingPorts(false);
+  };
+  const clearStorage = async () => {
+    try {
+      setClearing(true);
+      setStorage(await api.clearStatisticsStorage(clearScope));
+      setConfirmClear(false);
+      await appStore.refresh();
+      message(clearScope === "all" ? t("All statistics cleared") : t("Detailed records cleared"));
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setClearing(false);
+    }
+  };
+  const editProxy = () => {
+    if (!outboundProxy) return;
+    setProxyDraft({ mode: outboundProxy.mode, address: outboundProxy.address, auth_enabled: outboundProxy.auth_enabled, username: outboundProxy.username, password: "" });
+    setEditingProxy(true);
+  };
+  const cancelProxyEdit = () => {
+    if (outboundProxy) {
+      setProxyDraft({ mode: outboundProxy.mode, address: outboundProxy.address, auth_enabled: outboundProxy.auth_enabled, username: outboundProxy.username, password: "" });
+    }
+    setEditingProxy(false);
+  };
+  const saveProxy = async () => {
+    try {
+      setSavingProxy(true);
+      const saved = await api.setProxySettings({ ...proxyDraft, password: proxyDraft.password || undefined });
+      setOutboundProxy(saved);
+      setProxyDraft({ mode: saved.mode, address: saved.address, auth_enabled: saved.auth_enabled, username: saved.username, password: "" });
+      setEditingProxy(false);
+      message(t("Proxy settings saved"));
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSavingProxy(false);
+    }
+  };
+  const editTab = () => {
+    if (!tabSettings) return;
+    setTabDraft(tabSettings);
+    setEditingTab(true);
+  };
+  const cancelTabEdit = () => {
+    if (tabSettings) setTabDraft(tabSettings);
+    setEditingTab(false);
+  };
+  const saveTab = async () => {
+    try {
+      if (tabDraft.mode === "custom" && !tabDraft.address.trim()) throw new Error(t("TAB service address is required"));
+      setSavingTab(true);
+      const saved = await api.setTabSettings({ ...tabDraft, address: tabDraft.address.trim() });
+      setTabSettings(saved);
+      setTabDraft(saved);
+      setEditingTab(false);
+      message(t("TAB settings saved"));
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSavingTab(false);
+    }
+  };
+  const clearTitle = clearScope === "all" ? t("Clear all statistics?") : t("Clear detailed records?");
+  const clearDescription = clearScope === "all"
+    ? t("All call summaries, detailed content, and trace records will be deleted. Model configuration, CA, and application settings are unaffected. This action cannot be undone.")
+    : t("Only request, response, and trace attachments are deleted; call summaries, metrics, and configuration are kept.");
+  const content = (
+    <div className={styles.page}>
+      <TitledCard title={t("Call observability")}>
+        <div className={styles.settingRow}>
+          <div>
+            <strong>{t("Detailed mode")}</strong>
+            <small>
+              {t("Also store complete requests and streamed responses; by default only timing, status, and usage are stored.")}
+            </small>
+          </div>
+          <Checkbox
+            label={t("Detailed mode")}
+            checked={detailed}
+            onChange={(checked) => void appStore.updateDetailed(checked)}
+          />
+        </div>
+      </TitledCard>
+      <TitledCard title={t("Port settings")} action={editingPorts ? (
+        <div className={styles.cardActions}>
+          <Button size="small" disabled={savingPorts} onClick={cancelPortEdit}>{t("Cancel")}</Button>
+          <Button variant="primary" size="small" disabled={savingPorts} onClick={() => void savePorts()}>{savingPorts ? t("Saving...") : t("Save")}</Button>
+        </div>
+      ) : (
+        <button type="button" className={styles.textButton} onClick={editPorts}>{t("Edit")}</button>
+      )}>
+        <div className={styles.portSettings}>
+          <div className={styles.portFields}>
+            {editingPorts ? <><FormField
+              label={t("Proxy port")}
+              hint={t("The local proxy port used by Cursor. Enter 0 to select a random port at startup.")}
+            >
+              <TextInput
+                type="number"
+                min={0}
+                max={65535}
+                step={1}
+                value={proxyPort}
+                onChange={(event) => setProxyPort(event.target.value)}
+              />
+            </FormField>
+            <FormField
+              label={t("Service port")}
+              hint={t(
+                "The local management service port used by the desktop frontend. Enter 0 to select a random port at startup.",
+              )}
+            >
+              <TextInput
+                type="number"
+                min={0}
+                max={65535}
+                step={1}
+                value={servicePort}
+                onChange={(event) => setServicePort(event.target.value)}
+              />
+            </FormField></> : <>
+              <div className={styles.portValue}><strong>{t("Proxy port")}</strong><span>{ports.proxy_port}</span></div>
+              <div className={styles.portValue}><strong>{t("Service port")}</strong><span>{ports.service_port}</span></div>
+            </>}
+          </div>
+          <div className={styles.portFooter}>
+            <small>
+              {t(
+                "If a port is occupied, a new random port is selected and saved automatically. Restart the app after changing these settings.",
+              )}
+            </small>
+          </div>
+        </div>
+      </TitledCard>
+      <ExternalApiSettingsCard servicePort={ports.service_port} />
+      <HeadroomSettingsCard />
+      <ProxySettingsCard settings={outboundProxy} draft={proxyDraft} editing={editingProxy} saving={savingProxy} onDraftChange={setProxyDraft} onEdit={editProxy} onCancel={cancelProxyEdit} onSave={() => void saveProxy()} />
+      <TabSettingsCard settings={tabSettings} draft={tabDraft} editing={editingTab} saving={savingTab} onDraftChange={setTabDraft} onEdit={editTab} onCancel={cancelTabEdit} onSave={() => void saveTab()} />
+      <CommitSettingsCard />
+      <PricingSettingsCard />
+      <AppLifecycleSettingsCard />
+      <LegacyModelImport>{({ busy, previewing, open }) => <TitledCard title={t("Import")}>
+        <div className={styles.importRow}>
+          <div>
+            <strong>{t("Legacy configuration")}</strong>
+            <small>{t("Read models from the local legacy configuration. New and existing models are shown before confirmation.")}</small>
+          </div>
+          <Button size="small" disabled={busy} onClick={open}>
+            {previewing ? t("Reading...") : t("Review and import")}
+          </Button>
+        </div>
+      </TitledCard>}</LegacyModelImport>
+      <TitledCard title={t("Language")}>
+        <div className={styles.settingRow}>
+          <div>
+            <strong>{t("Display language")}</strong>
+            <small>{t("Uses the operating system language by default; unsupported languages fall back to English. Current: {language}", { language: locale === "zh-CN" ? "Simplified Chinese" : locale === "pt-BR" ? "Portuguese (Brazil)" : "English" })}</small>
+          </div>
+          <div className={styles.languageControl}>
+            <Select
+              value={preference}
+              ariaLabel={t("Display language")}
+              options={[
+                { value: "system", label: t("Use system language") },
+                { value: "zh-CN", label: "Simplified Chinese" },
+                { value: "en-US", label: "English" },
+                { value: "pt-BR", label: "Portuguese (Brazil)" },
+              ]}
+              onChange={(value) => setLocalePreference(value as LocalePreference)}
+            />
+          </div>
+        </div>
+      </TitledCard>
+      <TitledCard title={t("Theme")}>
+        <div className={styles.themeActions}>
+          {themeOptions.map(({ id }) => (
+            <button
+              className={theme === id ? styles.selected : ""}
+              key={id}
+              onClick={() => appStore.selectTheme(id)}
+            >
+              {id === "default-dark" ? t("Default dark") : t("Default light")}
+            </button>
+          ))}
+        </div>
+      </TitledCard>
+      <TitledCard title={t("Storage management")}>
+        <div className={styles.storageRow}>
+          <div>
+            <strong>{t("Statistics")}</strong>
+            <small>{storage ? t("{calls} call records - {traces} trace records", { calls: storage.call_count, traces: storage.trace_count }) : t("Calculating...")}</small>
+          </div>
+          <button
+            type="button"
+            className={styles.textButton}
+            onClick={() => { setClearScope("details"); setConfirmClear(true); }}
+          >
+            {t("Clear storage")}
+          </button>
+        </div>
+      </TitledCard>
+      <ConfirmDialog
+        open={confirmClear}
+        title={clearTitle}
+        busy={clearing}
+        cancelLabel={t("Cancel")}
+        confirmLabel={t("Confirm clear")}
+        onCancel={() => setConfirmClear(false)}
+        onConfirm={() => void clearStorage()}
+      >
+        <div className={styles.confirmContent}>
+          <Select
+            value={clearScope}
+            ariaLabel={t("Clear scope")}
+            options={[
+              { value: "details", label: t("Only clear detailed records") },
+              { value: "all", label: t("Clear all statistics") },
+            ]}
+            onChange={(value) => setClearScope(value as StatisticsStorageScope)}
+          />
+          <small>{clearDescription}</small>
+        </div>
+      </ConfirmDialog>
+    </div>
+  );
+  return <PageContent title={t("Settings")} sections={[{ key: "settings", estimatedHeight: 1200, content }]} />;
+}
