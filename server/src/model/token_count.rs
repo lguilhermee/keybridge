@@ -83,15 +83,7 @@ fn estimate_json_tokens(value: &impl serde::Serialize) -> u64 {
 }
 
 fn estimate_text_tokens(text: &str) -> u64 {
-    let text = text.trim();
-    if text.is_empty() {
-        return 0;
-    }
-    let characters = text.chars().count() as u64;
-    characters
-        .div_ceil(4)
-        .saturating_add(text.bytes().filter(|byte| *byte == b'\n').count() as u64)
-        .max(1)
+    bpe_openai::o200k_base().count(text) as u64
 }
 
 pub(crate) fn parse_token_count(value: &str) -> Option<u64> {
@@ -244,5 +236,25 @@ mod tests {
             estimate_projected_messages_tokens(&[without_replay]),
             estimate_projected_messages_tokens(&[with_replay])
         );
+    }
+
+    #[test]
+    fn text_estimate_uses_real_bpe_counts() {
+        // o200k_base counts, pinned for regression.
+        assert_eq!(estimate_text_tokens(""), 0);
+        assert_eq!(estimate_text_tokens("hello world"), 2);
+        assert_eq!(estimate_text_tokens("你好，世界"), 3);
+        // Repeated "x " is one token per pair plus a trailing-space token.
+        assert_eq!(estimate_text_tokens(&"x ".repeat(200_000)), 200_001);
+    }
+
+    #[test]
+    fn code_and_cjk_are_not_underestimated() {
+        let code = "fn main() { println!(\"héllo 世界\"); }\n".repeat(10_000);
+        let cjk = "你好，世界。这是一个用于测试分词器的中文句子。".repeat(10_000);
+        // The old estimate returned ~chars/4 (~100k and ~58k); the real counts
+        // are far higher for CJK and higher for code.
+        assert_eq!(estimate_text_tokens(&code), 110_000);
+        assert_eq!(estimate_text_tokens(&cjk), 160_000);
     }
 }
