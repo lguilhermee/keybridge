@@ -1381,7 +1381,7 @@ async fn injected_user_context_interrupts_automatic_compaction() {
         .await
         .unwrap();
     let provider = fake_provider::FakeProvider::default();
-    let seed_answer = "x".repeat(400_000);
+    let seed_answer = "x ".repeat(200_000);
     provider.push(text_response(&seed_answer));
     provider.push_pending();
     provider.push(text_response("continued after compacting injection"));

@@ -888,7 +888,7 @@ async fn one_run_can_auto_compact_again_after_more_tool_output() {
         .await
         .unwrap();
     let mut seqno = 1;
-    let oversized = format!("HEAD{}TAIL", "x".repeat(4 * 1024 * 1024));
+    let oversized = format!("HEAD{}TAIL", "x ".repeat(4 * 1024 * 1024));
     loop {
         let frame = tokio::time::timeout(std::time::Duration::from_secs(10), output.recv())
             .await
