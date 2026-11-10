@@ -69,9 +69,12 @@ Design:
   identifies which convention a row used.
 - The overview endpoint accepts a UTC offset in minutes and cuts buckets at
   local boundaries. The activity calendar uses the same offset.
-- `tiktoken-rs` replaces the character estimate. For models without a public
-  local tokenizer (Claude, Gemini) the result is still an approximation, so the
-  10% context reserve in `run/compaction.rs` stays.
+- `bpe-openai` (`o200k_base`) replaces the character estimate. It was chosen
+  over `tiktoken-rs` because tiktoken's merge step is super-linear on
+  whitespace-free text (~6.9 s vs ~0.7 s on an unbroken 4 MB string in a debug
+  build) at identical counts. For models without a public local tokenizer
+  (Claude, Gemini) the result is still an approximation, so the 10% context
+  reserve in `run/compaction.rs` stays.
 
 Tests are written first: one per adapter and built-in provider asserting the
 normalised `Usage`, one for the overview totals with mixed sources, one for
