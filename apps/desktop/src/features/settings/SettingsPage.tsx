@@ -1,321 +1,144 @@
-import { useEffect, useState } from "react";
-import { api, type ProxySettings, type ProxySettingsInput, type StatisticsStorage, type StatisticsStorageScope, type TabSettings } from "../../shared/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useI18n } from "../../i18n/store";
+import { Icon } from "../../shared/ui/Icon";
+import { searchIcon } from "../../shared/ui/icons";
+import { VirtualList } from "../../shared/virtual/VirtualList";
+import type { VirtualListApi } from "../../shared/virtual/virtualTypes";
 import { PageContent } from "../../shell/layout/PageContent";
-import { LegacyModelImport } from "../cursor/LegacyModelImport";
-import { AppLifecycleSettingsCard } from "./AppLifecycleSettingsCard";
-import { CommitSettingsCard } from "./CommitSettingsCard";
-import { ExternalApiSettingsCard } from "./ExternalApiSettingsCard";
-import { HeadroomSettingsCard } from "./HeadroomSettingsCard";
-import { PricingSettingsCard } from "./PricingSettingsCard";
-import { ProxySettingsCard } from "./ProxySettingsCard";
-import { TabSettingsCard } from "./TabSettingsCard";
-import { Button } from "../../shared/ui/Button";
-import { Checkbox } from "../../shared/ui/Checkbox";
-import { ConfirmDialog } from "../../shared/ui/ConfirmDialog";
-import { FormField, TextInput } from "../../shared/ui/FormControls";
-import { Select } from "../../shared/ui/Select";
-import { SectionCard } from "./SectionCard";
-import { setLocalePreference, useI18n, type LocalePreference } from "../../i18n/store";
-import { useMessage } from "../../shared/ui/message";
-import { appStore, useAppStore } from "../../shared/store/appStore";
-import { themeOptions } from "../../shared/theme/theme";
+import { VirtualPage, type VirtualPageSection } from "../../shell/layout/VirtualPage";
+import {
+  defaultSettingsSection,
+  filterSettingsSearchEntries,
+  isSettingsSectionId,
+  settingsSearchEntries,
+  settingsSectionIds,
+  settingsSectionLabel,
+  type SettingsSearchEntry,
+  type SettingsSectionId,
+} from "./sections";
+import { aboutGroups } from "./sections/AboutSection";
+import { cursorGroups } from "./sections/CursorSection";
+import { generalGroups } from "./sections/GeneralSection";
+import { networkGroups } from "./sections/NetworkSection";
+import { usageDataGroups } from "./sections/UsageDataSection";
 import styles from "./SettingsPage.module.scss";
 
-export function SettingsPage() {
-  const { detailed, ports, theme } = useAppStore();
-  const { preference, locale } = useI18n();
-  const message = useMessage();
-  const [proxyPort, setProxyPort] = useState(String(ports.proxy_port));
-  const [servicePort, setServicePort] = useState(String(ports.service_port));
-  const [editingPorts, setEditingPorts] = useState(false);
-  const [savingPorts, setSavingPorts] = useState(false);
-  const [storage, setStorage] = useState<StatisticsStorage | null>(null);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [clearScope, setClearScope] = useState<StatisticsStorageScope>("details");
-  const [clearing, setClearing] = useState(false);
-  const [outboundProxy, setOutboundProxy] = useState<ProxySettings | null>(null);
-  const [proxyDraft, setProxyDraft] = useState<ProxySettingsInput>({ mode: "default", address: "", auth_enabled: false, username: "", password: "" });
-  const [editingProxy, setEditingProxy] = useState(false);
-  const [savingProxy, setSavingProxy] = useState(false);
-  const [tabSettings, setTabSettings] = useState<TabSettings | null>(null);
-  const [tabDraft, setTabDraft] = useState<TabSettings>({ mode: "public", address: "" });
-  const [editingTab, setEditingTab] = useState(false);
-  const [savingTab, setSavingTab] = useState(false);
-  useEffect(() => {
-    const report = (cause: unknown) => message(cause instanceof Error ? cause.message : String(cause));
-    void api.statisticsStorage().then(setStorage).catch(report);
-    void api.proxySettings().then((next) => {
-      setOutboundProxy(next);
-      setProxyDraft({ mode: next.mode, address: next.address, auth_enabled: next.auth_enabled, username: next.username, password: "" });
-    }).catch(report);
-    void api.tabSettings().then((next) => {
-      setTabSettings(next);
-      setTabDraft(next);
-    }).catch(report);
-  }, [message]);
-  useEffect(() => {
-    setProxyPort(String(ports.proxy_port));
-    setServicePort(String(ports.service_port));
-  }, [ports.proxy_port, ports.service_port]);
+const sectionGroups: Record<SettingsSectionId, () => VirtualPageSection[]> = {
+  general: generalGroups,
+  network: networkGroups,
+  cursor: cursorGroups,
+  usage: usageDataGroups,
+  about: aboutGroups,
+};
 
-  const parsePort = (value: string, label: string) => {
-    const port = Number(value);
-    if (!Number.isInteger(port) || port < 0 || port > 65_535) {
-      throw new Error(`${label}${t(" must be an integer from 0 to 65535")}`);
+type NavItem =
+  | { kind: "section"; id: string; section: SettingsSectionId }
+  | { kind: "result"; id: string; entry: SettingsSearchEntry };
+
+export function SettingsPage() {
+  const params = useParams();
+  const navigate = useNavigate();
+  const sectionParam = params.section;
+  const valid = isSettingsSectionId(sectionParam);
+  const active: SettingsSectionId = valid ? sectionParam : defaultSettingsSection;
+  const [query, setQuery] = useState("");
+  const [focus, setFocus] = useState<{ key: string; nonce: number } | null>(null);
+  const listApi = useRef<VirtualListApi | null>(null);
+  // Re-render (and rebuild the search index) when the display language changes.
+  const { locale } = useI18n();
+
+  const groups = useMemo(() => sectionGroups[active](), [active]);
+  const displayGroups = useMemo(() => groups.map((group) => ({
+    ...group,
+    content: focus?.key === group.key ? <div className={styles.jumpTarget}>{group.content}</div> : group.content,
+  })), [groups, focus]);
+  const results = useMemo(() => filterSettingsSearchEntries(settingsSearchEntries(), query), [query, locale]);
+
+  // A search jump scrolls the target group into view and flashes it. The delayed
+  // second scroll corrects for rows whose measured height differs from the estimate.
+  useEffect(() => {
+    if (!focus) return;
+    const index = groups.findIndex((group) => group.key === focus.key);
+    if (index < 0) {
+      setFocus(null);
+      return;
     }
-    return port;
+    listApi.current?.scrollToIndex(index);
+    const resync = window.setTimeout(() => listApi.current?.scrollToIndex(index), 160);
+    const clear = window.setTimeout(() => setFocus(null), 2000);
+    return () => {
+      window.clearTimeout(resync);
+      window.clearTimeout(clear);
+    };
+  }, [focus, groups]);
+
+  if (!valid) return <Navigate to={`/settings/${defaultSettingsSection}`} replace />;
+
+  const jumpTo = (entry: SettingsSearchEntry) => {
+    setFocus({ key: entry.group, nonce: Date.now() });
+    if (entry.section !== active) navigate(`/settings/${entry.section}`);
   };
-  const savePorts = async () => {
-    try {
-      const next = {
-        proxy_port: parsePort(proxyPort, t("Proxy port")),
-        service_port: parsePort(servicePort, t("Service port")),
-      };
-      setSavingPorts(true);
-      if (await appStore.updatePorts(next)) {
-        setEditingPorts(false);
-        message(t("Port settings saved. Restart the app to apply them."), { duration: 4_000 });
-      }
-    } catch (cause) {
-      message(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setSavingPorts(false);
-    }
-  };
-  const editPorts = () => {
-    setProxyPort(String(ports.proxy_port));
-    setServicePort(String(ports.service_port));
-    setEditingPorts(true);
-  };
-  const cancelPortEdit = () => {
-    setProxyPort(String(ports.proxy_port));
-    setServicePort(String(ports.service_port));
-    setEditingPorts(false);
-  };
-  const clearStorage = async () => {
-    try {
-      setClearing(true);
-      setStorage(await api.clearStatisticsStorage(clearScope));
-      setConfirmClear(false);
-      await appStore.refresh();
-      message(clearScope === "all" ? t("All statistics cleared") : t("Detailed records cleared"));
-    } catch (cause) {
-      message(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setClearing(false);
-    }
-  };
-  const editProxy = () => {
-    if (!outboundProxy) return;
-    setProxyDraft({ mode: outboundProxy.mode, address: outboundProxy.address, auth_enabled: outboundProxy.auth_enabled, username: outboundProxy.username, password: "" });
-    setEditingProxy(true);
-  };
-  const cancelProxyEdit = () => {
-    if (outboundProxy) {
-      setProxyDraft({ mode: outboundProxy.mode, address: outboundProxy.address, auth_enabled: outboundProxy.auth_enabled, username: outboundProxy.username, password: "" });
-    }
-    setEditingProxy(false);
-  };
-  const saveProxy = async () => {
-    try {
-      setSavingProxy(true);
-      const saved = await api.setProxySettings({ ...proxyDraft, password: proxyDraft.password || undefined });
-      setOutboundProxy(saved);
-      setProxyDraft({ mode: saved.mode, address: saved.address, auth_enabled: saved.auth_enabled, username: saved.username, password: "" });
-      setEditingProxy(false);
-      message(t("Proxy settings saved"));
-    } catch (cause) {
-      message(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setSavingProxy(false);
-    }
-  };
-  const editTab = () => {
-    if (!tabSettings) return;
-    setTabDraft(tabSettings);
-    setEditingTab(true);
-  };
-  const cancelTabEdit = () => {
-    if (tabSettings) setTabDraft(tabSettings);
-    setEditingTab(false);
-  };
-  const saveTab = async () => {
-    try {
-      if (tabDraft.mode === "custom" && !tabDraft.address.trim()) throw new Error(t("TAB service address is required"));
-      setSavingTab(true);
-      const saved = await api.setTabSettings({ ...tabDraft, address: tabDraft.address.trim() });
-      setTabSettings(saved);
-      setTabDraft(saved);
-      setEditingTab(false);
-      message(t("TAB settings saved"));
-    } catch (cause) {
-      message(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setSavingTab(false);
-    }
-  };
-  const clearTitle = clearScope === "all" ? t("Clear all statistics?") : t("Clear detailed records?");
-  const clearDescription = clearScope === "all"
-    ? t("All call summaries, detailed content, and trace records will be deleted. Model configuration, CA, and application settings are unaffected. This action cannot be undone.")
-    : t("Only request, response, and trace attachments are deleted; call summaries, metrics, and configuration are kept.");
+
+  const items: NavItem[] = query.trim()
+    ? results.map((entry) => ({ kind: "result", id: entry.id, entry }))
+    : settingsSectionIds.map((section) => ({ kind: "section", id: `section:${section}`, section }));
+
   const content = (
-    <div className={styles.page}>
-      <SectionCard title={t("Call observability")}>
-        <div className={styles.settingRow}>
-          <div>
-            <strong>{t("Detailed mode")}</strong>
-            <small>
-              {t("Also store complete requests and streamed responses; by default only timing, status, and usage are stored.")}
-            </small>
-          </div>
-          <Checkbox
-            label={t("Detailed mode")}
-            checked={detailed}
-            onChange={(checked) => void appStore.updateDetailed(checked)}
-          />
-        </div>
-      </SectionCard>
-      <SectionCard title={t("Port settings")} action={editingPorts ? (
-        <div className={styles.cardActions}>
-          <Button size="small" disabled={savingPorts} onClick={cancelPortEdit}>{t("Cancel")}</Button>
-          <Button variant="primary" size="small" disabled={savingPorts} onClick={() => void savePorts()}>{savingPorts ? t("Saving...") : t("Save")}</Button>
-        </div>
-      ) : (
-        <button type="button" className={styles.textButton} onClick={editPorts}>{t("Edit")}</button>
-      )}>
-        <div className={styles.portSettings}>
-          <div className={styles.portFields}>
-            {editingPorts ? <><FormField
-              label={t("Proxy port")}
-              hint={t("The local proxy port used by Cursor. Enter 0 to select a random port at startup.")}
-            >
-              <TextInput
-                type="number"
-                min={0}
-                max={65535}
-                step={1}
-                value={proxyPort}
-                onChange={(event) => setProxyPort(event.target.value)}
-              />
-            </FormField>
-            <FormField
-              label={t("Service port")}
-              hint={t(
-                "The local management service port used by the desktop frontend. Enter 0 to select a random port at startup.",
-              )}
-            >
-              <TextInput
-                type="number"
-                min={0}
-                max={65535}
-                step={1}
-                value={servicePort}
-                onChange={(event) => setServicePort(event.target.value)}
-              />
-            </FormField></> : <>
-              <div className={styles.portValue}><strong>{t("Proxy port")}</strong><span>{ports.proxy_port}</span></div>
-              <div className={styles.portValue}><strong>{t("Service port")}</strong><span>{ports.service_port}</span></div>
-            </>}
-          </div>
-          <div className={styles.portFooter}>
-            <small>
-              {t(
-                "If a port is occupied, a new random port is selected and saved automatically. Restart the app after changing these settings.",
-              )}
-            </small>
-          </div>
-        </div>
-      </SectionCard>
-      <ExternalApiSettingsCard servicePort={ports.service_port} />
-      <HeadroomSettingsCard />
-      <ProxySettingsCard settings={outboundProxy} draft={proxyDraft} editing={editingProxy} saving={savingProxy} onDraftChange={setProxyDraft} onEdit={editProxy} onCancel={cancelProxyEdit} onSave={() => void saveProxy()} />
-      <TabSettingsCard settings={tabSettings} draft={tabDraft} editing={editingTab} saving={savingTab} onDraftChange={setTabDraft} onEdit={editTab} onCancel={cancelTabEdit} onSave={() => void saveTab()} />
-      <CommitSettingsCard />
-      <PricingSettingsCard />
-      <AppLifecycleSettingsCard />
-      <LegacyModelImport>{({ busy, previewing, open }) => <SectionCard title={t("Import")}>
-        <div className={styles.importRow}>
-          <div>
-            <strong>{t("Legacy configuration")}</strong>
-            <small>{t("Read models from the local legacy configuration. New and existing models are shown before confirmation.")}</small>
-          </div>
-          <Button size="small" disabled={busy} onClick={open}>
-            {previewing ? t("Reading...") : t("Review and import")}
-          </Button>
-        </div>
-      </SectionCard>}</LegacyModelImport>
-      <SectionCard title={t("Language")}>
-        <div className={styles.settingRow}>
-          <div>
-            <strong>{t("Display language")}</strong>
-            <small>{t("Uses the operating system language by default; unsupported languages fall back to English. Current: {language}", { language: locale === "zh-CN" ? "Simplified Chinese" : locale === "pt-BR" ? "Portuguese (Brazil)" : "English" })}</small>
-          </div>
-          <div className={styles.languageControl}>
-            <Select
-              value={preference}
-              ariaLabel={t("Display language")}
-              options={[
-                { value: "system", label: t("Use system language") },
-                { value: "zh-CN", label: "Simplified Chinese" },
-                { value: "en-US", label: "English" },
-                { value: "pt-BR", label: "Portuguese (Brazil)" },
-              ]}
-              onChange={(value) => setLocalePreference(value as LocalePreference)}
+    <div className={styles.pageBody}>
+      <div className={styles.layout}>
+        <nav className={styles.listPane} aria-label={t("Settings")}>
+          <div className={styles.searchBox}>
+            <Icon icon={searchIcon} size="1em" />
+            <input
+              value={query}
+              placeholder={t("Search settings")}
+              aria-label={t("Search settings")}
+              spellCheck={false}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && query) {
+                  event.preventDefault();
+                  setQuery("");
+                }
+                if (event.key === "Enter" && results[0]) {
+                  event.preventDefault();
+                  jumpTo(results[0]);
+                }
+              }}
             />
           </div>
-        </div>
-      </SectionCard>
-      <SectionCard title={t("Theme")}>
-        <div className={styles.themeActions}>
-          {themeOptions.map(({ id }) => (
-            <button
-              className={theme === id ? styles.selected : ""}
-              key={id}
-              onClick={() => appStore.selectTheme(id)}
-            >
-              {id === "default-dark" ? t("Default dark") : t("Default light")}
-            </button>
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title={t("Storage management")}>
-        <div className={styles.storageRow}>
-          <div>
-            <strong>{t("Statistics")}</strong>
-            <small>{storage ? t("{calls} call records - {traces} trace records", { calls: storage.call_count, traces: storage.trace_count }) : t("Calculating...")}</small>
-          </div>
-          <button
-            type="button"
-            className={styles.textButton}
-            onClick={() => { setClearScope("details"); setConfirmClear(true); }}
+          <VirtualList
+            items={items}
+            itemKey={(item) => item.id}
+            estimatedItemHeight={40}
+            className={styles.navList}
+            empty={<div className={styles.listEmpty}>{t("No results")}</div>}
           >
-            {t("Clear storage")}
-          </button>
+            {(item) => item.kind === "section" ? (
+              <button
+                type="button"
+                className={`${styles.navItem} ${item.section === active ? styles.navItemActive : ""}`}
+                aria-current={item.section === active ? "page" : undefined}
+                onClick={() => navigate(`/settings/${item.section}`)}
+              >
+                {settingsSectionLabel(item.section)}
+              </button>
+            ) : (
+              <button type="button" className={styles.resultItem} onClick={() => jumpTo(item.entry)}>
+                <span className={styles.resultLabel}>{item.entry.label}</span>
+                <span className={styles.resultMeta}>
+                  {settingsSectionLabel(item.entry.section)}{item.entry.description ? ` · ${item.entry.description}` : ""}
+                </span>
+              </button>
+            )}
+          </VirtualList>
+        </nav>
+        <div className={styles.detailPane}>
+          <VirtualPage sections={displayGroups} onReady={(api) => { listApi.current = api; }} />
         </div>
-      </SectionCard>
-      <ConfirmDialog
-        open={confirmClear}
-        title={clearTitle}
-        busy={clearing}
-        cancelLabel={t("Cancel")}
-        confirmLabel={t("Confirm clear")}
-        onCancel={() => setConfirmClear(false)}
-        onConfirm={() => void clearStorage()}
-      >
-        <div className={styles.confirmContent}>
-          <Select
-            value={clearScope}
-            ariaLabel={t("Clear scope")}
-            options={[
-              { value: "details", label: t("Only clear detailed records") },
-              { value: "all", label: t("Clear all statistics") },
-            ]}
-            onChange={(value) => setClearScope(value as StatisticsStorageScope)}
-          />
-          <small>{clearDescription}</small>
-        </div>
-      </ConfirmDialog>
+      </div>
     </div>
   );
-  return <PageContent title={t("Settings")} sections={[{ key: "settings", estimatedHeight: 1200, content }]} />;
+  return <PageContent title={t("Settings")} fixed sections={[{ key: "settings", estimatedHeight: 0, content }]} />;
 }

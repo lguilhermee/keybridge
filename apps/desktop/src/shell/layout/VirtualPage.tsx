@@ -1,5 +1,6 @@
 import { useCallback, type ReactNode } from "react";
 import { VirtualList } from "../../shared/virtual/VirtualListEngine";
+import type { VirtualListApi } from "../../shared/virtual/virtualTypes";
 import styles from "./VirtualPage.module.scss";
 
 export type VirtualPageSection = {
@@ -8,7 +9,7 @@ export type VirtualPageSection = {
   content: ReactNode;
 };
 
-export function VirtualPage({ sections, className, contentClassName }: { sections: VirtualPageSection[]; className?: string; contentClassName?: string }) {
+export function VirtualPage({ sections, className, contentClassName, onReady }: { sections: VirtualPageSection[]; className?: string; contentClassName?: string; onReady?: (api: VirtualListApi) => void }) {
   const getKey = useCallback((section: VirtualPageSection) => section.key, []);
   const estimateSize = useCallback((section: VirtualPageSection) => section.estimatedHeight, []);
   const renderItem = useCallback((section: VirtualPageSection) => <section className={styles.section}>
@@ -25,5 +26,6 @@ export function VirtualPage({ sections, className, contentClassName }: { section
     scrollbarSize={7}
     className={[styles.root, "scroll-shadow-top", className].filter(Boolean).join(" ")}
     contentClassName={[styles.content, contentClassName].filter(Boolean).join(" ")}
+    onReady={onReady}
   />;
 }

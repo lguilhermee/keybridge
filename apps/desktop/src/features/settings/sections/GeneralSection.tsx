@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { setLocalePreference, useI18n, type LocalePreference } from "../../../i18n/store";
 import {
-  currentAppVersion,
   hasDockVisibilitySetting,
   hasNativeAppLifecycle,
   readAutostart,
@@ -8,20 +8,70 @@ import {
   writeAutostart,
   writeDockIconVisibility,
   writeSilentStart,
-} from "../../shared/native/appLifecycle";
-import { updateStore, useUpdateStore } from "../../shared/store/updateStore";
-import { Button } from "../../shared/ui/Button";
-import { Switch } from "../../shared/ui/Switch";
-import { SectionCard } from "./SectionCard";
-import { useMessage } from "../../shared/ui/message";
-import styles from "./AppLifecycleSettingsCard.module.scss";
+} from "../../../shared/native/appLifecycle";
+import { appStore, useAppStore } from "../../../shared/store/appStore";
+import { themeOptions } from "../../../shared/theme/theme";
+import { useMessage } from "../../../shared/ui/message";
+import { Select } from "../../../shared/ui/Select";
+import { Switch } from "../../../shared/ui/Switch";
+import type { VirtualPageSection } from "../../../shell/layout/VirtualPage";
+import { SectionCard } from "../SectionCard";
+import styles from "./sections.module.scss";
 
-export function AppLifecycleSettingsCard() {
+export function generalGroups(): VirtualPageSection[] {
+  return [
+    { key: "language", estimatedHeight: 100, content: <LanguageGroup /> },
+    { key: "theme", estimatedHeight: 90, content: <ThemeGroup /> },
+    { key: "startup", estimatedHeight: 180, content: <StartupTrayGroup /> },
+  ];
+}
+
+function LanguageGroup() {
+  const { preference, locale } = useI18n();
+  return <SectionCard title={t("Language")}>
+    <div className={styles.stackRow}>
+      <div>
+        <strong>{t("Display language")}</strong>
+        <small>{t("Uses the operating system language by default; unsupported languages fall back to English. Current: {language}", { language: locale === "zh-CN" ? "Simplified Chinese" : locale === "pt-BR" ? "Portuguese (Brazil)" : "English" })}</small>
+      </div>
+      <div className={styles.control}>
+        <Select
+          value={preference}
+          ariaLabel={t("Display language")}
+          options={[
+            { value: "system", label: t("Use system language") },
+            { value: "zh-CN", label: "Simplified Chinese" },
+            { value: "en-US", label: "English" },
+            { value: "pt-BR", label: "Portuguese (Brazil)" },
+          ]}
+          onChange={(value) => setLocalePreference(value as LocalePreference)}
+        />
+      </div>
+    </div>
+  </SectionCard>;
+}
+
+function ThemeGroup() {
+  const { theme } = useAppStore();
+  return <SectionCard title={t("Theme")}>
+    <div className={styles.themeActions}>
+      {themeOptions.map(({ id }) => (
+        <button
+          className={theme === id ? styles.selected : ""}
+          key={id}
+          onClick={() => appStore.selectTheme(id)}
+        >
+          {id === "default-dark" ? t("Default dark") : t("Default light")}
+        </button>
+      ))}
+    </div>
+  </SectionCard>;
+}
+
+function StartupTrayGroup() {
   const message = useMessage();
   const native = hasNativeAppLifecycle();
   const dockVisibilitySetting = hasDockVisibilitySetting();
-  const { availableVersion, checking, installing } = useUpdateStore();
-  const [version, setVersion] = useState("...");
   const [autostart, setAutostart] = useState(false);
   const [loadingAutostart, setLoadingAutostart] = useState(native);
   const [silentStart, setSilentStart] = useState(false);
@@ -30,7 +80,6 @@ export function AppLifecycleSettingsCard() {
 
   useEffect(() => {
     let disposed = false;
-    void currentAppVersion().then((next) => { if (!disposed) setVersion(next); });
     if (native) {
       void readAutostart()
         .then((enabled) => { if (!disposed) setAutostart(enabled); })
@@ -90,27 +139,8 @@ export function AppLifecycleSettingsCard() {
     }
   };
 
-  const checkUpdate = async () => {
-    try {
-      const nextVersion = await updateStore.check();
-      message(nextVersion ? t("Version {version} is available", { version: nextVersion }) : t("You're up to date"));
-    } catch (cause) {
-      const error = cause instanceof Error ? cause.message : String(cause);
-      message(t("Failed to check for updates: {error}", { error }));
-    }
-  };
-
-  const updateNow = async () => {
-    try {
-      await updateStore.install();
-    } catch (cause) {
-      const error = cause instanceof Error ? cause.message : String(cause);
-      message(t("Failed to install update: {error}", { error }));
-    }
-  };
-
-  return <SectionCard title={t("Application")}>
-    <div className={styles.row}>
+  return <SectionCard title={t("Startup and tray")}>
+    <div className={styles.stackRow}>
       <div>
         <strong>{t("Launch at login")}</strong>
         <small>{t("Start Cursor BYOK automatically after signing in.")}</small>
@@ -122,7 +152,7 @@ export function AppLifecycleSettingsCard() {
         onChange={(enabled) => void toggleAutostart(enabled)}
       />
     </div>
-    {autostart && <div className={styles.row}>
+    {autostart && <div className={styles.stackRow}>
       <div>
         <strong>{t("Silent start")}</strong>
         <small>{t("Hide the main window on startup and keep only the tray icon.")}</small>
@@ -134,7 +164,7 @@ export function AppLifecycleSettingsCard() {
         onChange={(enabled) => void toggleSilentStart(enabled)}
       />
     </div>}
-    {dockVisibilitySetting && <div className={styles.row}>
+    {dockVisibilitySetting && <div className={styles.stackRow}>
       <div>
         <strong>{t("Show in Dock")}</strong>
         <small>{t("Hide the Dock icon when disabled. You can still open the app from the menu bar icon.")}</small>
@@ -146,21 +176,5 @@ export function AppLifecycleSettingsCard() {
         onChange={(visible) => void toggleDockIcon(visible)}
       />
     </div>}
-    <div className={styles.row}>
-      <div>
-        <strong>{t("Software updates")}</strong>
-        <small>{availableVersion
-          ? t("Version {version} is ready to install", { version: availableVersion })
-          : t("Current version {version}", { version })}</small>
-      </div>
-      {availableVersion
-        ? <Button size="small" variant="primary" disabled={installing} onClick={() => void updateNow()}>
-            {installing ? t("Installing...") : t("Download and install")}
-            <span className={styles.updateDot} aria-hidden="true" />
-          </Button>
-        : <Button size="small" disabled={!native || checking} onClick={() => void checkUpdate()}>
-            {checking ? t("Checking...") : t("Check for updates")}
-          </Button>}
-    </div>
   </SectionCard>;
 }
