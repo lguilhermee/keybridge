@@ -497,10 +497,146 @@ mod tests {
             .unwrap();
 
             assert_eq!(checksum_after, checksum_before);
-            assert_eq!(versions, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+            assert_eq!(versions, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
             assert_eq!(checkpoint_table_exists, 1);
             assert_eq!(argument_error_column_exists, 1);
         }
+    }
+
+    #[tokio::test]
+    async fn input_token_normalisation_rewrites_only_rows_that_included_cache() {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+        let historical = migrator_with_line_endings(MigrationLineEndings::Lf);
+        let previous = Migrator {
+            migrations: Cow::Owned(historical.iter().take(10).cloned().collect()),
+            ..Migrator::DEFAULT
+        };
+        previous.run(&pool).await.unwrap();
+
+        type HistoricalRow = (
+            &'static str,
+            &'static str,
+            &'static str,
+            Option<i64>,
+            Option<i64>,
+            Option<i64>,
+            Option<&'static str>,
+        );
+        let claude = "plugin://dev.cursorbyok.providers.claude/claude";
+        let codex = "plugin://dev.cursorbyok.examples.codex-auth/codex";
+        let rows: [HistoricalRow; 6] = [
+            (
+                "openai",
+                "openai-chat",
+                "https://api.example.test",
+                Some(100),
+                Some(40),
+                None,
+                Some(r#"{"input_tokens":100,"context_input_tokens":100,"cache_read_tokens":40}"#),
+            ),
+            (
+                "anthropic",
+                "anthropic",
+                "https://api.example.test",
+                Some(10),
+                Some(20),
+                Some(30),
+                Some(
+                    r#"{"input_tokens":10,"context_input_tokens":60,"cache_read_tokens":20,"cache_write_tokens":30}"#,
+                ),
+            ),
+            (
+                "claude",
+                "plugin",
+                claude,
+                Some(10),
+                Some(20),
+                Some(30),
+                Some(
+                    r#"{"input_tokens":10,"context_input_tokens":10,"cache_read_tokens":20,"cache_write_tokens":30}"#,
+                ),
+            ),
+            (
+                "codex",
+                "plugin",
+                codex,
+                Some(100),
+                Some(40),
+                None,
+                Some(r#"{"input_tokens":100,"context_input_tokens":100,"cache_read_tokens":40}"#),
+            ),
+            (
+                "over-cached",
+                "openai-responses",
+                "https://api.example.test",
+                Some(10),
+                Some(25),
+                None,
+                Some(r#"{"input_tokens":10,"context_input_tokens":10,"cache_read_tokens":25}"#),
+            ),
+            (
+                "no-usage",
+                "openai-chat",
+                "https://api.example.test",
+                None,
+                None,
+                None,
+                None,
+            ),
+        ];
+        for (call_id, request_type, url, input, cache_read, cache_write, usage_json) in rows {
+            sqlx::query(
+                "INSERT INTO llm_calls(
+                    call_id, run_id, conversation_id, provider_call_index, provider_type,
+                    provider_url, request_type, request_url, model_id, display_name, status,
+                    created_at_ms, input_tokens, cache_read_tokens, cache_write_tokens,
+                    usage_json, message_count, tool_count, detailed
+                 ) VALUES (?, 'run', 'conversation', 0, ?, ?, ?, ?, 'model', 'Model', 'completed',
+                    1, ?, ?, ?, ?, 1, 0, 0)",
+            )
+            .bind(call_id)
+            .bind(request_type)
+            .bind(url)
+            .bind(request_type)
+            .bind(url)
+            .bind(input)
+            .bind(cache_read)
+            .bind(cache_write)
+            .bind(usage_json)
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+
+        run(&pool, Path::new("input-token-normalisation.db"))
+            .await
+            .unwrap();
+
+        type NormalisedRow = (String, Option<i64>, Option<i64>, Option<i64>);
+        let normalised: Vec<NormalisedRow> = sqlx::query_as(
+            "SELECT call_id, input_tokens,
+                    json_extract(usage_json, '$.input_tokens'),
+                    json_extract(usage_json, '$.context_input_tokens')
+             FROM llm_calls ORDER BY call_id",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+        assert_eq!(
+            normalised,
+            vec![
+                ("anthropic".into(), Some(10), Some(10), Some(60)),
+                ("claude".into(), Some(10), Some(10), Some(60)),
+                ("codex".into(), Some(60), Some(60), Some(100)),
+                ("no-usage".into(), None, None, None),
+                ("openai".into(), Some(60), Some(60), Some(100)),
+                ("over-cached".into(), Some(0), Some(0), Some(10)),
+            ]
+        );
     }
 
     #[test]

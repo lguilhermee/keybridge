@@ -47,9 +47,9 @@ impl Store {
         .bind(model_hashes)
         .fetch_one(&self.pool)
         .await?;
-        let token_row = sqlx::query(&format!(
+        let token_row = sqlx::query(
             "SELECT
-                COALESCE(SUM({fresh_input}), 0) AS input_tokens,
+                COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens,
                 COALESCE(SUM(COALESCE(cache_read_tokens, 0)), 0) AS cache_read_tokens,
                 COALESCE(SUM(COALESCE(cache_write_tokens, 0)), 0) AS cache_write_tokens,
                 COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens
@@ -57,8 +57,7 @@ impl Store {
              WHERE (? IS NULL OR created_at_ms >= ?)
                AND (? IS NULL OR created_at_ms < ?)
                AND (? IS NULL OR model_hash IN (SELECT value FROM json_each(?)))",
-            fresh_input = fresh_input_sql(),
-        ))
+        )
         .bind(start_ms)
         .bind(start_ms)
         .bind(end_ms)
@@ -90,7 +89,7 @@ impl Store {
         let rows = sqlx::query(&format!(
             "SELECT
                 (created_at_ms / {bucket_ms}) * {bucket_ms} AS bucket_start_ms,
-                COALESCE(SUM({fresh_input}), 0) AS input_tokens,
+                COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens,
                 COALESCE(SUM(COALESCE(cache_read_tokens, 0)), 0) AS cache_read_tokens,
                 COALESCE(SUM(COALESCE(cache_write_tokens, 0)), 0) AS cache_write_tokens,
                 COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens
@@ -100,7 +99,6 @@ impl Store {
                AND (? IS NULL OR model_hash IN (SELECT value FROM json_each(?)))
              GROUP BY bucket_start_ms
              ORDER BY bucket_start_ms",
-            fresh_input = fresh_input_sql(),
         ))
         .bind(start_ms.unwrap_or(series_start_ms).max(series_start_ms))
         .bind(end_ms)
@@ -201,15 +199,6 @@ fn token_usage_buckets(
     )
 }
 
-fn fresh_input_sql() -> &'static str {
-    "CASE
-        WHEN request_type = 'anthropic' THEN MAX(0, COALESCE(input_tokens, 0))
-        ELSE MAX(0, COALESCE(input_tokens, 0)
-            - COALESCE(cache_read_tokens, 0)
-            - COALESCE(cache_write_tokens, 0))
-     END"
-}
-
 fn non_negative(value: i64) -> i64 {
     value.max(0)
 }
@@ -218,4 +207,100 @@ fn saturating_sum(values: &[i64]) -> i64 {
     values
         .iter()
         .fold(0_i64, |total, value| total.saturating_add(*value))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{NewLlmCall, ProviderType, Usage};
+
+    async fn store() -> (tempfile::TempDir, Store) {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            directory.path().join("test.db").display()
+        ))
+        .await
+        .unwrap();
+        (directory, store)
+    }
+
+    async fn record(store: &Store, call_id: &str, request_type: ProviderType, usage: Usage) {
+        store
+            .start_llm_call(&NewLlmCall {
+                call_id: call_id.into(),
+                run_id: format!("run-{call_id}"),
+                conversation_id: "conversation".into(),
+                provider_call_index: 0,
+                model_hash: "model".into(),
+                provider_type: request_type,
+                provider_url: "https://example.test".into(),
+                request_type,
+                request_url: "https://example.test".into(),
+                model_id: "model".into(),
+                display_name: "Model".into(),
+                reasoning_effort: None,
+                fast: false,
+                message_count: 1,
+                tool_count: 0,
+                detailed: false,
+            })
+            .await
+            .unwrap();
+        store.record_llm_usage(call_id, usage).await.unwrap();
+        store
+            .finish_llm_call(call_id, "completed", None, 10, None, None)
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn overview_sums_non_cached_input_for_every_source() {
+        let (_directory, store) = store().await;
+        record(
+            &store,
+            "plugin",
+            ProviderType::Plugin,
+            Usage {
+                input_tokens: Some(10),
+                context_input_tokens: Some(60),
+                output_tokens: Some(5),
+                total_tokens: Some(65),
+                cache_read_tokens: Some(20),
+                cache_write_tokens: Some(30),
+                reasoning_tokens: None,
+            },
+        )
+        .await;
+        record(
+            &store,
+            "openai",
+            ProviderType::OpenAiChat,
+            Usage {
+                input_tokens: Some(60),
+                context_input_tokens: Some(100),
+                output_tokens: Some(7),
+                total_tokens: Some(107),
+                cache_read_tokens: Some(40),
+                cache_write_tokens: None,
+                reasoning_tokens: None,
+            },
+        )
+        .await;
+
+        let overview = store.overview(None, None, None, None).await.unwrap();
+
+        assert_eq!(overview.metrics.input_tokens, 70);
+        assert_eq!(overview.metrics.cache_read_tokens, 60);
+        assert_eq!(overview.metrics.cache_write_tokens, 30);
+        assert_eq!(overview.metrics.output_tokens, 12);
+        assert_eq!(overview.metrics.prompt_tokens, 160);
+        assert_eq!(overview.metrics.token_usage, 172);
+        let series_input: i64 = overview
+            .token_usage_series
+            .iter()
+            .map(|bucket| bucket.input_tokens)
+            .sum();
+        assert_eq!(series_input, 70);
+    }
 }
