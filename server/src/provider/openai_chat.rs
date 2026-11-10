@@ -424,15 +424,17 @@ fn merge_chat_fragment(target: &mut String, fragment: &str) {
 }
 
 pub(crate) fn openai_usage(value: &Value) -> Usage {
-    let input_tokens = value.get("prompt_tokens").and_then(Value::as_u64);
+    let prompt_tokens = value.get("prompt_tokens").and_then(Value::as_u64);
+    let cache_read_tokens = value
+        .pointer("/prompt_tokens_details/cached_tokens")
+        .and_then(Value::as_u64);
     Usage {
-        input_tokens,
-        context_input_tokens: input_tokens,
+        input_tokens: prompt_tokens
+            .map(|prompt| prompt.saturating_sub(cache_read_tokens.unwrap_or_default())),
+        context_input_tokens: prompt_tokens,
         output_tokens: value.get("completion_tokens").and_then(Value::as_u64),
         total_tokens: value.get("total_tokens").and_then(Value::as_u64),
-        cache_read_tokens: value
-            .pointer("/prompt_tokens_details/cached_tokens")
-            .and_then(Value::as_u64),
+        cache_read_tokens,
         cache_write_tokens: None,
         reasoning_tokens: value
             .pointer("/completion_tokens_details/reasoning_tokens")
@@ -469,5 +471,44 @@ mod tests {
     fn a_truncated_response_stays_truncated_even_with_tool_calls() {
         assert_eq!(map_finish("length", true), FinishReason::Length);
         assert_eq!(map_finish("length", false), FinishReason::Length);
+    }
+
+    #[test]
+    fn cached_prompt_tokens_are_excluded_from_input_and_kept_in_context() {
+        let usage = openai_usage(&serde_json::json!({
+            "prompt_tokens": 100,
+            "completion_tokens": 7,
+            "total_tokens": 107,
+            "prompt_tokens_details": {"cached_tokens": 40}
+        }));
+
+        assert_eq!(usage.input_tokens, Some(60));
+        assert_eq!(usage.context_input_tokens, Some(100));
+        assert_eq!(usage.cache_read_tokens, Some(40));
+        assert_eq!(usage.output_tokens, Some(7));
+        assert_eq!(usage.total_tokens, Some(107));
+    }
+
+    #[test]
+    fn usage_without_cache_details_reports_the_whole_prompt_as_input() {
+        let usage = openai_usage(&serde_json::json!({
+            "prompt_tokens": 100,
+            "completion_tokens": 7
+        }));
+
+        assert_eq!(usage.input_tokens, Some(100));
+        assert_eq!(usage.context_input_tokens, Some(100));
+        assert_eq!(usage.cache_read_tokens, None);
+    }
+
+    #[test]
+    fn more_cached_than_prompt_tokens_clamps_input_to_zero() {
+        let usage = openai_usage(&serde_json::json!({
+            "prompt_tokens": 10,
+            "prompt_tokens_details": {"cached_tokens": 25}
+        }));
+
+        assert_eq!(usage.input_tokens, Some(0));
+        assert_eq!(usage.context_input_tokens, Some(10));
     }
 }

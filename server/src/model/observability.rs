@@ -8,7 +8,9 @@ mod usage {
 
     #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
     pub struct Usage {
+        /// Input tokens that were neither read from nor written to the prompt cache.
         pub input_tokens: Option<u64>,
+        /// Full prompt size: `input_tokens` plus cache read plus cache write.
         pub context_input_tokens: Option<u64>,
         pub output_tokens: Option<u64>,
         pub total_tokens: Option<u64>,

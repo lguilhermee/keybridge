@@ -527,15 +527,17 @@ fn required_u64(value: &Value, name: &str) -> Result<u64> {
 }
 
 pub(crate) fn responses_usage(value: &Value) -> Usage {
-    let input_tokens = value.get("input_tokens").and_then(Value::as_u64);
+    let prompt_tokens = value.get("input_tokens").and_then(Value::as_u64);
+    let cache_read_tokens = value
+        .pointer("/input_tokens_details/cached_tokens")
+        .and_then(Value::as_u64);
     Usage {
-        input_tokens,
-        context_input_tokens: input_tokens,
+        input_tokens: prompt_tokens
+            .map(|prompt| prompt.saturating_sub(cache_read_tokens.unwrap_or_default())),
+        context_input_tokens: prompt_tokens,
         output_tokens: value.get("output_tokens").and_then(Value::as_u64),
         total_tokens: value.get("total_tokens").and_then(Value::as_u64),
-        cache_read_tokens: value
-            .pointer("/input_tokens_details/cached_tokens")
-            .and_then(Value::as_u64),
+        cache_read_tokens,
         cache_write_tokens: None,
         reasoning_tokens: value
             .pointer("/output_tokens_details/reasoning_tokens")
@@ -584,5 +586,32 @@ mod tests {
                 "encrypted_content": "opaque"
             })]
         );
+    }
+
+    #[test]
+    fn cached_input_tokens_are_excluded_from_input_and_kept_in_context() {
+        let usage = responses_usage(&json!({
+            "input_tokens": 100,
+            "output_tokens": 7,
+            "total_tokens": 107,
+            "input_tokens_details": {"cached_tokens": 40},
+            "output_tokens_details": {"reasoning_tokens": 3}
+        }));
+
+        assert_eq!(usage.input_tokens, Some(60));
+        assert_eq!(usage.context_input_tokens, Some(100));
+        assert_eq!(usage.cache_read_tokens, Some(40));
+        assert_eq!(usage.reasoning_tokens, Some(3));
+    }
+
+    #[test]
+    fn more_cached_than_input_tokens_clamps_input_to_zero() {
+        let usage = responses_usage(&json!({
+            "input_tokens": 10,
+            "input_tokens_details": {"cached_tokens": 25}
+        }));
+
+        assert_eq!(usage.input_tokens, Some(0));
+        assert_eq!(usage.context_input_tokens, Some(10));
     }
 }
