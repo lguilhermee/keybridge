@@ -204,13 +204,15 @@ function requiredIndex(value: Record<string, unknown>): number {
 
 function usageEvent(value: unknown): ModelEvent {
   const usage = record(value) ?? {};
+  const promptTokens = count(usage.input_tokens);
+  const cachedTokens = count(record(usage.input_tokens_details)?.cached_tokens);
   return {
     type: "usage",
     usage: {
-      inputTokens: count(usage.input_tokens),
+      inputTokens: promptTokens === null ? null : Math.max(0, promptTokens - (cachedTokens ?? 0)),
       outputTokens: count(usage.output_tokens),
       totalTokens: count(usage.total_tokens),
-      cacheReadTokens: count(record(usage.input_tokens_details)?.cached_tokens),
+      cacheReadTokens: cachedTokens,
       cacheWriteTokens: null,
       reasoningTokens: count(record(usage.output_tokens_details)?.reasoning_tokens),
     },

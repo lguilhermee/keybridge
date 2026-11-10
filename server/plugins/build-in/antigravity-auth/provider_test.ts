@@ -127,7 +127,7 @@ Deno.test("provider parses usage metadata including cachedContentTokenCount as c
     {
       type: "usage",
       usage: {
-        inputTokens: 120,
+        inputTokens: 40,
         outputTokens: 15,
         totalTokens: 135,
         cacheReadTokens: 80,

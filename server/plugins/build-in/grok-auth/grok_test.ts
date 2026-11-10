@@ -292,7 +292,7 @@ Deno.test("invoke streams normalized events from the xAI Chat Completions API", 
     {
       type: "usage",
       usage: {
-        inputTokens: 10,
+        inputTokens: 6,
         outputTokens: 2,
         totalTokens: null,
         cacheReadTokens: 4,

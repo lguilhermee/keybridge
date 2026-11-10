@@ -63,6 +63,12 @@ export type LlmRequest = {
   cacheKey: string | null;
 };
 
+/**
+ * Token counts for one model call. `inputTokens` is the input that was neither read from nor
+ * written to the prompt cache; the host adds `cacheReadTokens` and `cacheWriteTokens` to it to
+ * get the full prompt size. Upstreams that report a prompt total including cached tokens must
+ * subtract them before emitting.
+ */
 export type ModelUsage = {
   inputTokens: number | null;
   outputTokens: number | null;

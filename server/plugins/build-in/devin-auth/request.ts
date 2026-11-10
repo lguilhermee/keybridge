@@ -572,8 +572,7 @@ export class ResponseDecoder {
       this.emit({
         type: "usage",
         usage: {
-          inputTokens: (usage.inputTokens ?? 0) + (usage.cacheReadTokens ?? 0) +
-            (usage.cacheWriteTokens ?? 0),
+          inputTokens: usage.inputTokens ?? 0,
           outputTokens: usage.outputTokens ?? 0,
           totalTokens: Object.values(usage).reduce(
             (sum, value) => sum + value,

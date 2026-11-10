@@ -163,13 +163,15 @@ function eventError(value: Record<string, unknown>): string | null {
 
 function usageEvent(value: unknown): ModelEvent {
   const usage = record(value) ?? {};
+  const promptTokens = count(usage.prompt_tokens);
+  const cachedTokens = count(record(usage.prompt_tokens_details)?.cached_tokens);
   return {
     type: "usage",
     usage: {
-      inputTokens: count(usage.prompt_tokens),
+      inputTokens: promptTokens === null ? null : Math.max(0, promptTokens - (cachedTokens ?? 0)),
       outputTokens: count(usage.completion_tokens),
       totalTokens: count(usage.total_tokens),
-      cacheReadTokens: count(record(usage.prompt_tokens_details)?.cached_tokens),
+      cacheReadTokens: cachedTokens,
       cacheWriteTokens: null,
       reasoningTokens: count(record(usage.completion_tokens_details)?.reasoning_tokens),
     },

@@ -426,15 +426,21 @@ async function streamCloudCode(
 
         const usage = resp.usageMetadata as Record<string, number> | undefined;
         if (usage) {
+          const promptTokens = typeof usage.promptTokenCount === "number"
+            ? usage.promptTokenCount
+            : null;
+          const cachedTokens = typeof usage.cachedContentTokenCount === "number"
+            ? usage.cachedContentTokenCount
+            : null;
           finalUsage = {
-            inputTokens: typeof usage.promptTokenCount === "number" ? usage.promptTokenCount : null,
+            inputTokens: promptTokens === null
+              ? null
+              : Math.max(0, promptTokens - (cachedTokens ?? 0)),
             outputTokens: typeof usage.candidatesTokenCount === "number"
               ? usage.candidatesTokenCount
               : null,
             totalTokens: typeof usage.totalTokenCount === "number" ? usage.totalTokenCount : null,
-            cacheReadTokens: typeof usage.cachedContentTokenCount === "number"
-              ? usage.cachedContentTokenCount
-              : null,
+            cacheReadTokens: cachedTokens,
           };
         }
 

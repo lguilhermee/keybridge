@@ -444,6 +444,17 @@ Deno.test("Response decoder preserves signed reasoning, tool deltas, aliases, an
       outputId: "out",
     },
   });
+  equal(events.find((event) => event.type === "usage"), {
+    type: "usage",
+    usage: {
+      inputTokens: 5,
+      outputTokens: 3,
+      totalTokens: 15,
+      cacheReadTokens: 7,
+      cacheWriteTokens: 0,
+      reasoningTokens: null,
+    },
+  });
   equal(events.at(-1), { type: "done", reason: "tool-use" });
   equal(events.filter((event) => event.type === "thinking-start").length, 1);
 });
