@@ -50,7 +50,7 @@ development session before using that executable directly or through autostart.
 The Desktop and Start Menu **Cursor BYOK** shortcuts use
 `support/windows/start-dev.ps1`. They start development mode with a hidden
 terminal and write build output to `target/windows-dev.log`. The app reads the
-existing settings, database, plugins and certificates in
+existing settings, database, providers and certificates in
 `C:\Users\Administrador\.cursor-byok-v3`. The old packaged installer is removed;
 no release installer is needed to run this checkout.
 

@@ -25,7 +25,7 @@ Cursor locks its best Agent features behind a **$20/month Pro subscription** (or
 
 - **Bypasses the $20 Cursor Subscription Check:** Emulates an active local **Cursor Ultra** account (`membershipType: "ultra"`, `$200` included plan quota, zero slow-pool throttling) so Cursor unlocks every gated Agent capability out of the box — even on a free or unauthenticated Cursor install.
 - **Use Any Model You Want:** Connect any **OpenAI-compatible** (`/v1/chat/completions` or `/v1/responses`), **Anthropic-compatible** (`/v1/messages`), local (**Ollama, vLLM, LM Studio, llama.cpp**), or custom API endpoint with full control over model IDs, headers, reasoning effort, thinking budgets, and parameters.
-- **Reuse Your Existing AI Subscriptions:** Sign in directly with your existing **Claude**, **ChatGPT / Codex**, **Devin / Windsurf**, **Google Antigravity (Gemini & Claude)**, **Grok (xAI)**, or **OpenCode Go** accounts via built-in Deno auth plugins — no separate API billing required.
+- **Reuse Your Existing AI Subscriptions:** Sign in directly with your existing **Claude**, **ChatGPT / Codex**, **Devin / Windsurf**, **Google Antigravity (Gemini & Claude)**, **Grok (xAI)**, or **OpenCode Go** accounts via built-in Deno auth providers — no separate API billing required.
 - **100% Native Cursor Experience:** Every Cursor Agent feature — including **Computer Use**, **Subagents**, **MCP**, **Skills**, **Semble semantic codebase search**, **Checkpoints**, **Git commit generation**, and **Remote SSH** — works natively with whichever model you select.
 
 > [!IMPORTANT]
@@ -35,18 +35,18 @@ Cursor locks its best Agent features behind a **$20/month Pro subscription** (or
 
 ## Supported Subscriptions & BYOK Channels
 
-Keybridge supports both **built-in subscription plugins** (OAuth / browser sign-in / credential import) and **direct BYOK API channels**:
+Keybridge supports both **built-in subscription providers** (OAuth / browser sign-in / credential import) and **direct BYOK API channels**:
 
 ### 1. Built-in Subscription Providers
 
-| Provider Plugin | Account / Subscription Type | Auth Method | Included Model Families |
+| Provider | Account / Subscription Type | Auth Method | Included Model Families |
 | :--- | :--- | :--- | :--- |
-| <img src="./server/plugins/build-in/claude-auth/assets/claude.svg" width="16" height="16" /> **Claude** (`claude-auth`) | Claude Pro / Max / Claude Code subscriptions | Browser OAuth & Credential Import | `claude-opus-5-5`, `claude-opus-5`, `claude-fable-5-2`, `claude-fable-5-1`, `claude-fable-5`, `claude-sonnet-5-5`, `claude-sonnet-5`, `claude-haiku-4-5` (with Fast Mode support) |
-| <img src="./server/plugins/build-in/codex-auth/assets/codex.svg" width="16" height="16" /> **ChatGPT / Codex** (`codex-auth`) | ChatGPT Plus / Pro / Team / Codex subscriptions | Device Code OAuth, Credential Import & Quota Reset Cards | Dynamic official Codex model catalog (`gpt-5.x`, `codex-*`, reasoning effort levels, Priority service tier, and `daybreak-blue` cyber access program) |
-| <img src="./server/plugins/build-in/devin-auth/assets/devin.svg" width="16" height="16" /> **Devin** (`devin-auth`) | Devin / Cognition / Windsurf accounts | Browser OAuth & Credential Import | Live `GetCliModelConfigs` catalog discovery with automatic Fast Mode sibling routing |
-| <img src="./server/plugins/build-in/antigravity-auth/assets/antigravity.svg" width="16" height="16" /> **Google Antigravity** (`antigravity-auth`) | Google Cloud Code / Antigravity accounts & keys | Google OAuth & Credential Import | **Gemini 3.8 / 3.7 / 3.6 Flash**, **Gemini 3.1 / 2.5 Pro**, **Claude Sonnet 4.6 & 3.7 Opus Thinking (via Antigravity)**, **GPT-4o**, **GPT OSS 120B** |
-| <img src="./server/plugins/build-in/grok-auth/assets/grok.svg" width="16" height="16" /> **Grok** (`grok-auth`) | xAI / Grok accounts (Free & Paid tiers) | Device Code OAuth & Credential Import | Live `/v1/language-models` discovery + built-in fallback for **Grok 4.6**, **Grok 4.5**, and vision-capable Grok models |
-| <img src="./server/plugins/build-in/opencode-auth/assets/opencode.svg" width="16" height="16" /> **OpenCode** (`opencode-auth`) | OpenCode Go subscriptions **+ Zero-Auth Free Tier** | API Key / Credential Import & Built-in Free Session Pool | **Kimi K3 / K2.7 Code**, **GLM 5.3 / Flash**, **Qwen 3.8 Max**, **DeepSeek V4 Pro / Flash**, **MiniMax M3**, **MiMo V2.6**, **Grok 4.7**, **GPT 6 Luna**, **Muse Spark 1.3** |
+| <img src="./server/providers/built-in/claude-auth/assets/claude.svg" width="16" height="16" /> **Claude** (`claude-auth`) | Claude Pro / Max / Claude Code subscriptions | Browser OAuth & Credential Import | `claude-opus-5-5`, `claude-opus-5`, `claude-fable-5-2`, `claude-fable-5-1`, `claude-fable-5`, `claude-sonnet-5-5`, `claude-sonnet-5`, `claude-haiku-4-5` (with Fast Mode support) |
+| <img src="./server/providers/built-in/codex-auth/assets/codex.svg" width="16" height="16" /> **ChatGPT / Codex** (`codex-auth`) | ChatGPT Plus / Pro / Team / Codex subscriptions | Device Code OAuth, Credential Import & Quota Reset Cards | Dynamic official Codex model catalog (`gpt-5.x`, `codex-*`, reasoning effort levels, Priority service tier, and `daybreak-blue` cyber access program) |
+| <img src="./server/providers/built-in/devin-auth/assets/devin.svg" width="16" height="16" /> **Devin** (`devin-auth`) | Devin / Cognition / Windsurf accounts | Browser OAuth & Credential Import | Live `GetCliModelConfigs` catalog discovery with automatic Fast Mode sibling routing |
+| <img src="./server/providers/built-in/antigravity-auth/assets/antigravity.svg" width="16" height="16" /> **Google Antigravity** (`antigravity-auth`) | Google Cloud Code / Antigravity accounts & keys | Google OAuth & Credential Import | **Gemini 3.8 / 3.7 / 3.6 Flash**, **Gemini 3.1 / 2.5 Pro**, **Claude Sonnet 4.6 & 3.7 Opus Thinking (via Antigravity)**, **GPT-4o**, **GPT OSS 120B** |
+| <img src="./server/providers/built-in/grok-auth/assets/grok.svg" width="16" height="16" /> **Grok** (`grok-auth`) | xAI / Grok accounts (Free & Paid tiers) | Device Code OAuth & Credential Import | Live `/v1/language-models` discovery + built-in fallback for **Grok 4.6**, **Grok 4.5**, and vision-capable Grok models |
+| <img src="./server/providers/built-in/opencode-auth/assets/opencode.svg" width="16" height="16" /> **OpenCode** (`opencode-auth`) | OpenCode Go subscriptions **+ Zero-Auth Free Tier** | API Key / Credential Import & Built-in Free Session Pool | **Kimi K3 / K2.7 Code**, **GLM 5.3 / Flash**, **Qwen 3.8 Max**, **DeepSeek V4 Pro / Flash**, **MiniMax M3**, **MiMo V2.6**, **Grok 4.7**, **GPT 6 Luna**, **Muse Spark 1.3** |
 
 ### 2. Custom BYOK API Protocols
 
@@ -90,7 +90,7 @@ Full native encoding and execution dispatch for Cursor's **Computer Use** agent 
 - **Cursor Tab Completion Routing:** Configurable passthrough to Cursor's public Tab service or a custom Tab completion server (`StreamCpp`, `StreamNextCursorPrediction`, `FileSyncService`).
 - **Remote SSH Support:** Works across Cursor Remote-SSH workspaces via `"cursorAgentHost.remoteInferenceRoute": "always"` without exposing public ports or copying CA keys to remote hosts.
 - **Headroom Context Compression:** Optional integration with `headroom` proxy to compress large prompts before they hit upstream providers.
-- **External Local API:** Exposes your configured models and subscription plugins as a local OpenAI/Anthropic-compatible endpoint for other tools on your machine.
+- **External Local API:** Exposes your configured models and subscription providers as a local OpenAI/Anthropic-compatible endpoint for other tools on your machine.
 - **Desktop Observability & Benchmarks:** Built-in Tauri desktop dashboard with token usage heatmaps, cache-hit rate tracking, TTFT / throughput connection benchmarks, and full request/response payload inspection.
 
 ---
@@ -116,8 +116,8 @@ Full native encoding and execution dispatch for Cursor's **Computer Use** agent 
 │                 Prefix-Stable Prompt Compiler & SQLite Store               │
 └───────────────────┬─────────────────────────────────────┬──────────────────┘
                     │                                     │
-     Built-in Deno Auth Plugins              Direct BYOK Protocol Adapters
-  (OAuth / Session / Free Pools)           (OpenAI Chat, Responses, Anthropic)
+     Built-in Deno Auth Providers            Direct BYOK Protocol Adapters
+    (OAuth / Session / Free Pools)          (OpenAI Chat, Responses, Anthropic)
                     │                                     │
                     ▼                                     ▼
 ┌───────────────────────────────────────┐ ┌──────────────────────────────────┐
@@ -166,7 +166,7 @@ cargo build --release -p cursor-server --bin cursor-server
 
 1. **Initialize Local CA:** Open Keybridge and click **Initialize CA** on the Cursor settings page to trust the device-local certificate.
 2. **Add a Subscription or Model:**
-   - Go to **Plugins** to sign in with **Claude**, **Codex (ChatGPT)**, **Devin**, **Google (Antigravity)**, **Grok**, or **OpenCode**, **or**
+   - Go to **Providers** to sign in with **Claude**, **Codex (ChatGPT)**, **Devin**, **Google (Antigravity)**, **Grok**, or **OpenCode**, **or**
    - Go to **Models → Add Model** to configure any OpenAI- or Anthropic-compatible API endpoint and key.
 3. **Enable Models in Cursor:** Select your configured models in Keybridge, open Cursor, and start using Agent, Plan, Debug, or Computer Use with your chosen model.
 
@@ -179,7 +179,7 @@ cursor-byok/
 ├── apps/desktop/                  # Tauri + React desktop control center
 │   ├── src/features/home/         # Token usage charts, latency trends, cache-hit metrics
 │   ├── src/features/models/       # Model editor, benchmark runner, CA gate, Remote SSH guide
-│   ├── src/features/plugins/      # Subscription OAuth flows, account & quota management
+│   ├── src/features/providers/    # Subscription OAuth flows, account & quota management
 │   ├── src/features/calls/        # Real-time LLM call inspector & trace viewer
 │   └── src/features/settings/     # Ports, Commit model, Tab service, Headroom, External API
 ├── server/                        # Rust backend (cursor-server)
@@ -188,8 +188,9 @@ cursor-byok/
 │   ├── src/cursor/prompting/      # 7-mode Cursor prompt & tool manifest compiler
 │   ├── src/cursor/tools/          # Tool dispatch & result codecs (Shell, Edit, MCP, Task, ComputerUse)
 │   ├── src/cursor/checkpoint/     # SQLite conversation state, checkpoints, subagent recovery
-│   ├── src/provider/              # OpenAI Chat, OpenAI Responses, Anthropic Messages adapters
-│   └── plugins/build-in/          # Bundled Deno subscription plugins:
+│   ├── src/protocol/              # OpenAI Chat, OpenAI Responses, Anthropic Messages adapters
+│   ├── src/provider/              # Deno provider host: registry, manifests, runtime, SDK
+│   └── providers/built-in/        # Bundled Deno subscription providers:
 │       ├── claude-auth/           #   Claude Pro / Max / Code
 │       ├── codex-auth/            #   ChatGPT Plus / Pro / Codex
 │       ├── devin-auth/            #   Devin / Windsurf
@@ -211,11 +212,11 @@ cargo clippy -p cursor-server --all-targets -- -D warnings
 cargo test -p cursor-server --all-targets
 ```
 
-Built-in subscription plugins are tested with the Deno runtime:
+Built-in subscription providers are tested with the Deno runtime:
 
 ```bash
-cd server/plugins/build-in/<plugin>
-deno test -A <plugin>_test.ts
+cd server/providers/built-in/<provider>
+deno test -A <provider>_test.ts
 ```
 
 ---
@@ -226,4 +227,4 @@ Released under the [MIT License](./LICENSE).
 
 ## Credits
 
-Keybridge builds upon [cursor-byok](https://github.com/leookun/cursor-byok) by [@leookun](https://github.com/leookun), where the local Cursor protocol engine, desktop application, and plugin runtime originated.
+Keybridge builds upon [cursor-byok](https://github.com/leookun/cursor-byok) by [@leookun](https://github.com/leookun), where the local Cursor protocol engine, desktop application, and provider runtime originated.

@@ -11,8 +11,8 @@
 ## Verification
 
 - Rust: `cargo fmt --all -- --check`, `cargo clippy -p cursor-server --all-targets -- -D warnings`, `cargo test -p cursor-server --all-targets`. Set `CARGO_TARGET_DIR=target/devin-test` when the desktop dev build is running so tests do not fight over `target/debug`.
-- Built-in plugins (`server/plugins/build-in/<plugin>`): run `deno test -A <plugin>_test.ts` from the plugin directory with the bundled runtime at `~/.cursor-byok-v3/plugins/runtime/deno/<version>/x86_64-pc-windows-msvc/deno.exe`.
-- Debug desktop builds load built-in plugins from source, so a plugin syntax error disables that provider (look for `ignoring invalid plugin` in `~/.cursor-byok-v3/logs`). Release builds embed them with `include_str!`.
+- Built-in providers (`server/providers/built-in/<provider>`): run `deno test -A <provider>_test.ts` from the provider directory with the bundled runtime at `~/.cursor-byok-v3/providers/runtime/deno/<version>/x86_64-pc-windows-msvc/deno.exe`.
+- Debug desktop builds load built-in providers from source, so a provider syntax error disables that provider (look for `ignoring invalid provider` in `~/.cursor-byok-v3/logs`). Release builds embed them with `include_str!`.
 
 ## Communication
 
