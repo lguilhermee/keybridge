@@ -11,7 +11,7 @@ use prost::Message;
 
 use crate::{
     api::{
-        byok::configured_provider_name,
+        byok::{configured_provider_name, provider_tag},
         cursor::proxy::{self, CursorProxy},
     },
     cursor::{protocol::proto::agent::v1 as agent, transport::TransportRegistry},
@@ -225,10 +225,7 @@ const CONTEXTS: [(&str, &str); 5] = [
     ("800k", "800K"),
     ("1m", "1M"),
 ];
-/// Effort levels manually configured models and combos offer.
-const STANDARD_EFFORTS: [&str; 5] = ["low", "medium", "high", "xhigh", "max"];
-
-/// Settings one picker entry offers: Effort levels (ascending), the preselected effort, and Fast.
+/// Settings one picker entry offers: Effort levels (ascending), preselected effort, and Fast.
 struct PickerOptions {
     efforts: Vec<String>,
     default_effort: Option<String>,
@@ -237,26 +234,14 @@ struct PickerOptions {
 
 impl PickerOptions {
     fn standard() -> Self {
-        Self {
-            efforts: STANDARD_EFFORTS.map(str::to_owned).to_vec(),
-            default_effort: Some("high".into()),
-            fast: true,
-        }
+        Self::provider(&ModelOptions::manual())
     }
 
-    /// Provider models offer exactly the settings they declare.
+    /// Provider models offer exactly settings declare.
     fn provider(options: &ModelOptions) -> Self {
-        let default_effort = options.default_effort.clone().or_else(|| {
-            options
-                .efforts
-                .iter()
-                .find(|effort| *effort == "high")
-                .or(options.efforts.last())
-                .cloned()
-        });
         Self {
             efforts: options.efforts.clone(),
-            default_effort,
+            default_effort: options.preselected_effort().map(str::to_owned),
             fast: options.fast,
         }
     }
@@ -589,23 +574,9 @@ fn available_model(model: &ModelConfig) -> AvailableModel {
 /// Cursor's `ModelPickerBadge.Variant.VARIANT_ACCENT` (blue).
 const BADGE_ACCENT: i32 = 1;
 
-/// Short provider tag so the badge never crowds out the model name: the group name, a known
-/// provider name ("Refuseless"), or the host's main label ("api.foo.com" -> "foo").
+/// Short provider tag so badge never crowds out model name.
 fn badge_label(model: &ModelConfig) -> String {
-    let name = configured_provider_name(model);
-    if !name.contains('.') {
-        return name;
-    }
-    let labels = name
-        .split('.')
-        .filter(|label| !label.is_empty())
-        .collect::<Vec<_>>();
-    labels
-        .len()
-        .checked_sub(2)
-        .and_then(|index| labels.get(index))
-        .map(|label| (*label).to_owned())
-        .unwrap_or(name)
+    provider_tag(&configured_provider_name(model))
 }
 
 fn model_parameters(

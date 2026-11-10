@@ -4,7 +4,11 @@ import { accountData, accountHeaders } from "./resources.ts";
 
 const MODELS_URL = "https://chatgpt.com/backend-api/codex/models?client_version=1.0.0";
 
-/** Codex (gpt-*-codex) models carry a ~272K context window; used when discovery omits it. */
+/**
+ * Codex models default to a ~272K context window (`context_window`) but accept up to
+ * `max_context_window`; the Context picker spans that whole range. This is the fallback when
+ * discovery omits both.
+ */
 const CODEX_CONTEXT_WINDOW = 272_000;
 
 function object(value: unknown): Record<string, unknown> | null {
@@ -94,10 +98,13 @@ export function parseOfficialModels(body: unknown): ModelDefinition[] {
       model.max_output_tokens ?? model.maxOutputTokens ?? model.max_completion_tokens ??
         model.maxCompletionTokens,
     );
-    const contextWindow = positiveInteger(
-      model.context_window ?? model.contextWindow ?? model.context_length ??
-        model.contextLength ?? model.max_input_tokens ?? model.maxInputTokens,
-    ) ?? CODEX_CONTEXT_WINDOW;
+    const contextWindow = Math.max(
+      positiveInteger(
+        model.context_window ?? model.contextWindow ?? model.context_length ??
+          model.contextLength ?? model.max_input_tokens ?? model.maxInputTokens,
+      ) ?? CODEX_CONTEXT_WINDOW,
+      positiveInteger(model.max_context_window ?? model.maxContextWindow) ?? 0,
+    );
     const displayName =
       text(model.display_name ?? model.displayName ?? model.title ?? model.name) ?? id;
     const serviceTiers = serviceTierIds(model);

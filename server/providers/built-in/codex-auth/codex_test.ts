@@ -280,6 +280,8 @@ Deno.test("official model discovery excludes hidden models and puts the default 
         ],
         default_reasoning_level: "medium",
         service_tiers: [{ id: "priority" }],
+        context_window: 272_000,
+        max_context_window: 872_000,
       },
       {
         slug: "gpt-second",
@@ -292,9 +294,9 @@ Deno.test("official model discovery excludes hidden models and puts the default 
     ],
   });
   assertEquals(models.map((model) => model.id), ["gpt-second", "gpt-first"]);
-  // An upstream window wins; models without one get the 272K Codex fallback.
+  // The picker spans the larger of context_window and max_context_window (272K if both missing).
   assertEquals(models[0].contextWindow, 400_000);
-  assertEquals(models[1].contextWindow, 272_000);
+  assertEquals(models[1].contextWindow, 872_000);
   assertEquals(models[1].capabilities, { images: true });
   assertEquals(models[1].privateData, {
     reasoningEfforts: ["low", "medium"],

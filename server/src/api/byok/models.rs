@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 
 use crate::{
     model::ModelConfig,
-    provider::{ProviderModelDescriptor, ProviderRegistry},
+    provider::{ModelOptions, ProviderModelDescriptor, ProviderRegistry},
     store::Store,
     Result,
 };
@@ -18,18 +18,40 @@ pub(crate) struct ListedModel {
     pub display_name: String,
     pub context_window: Option<u64>,
     pub images: bool,
+    /// Effort levels and Fast tier the model offers callers.
+    pub options: ModelOptions,
 }
 
 impl ListedModel {
     /// Prefixes the model name with `[Provider]` unless it already carries that tag.
     pub fn labeled_display_name(&self) -> String {
-        let provider = self.provider_name.trim();
+        let provider = provider_tag(&self.provider_name);
+        let provider = provider.as_str();
         let name = self.display_name.trim();
         if provider.is_empty() || has_provider_prefix(name, provider) {
             return name.to_owned();
         }
         format!("[{provider}] {name}")
     }
+}
+
+/// Short provider tag that never crowds out a model name: a group or provider name stays as is,
+/// a host collapses to its main label ("api.foo.com" -> "foo").
+pub(crate) fn provider_tag(provider_name: &str) -> String {
+    let name = provider_name.trim();
+    if !name.contains('.') {
+        return name.to_owned();
+    }
+    let labels = name
+        .split('.')
+        .filter(|label| !label.is_empty())
+        .collect::<Vec<_>>();
+    labels
+        .len()
+        .checked_sub(2)
+        .and_then(|index| labels.get(index))
+        .map(|label| (*label).to_owned())
+        .unwrap_or_else(|| name.to_owned())
 }
 
 fn has_provider_prefix(display_name: &str, provider_name: &str) -> bool {
@@ -170,6 +192,7 @@ pub(crate) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
                 context_window: model.context_window_tokens,
                 // A manually configured model does not declare its modalities.
                 images: true,
+                options: ModelOptions::manual(),
             });
         }
     }
@@ -186,6 +209,7 @@ pub(crate) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
                 display_name: model.display_name,
                 context_window: model.context_window,
                 images: model.images,
+                options: model.options,
             });
         }
     }
@@ -252,6 +276,7 @@ mod tests {
             display_name: "6.1".into(),
             context_window: None,
             images: true,
+            options: ModelOptions::default(),
         };
         assert_eq!(model.labeled_display_name(), "[Codex] 6.1");
 

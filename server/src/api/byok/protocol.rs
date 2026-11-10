@@ -5,8 +5,9 @@ use serde_json::Value;
 
 use crate::{
     model::{
-        ContentPart, ModelRequest, ModelSpec, ProjectedContent, ProjectedMessage, PromptSpec,
-        ProtocolType, Role, ToolCallContent, ToolDefinition, ToolResultContent,
+        ContentPart, ModelLatency, ModelRequest, ModelSpec, ProjectedContent, ProjectedMessage,
+        PromptSpec, ProtocolType, ReasoningSpec, Role, ToolCallContent, ToolDefinition,
+        ToolResultContent,
     },
     Error, Result,
 };
@@ -78,6 +79,8 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
             model.max_output_tokens = body.get("max_tokens").and_then(Value::as_u64);
         }
     }
+    apply_selected_settings(protocol, body, &mut model);
+
     if history.is_empty() {
         return Err(Error::Protocol(
             "at least one input message is required".into(),
@@ -93,6 +96,31 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
         stream,
         namespaced_tools,
     })
+}
+
+/// Reasoning effort and Fast tier a caller picks per request: Chat `reasoning_effort`, Responses
+/// `reasoning.effort`, and the OpenAI `service_tier: "priority"` both of them carry.
+fn apply_selected_settings(protocol: ApiProtocol, body: &Value, model: &mut ModelSpec) {
+    let effort = match protocol {
+        ApiProtocol::Chat => body.get("reasoning_effort"),
+        ApiProtocol::Responses => body
+            .get("reasoning")
+            .and_then(|reasoning| reasoning.get("effort")),
+        ApiProtocol::Messages => None,
+    }
+    .and_then(Value::as_str)
+    .map(str::trim)
+    .filter(|effort| !effort.is_empty() && *effort != "none");
+    if let Some(effort) = effort {
+        model.reasoning = ReasoningSpec {
+            enabled: true,
+            effort: Some(effort.to_owned()),
+        };
+    }
+    let openai = matches!(protocol, ApiProtocol::Chat | ApiProtocol::Responses);
+    if openai && body.get("service_tier").and_then(Value::as_str) == Some("priority") {
+        model.latency = ModelLatency::Fast;
+    }
 }
 
 fn required_string<'a>(value: &'a Value, field: &str) -> Result<&'a str> {
@@ -607,4 +635,41 @@ fn tool_name(history: &[ProjectedMessage], call_id: &str) -> Option<String> {
                 .map(|call| call.name.clone()),
             _ => None,
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn responses_requests_carry_selected_effort_and_fast_tier() {
+        let body = json!({
+            "model": "m",
+            "input": "hi",
+            "reasoning": {"effort": "xhigh"},
+            "service_tier": "priority",
+        });
+        let model = parse(ApiProtocol::Responses, &body).unwrap().request.model;
+        assert!(model.reasoning.enabled);
+        assert_eq!(model.reasoning.effort.as_deref(), Some("xhigh"));
+        assert_eq!(model.latency, ModelLatency::Fast);
+    }
+
+    #[test]
+    fn chat_requests_without_settings_stay_default_and_none_turns_reasoning_off() {
+        let plain = json!({"model": "m", "messages": [{"role": "user", "content": "hi"}]});
+        let model = parse(ApiProtocol::Chat, &plain).unwrap().request.model;
+        assert_eq!(model.reasoning, ReasoningSpec::default());
+        assert_eq!(model.latency, ModelLatency::Standard);
+
+        let off = json!({
+            "model": "m",
+            "messages": [{"role": "user", "content": "hi"}],
+            "reasoning_effort": "none",
+        });
+        let model = parse(ApiProtocol::Chat, &off).unwrap().request.model;
+        assert_eq!(model.reasoning, ReasoningSpec::default());
+    }
 }

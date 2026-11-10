@@ -23,7 +23,7 @@ use crate::{
 use self::protocol::ApiProtocol;
 pub use direct::NativeForwarder;
 pub(crate) use models::{
-    configured_provider_name, list as public_models, ListedModel as PublicModel,
+    configured_provider_name, list as public_models, provider_tag, ListedModel as PublicModel,
 };
 
 #[derive(Clone)]

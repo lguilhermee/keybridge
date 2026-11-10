@@ -165,6 +165,30 @@ pub struct ModelOptions {
 }
 
 impl ModelOptions {
+    /// Settings every manually configured model offers: its provider declares none.
+    pub fn manual() -> Self {
+        Self {
+            efforts: ["low", "medium", "high", "xhigh", "max"]
+                .map(str::to_owned)
+                .to_vec(),
+            default_effort: Some("high".into()),
+            fast: true,
+        }
+    }
+
+    /// Effort a fresh selection starts on: the declared default, else `high`, else the highest.
+    pub fn preselected_effort(&self) -> Option<&str> {
+        self.default_effort
+            .as_deref()
+            .or_else(|| {
+                self.efforts
+                    .iter()
+                    .find(|effort| *effort == "high")
+                    .map(String::as_str)
+            })
+            .or_else(|| self.efforts.last().map(String::as_str))
+    }
+
     fn from_definition(value: Option<&serde_json::Value>) -> Result<Self> {
         let Some(value) = value.filter(|value| !value.is_null()) else {
             return Ok(Self::default());
