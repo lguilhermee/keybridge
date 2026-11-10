@@ -106,7 +106,7 @@ async function dispatch(message: { id: string; method: string; params?: JsonValu
         const output = {
           emit: (event: ModelEvent) => void send({ type: "event", id: message.id, event }),
         };
-        result = await provider(params.providerId).invoke(
+        result = await provider(params.channelId).invoke(
           {
             model: params.model as never,
             resource: (params.resource ?? null) as never,
@@ -118,8 +118,8 @@ async function dispatch(message: { id: string; method: string; params?: JsonValu
         break;
       }
       case "models.list": {
-        const models = provider(params.providerId).models;
-        if (!models) throw new Error(`plugin provider ${params.providerId} has no models`);
+        const models = provider(params.channelId).models;
+        if (!models) throw new Error(`provider channel ${params.channelId} has no models`);
         result = await models.list({ resource: (params.resource ?? null) as never }, context);
         break;
       }

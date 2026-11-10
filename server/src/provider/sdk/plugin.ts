@@ -78,11 +78,11 @@ export function __getRegisteredPlugin(): ProviderPluginDefinition {
 /** Serializable capability summary; the host collects it without invoking any capability method. */
 export function __descriptor(definition: ProviderPluginDefinition) {
   return {
-    providers: definition.providers.map((provider) => ({
+    channels: definition.providers.map((provider) => ({
       id: provider.id,
       displayName: provider.displayName,
       description: provider.description ?? null,
-      providerType: provider.providerType,
+      brand: provider.providerType,
       resourceType: provider.resourceType ?? null,
       hasModels: provider.models !== undefined,
     })),

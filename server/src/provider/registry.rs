@@ -170,7 +170,7 @@ impl ProviderRegistry {
                     version: manifest.version,
                     author: manifest.author,
                     icon,
-                    providers: Vec::new(),
+                    channels: Vec::new(),
                     resources: Vec::new(),
                 })
                 .collect();
@@ -189,7 +189,7 @@ impl ProviderRegistry {
         };
         let mut models = Vec::new();
         for entry in self.entries(&executable).await {
-            for channel in &entry.definition.providers {
+            for channel in &entry.definition.channels {
                 if !self.channel_configured(&entry, channel).await {
                     continue;
                 }
@@ -238,7 +238,7 @@ impl ProviderRegistry {
 
     pub async fn plan_model(&self, model_id: &str) -> Result<ProviderInvocationPlan> {
         let model = self.model_descriptor(model_id).await?;
-        let request_url = format!("plugin://{}/{}", model.provider_id, model.channel_id);
+        let request_url = format!("provider://{}/{}", model.provider_id, model.channel_id);
         Ok(ProviderInvocationPlan { model, request_url })
     }
 
@@ -278,7 +278,7 @@ impl ProviderRegistry {
             yield ModelEvent::Start { model_call_id: invocation.call_id.clone() };
             for (attempt_index, resource) in candidates.into_iter().enumerate() {
                 let params = serde_json::json!({
-                    "providerId": channel_id,
+                    "channelId": channel_id,
                     "model": stored.snapshot(),
                     "resource": resource.as_ref().map(|(resource_type, record)| record.snapshot(resource_type)),
                     "request": request,
@@ -1035,8 +1035,8 @@ impl ProviderRegistry {
 
     async fn descriptor(&self, entry: &ProviderEntry, executable: &Path) -> ProviderDescriptor {
         let provider_id = &entry.manifest.id;
-        let mut providers = Vec::new();
-        for channel in &entry.definition.providers {
+        let mut channels = Vec::new();
+        for channel in &entry.definition.channels {
             let stored = self
                 .inner
                 .state
@@ -1044,7 +1044,7 @@ impl ProviderRegistry {
                 .await
                 .unwrap_or_default();
             let configured = self.channel_configured(entry, channel).await;
-            providers.push(ChannelDescriptor {
+            channels.push(ChannelDescriptor {
                 id: channel.id.clone(),
                 provider_id: provider_id.clone(),
                 display_name: channel.display_name.clone(),
@@ -1095,7 +1095,7 @@ impl ProviderRegistry {
             version: entry.manifest.version.clone(),
             author: entry.manifest.author.clone(),
             icon: entry.icon.clone(),
-            providers,
+            channels,
             resources,
         }
     }
@@ -1184,7 +1184,7 @@ impl ProviderRegistry {
         resource_type: &str,
     ) -> Option<String> {
         let mut errors = Vec::new();
-        for channel in entry.definition.providers.clone() {
+        for channel in entry.definition.channels.clone() {
             if channel.resource_type.as_deref() != Some(resource_type) || !channel.has_models {
                 continue;
             }
@@ -1220,7 +1220,7 @@ impl ProviderRegistry {
             .await
             .invoke(
                 "models.list",
-                serde_json::json!({ "providerId": channel.id, "resource": resource }),
+                serde_json::json!({ "channelId": channel.id, "resource": resource }),
                 CancellationToken::new(),
             )
             .await?;
@@ -1418,7 +1418,7 @@ struct ImportParseResult {
 fn find_channel<'a>(entry: &'a ProviderEntry, channel_id: &str) -> Result<&'a ChannelDefinition> {
     entry
         .definition
-        .providers
+        .channels
         .iter()
         .find(|channel| channel.id == channel_id)
         .ok_or_else(|| {

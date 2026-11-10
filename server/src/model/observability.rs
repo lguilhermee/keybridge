@@ -115,8 +115,6 @@ mod llm_call {
         pub model_hash: String,
         pub protocol_type: ProtocolType,
         pub endpoint_url: String,
-        pub request_type: ProtocolType,
-        pub request_url: String,
         pub model_id: String,
         pub display_name: String,
         pub reasoning_effort: Option<String>,
@@ -133,12 +131,8 @@ mod llm_call {
         pub conversation_id: String,
         pub provider_call_index: i64,
         pub model_hash: Option<String>,
-        #[serde(rename = "provider_type")]
         pub protocol_type: String,
-        #[serde(rename = "provider_url")]
         pub endpoint_url: String,
-        pub request_type: String,
-        pub request_url: String,
         pub model_id: String,
         pub display_name: String,
         pub reasoning_effort: Option<String>,

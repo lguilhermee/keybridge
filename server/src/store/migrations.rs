@@ -497,7 +497,7 @@ mod tests {
             .unwrap();
 
             assert_eq!(checksum_after, checksum_before);
-            assert_eq!(versions, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+            assert_eq!(versions, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
             assert_eq!(checkpoint_table_exists, 1);
             assert_eq!(argument_error_column_exists, 1);
         }
@@ -636,6 +636,142 @@ mod tests {
                 ("openai".into(), Some(60), Some(60), Some(100)),
                 ("over-cached".into(), Some(0), Some(0), Some(10)),
             ]
+        );
+    }
+
+    #[tokio::test]
+    async fn provider_rename_collapses_request_columns_and_rewrites_identifiers() {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+        let historical = migrator_with_line_endings(MigrationLineEndings::Lf);
+        let previous = Migrator {
+            migrations: Cow::Owned(historical.iter().take(11).cloned().collect()),
+            ..Migrator::DEFAULT
+        };
+        previous.run(&pool).await.unwrap();
+
+        // The pre-0012 schema carries both pairs; old builds wrote the same
+        // values to provider_* and request_*.
+        sqlx::query(
+            "INSERT INTO llm_calls(
+                call_id, run_id, conversation_id, provider_call_index,
+                provider_type, provider_url, request_type, request_url,
+                model_id, display_name, status,
+                created_at_ms, message_count, tool_count, detailed
+             ) VALUES (
+                'provider-call', 'run', 'conversation', 0,
+                'plugin', 'plugin://dev.cursorbyok.plugins.antigravity-auth/vertex',
+                'plugin', 'plugin://dev.cursorbyok.plugins.antigravity-auth/vertex',
+                'plugin:dev.cursorbyok.plugins.antigravity-auth/vertex/gemini-3', 'Gemini 3', 'completed',
+                1, 1, 0, 0
+             )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO llm_calls(
+                call_id, run_id, conversation_id, provider_call_index,
+                provider_type, provider_url, request_type, request_url,
+                model_id, display_name, status,
+                created_at_ms, message_count, tool_count, detailed
+             ) VALUES (
+                'openai-call', 'run', 'conversation', 1,
+                'openai-chat', 'https://api.example.test/v1',
+                'openai-chat', 'https://api.example.test/v1/chat/completions',
+                'gpt-test', 'GPT Test', 'completed',
+                1, 1, 0, 0
+             )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO service_settings(setting_key, value_json, updated_at_ms) VALUES (
+                'commit_settings',
+                '{\"model_id\":\"plugin:dev.cursorbyok.examples.grok-auth/grok/grok-3\",\"prompt\":\"\",\"prompt_locale\":\"en-US\"}',
+                1
+             )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        run(&pool, Path::new("provider-rename.db")).await.unwrap();
+
+        let columns: Vec<String> =
+            sqlx::query_scalar("SELECT name FROM pragma_table_info('llm_calls')")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+        for removed in [
+            "request_type",
+            "request_url",
+            "provider_type",
+            "provider_url",
+        ] {
+            assert!(
+                !columns.iter().any(|column| column == removed),
+                "column {removed} must be gone"
+            );
+        }
+        for renamed in ["protocol_type", "endpoint_url"] {
+            assert!(
+                columns.iter().any(|column| column == renamed),
+                "column {renamed} must exist"
+            );
+        }
+
+        type RenamedRow = (String, String, String);
+        let rows: Vec<RenamedRow> = sqlx::query_as(
+            "SELECT call_id, protocol_type, endpoint_url FROM llm_calls ORDER BY call_id",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+        assert_eq!(
+            rows,
+            vec![
+                (
+                    "openai-call".into(),
+                    "openai-chat".into(),
+                    "https://api.example.test/v1".into()
+                ),
+                (
+                    "provider-call".into(),
+                    "provider".into(),
+                    "provider://dev.cursorbyok.providers.antigravity-auth/vertex".into()
+                ),
+            ]
+        );
+        let model_id: String =
+            sqlx::query_scalar("SELECT model_id FROM llm_calls WHERE call_id = 'provider-call'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(
+            model_id,
+            "provider:dev.cursorbyok.providers.antigravity-auth/vertex/gemini-3"
+        );
+        let openai_model_id: String =
+            sqlx::query_scalar("SELECT model_id FROM llm_calls WHERE call_id = 'openai-call'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(openai_model_id, "gpt-test");
+
+        let commit_model_id: String = sqlx::query_scalar(
+            "SELECT json_extract(value_json, '$.model_id') FROM service_settings WHERE setting_key = 'commit_settings'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(
+            commit_model_id,
+            "provider:dev.cursorbyok.providers.grok-auth/grok/grok-3"
         );
     }
 

@@ -241,7 +241,7 @@ mod tests {
         (directory, store)
     }
 
-    async fn record(store: &Store, call_id: &str, request_type: ProtocolType, usage: Usage) {
+    async fn record(store: &Store, call_id: &str, protocol_type: ProtocolType, usage: Usage) {
         store
             .start_llm_call(&NewLlmCall {
                 call_id: call_id.into(),
@@ -249,10 +249,8 @@ mod tests {
                 conversation_id: "conversation".into(),
                 provider_call_index: 0,
                 model_hash: "model".into(),
-                protocol_type: request_type,
+                protocol_type,
                 endpoint_url: "https://example.test".into(),
-                request_type,
-                request_url: "https://example.test".into(),
                 model_id: "model".into(),
                 display_name: "Model".into(),
                 reasoning_effort: None,
@@ -275,7 +273,7 @@ mod tests {
         let (_directory, store) = store().await;
         record(
             &store,
-            "plugin",
+            "provider",
             ProtocolType::Provider,
             Usage {
                 input_tokens: Some(10),

@@ -44,7 +44,7 @@ pub(super) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
     }
     for model in providers.configured_models().await {
         let public_id = format!(
-            "plugin:{}:{}/{}",
+            "provider:{}:{}/{}",
             model.provider_id, model.channel_id, model.model_id
         );
         if ids.insert(public_id.clone()) {

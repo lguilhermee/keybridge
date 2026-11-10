@@ -68,7 +68,7 @@ fn wire_message(message: &ProjectedMessage) -> Result<serde_json::Value> {
             "text": text,
             "thinking": thinking,
             "replayState": replay_state.as_ref().map(|state| serde_json::json!({
-                "providerKind": state.protocol_kind,
+                "protocolKind": state.protocol_kind,
                 "value": state.value,
             })),
             "toolCalls": calls.iter().map(|call| serde_json::json!({
@@ -139,7 +139,7 @@ pub fn model_event(value: &serde_json::Value) -> Result<ModelEvent> {
             index: required_index(value)?,
         },
         "replay-state" => ModelEvent::ProtocolReplayState(ProtocolReplayState {
-            protocol_kind: required_str(value, "providerKind")?.to_owned(),
+            protocol_kind: required_str(value, "protocolKind")?.to_owned(),
             value: value.get("value").cloned().unwrap_or_default(),
         }),
         "usage" => {
@@ -217,7 +217,7 @@ mod tests {
                     instructions: "be brief".into(),
                     tools: Vec::new(),
                 },
-                model: ModelSpec::new("plugin:p/c/m"),
+                model: ModelSpec::new("provider:p/c/m"),
                 history: vec![
                     ProjectedMessage {
                         message_id: "m1".into(),
@@ -266,7 +266,7 @@ mod tests {
         let messages = request["messages"].as_array().unwrap();
         assert_eq!(messages[0]["role"], "user");
         assert_eq!(
-            messages[1]["replayState"]["providerKind"],
+            messages[1]["replayState"]["protocolKind"],
             "openai_responses"
         );
         assert_eq!(messages[1]["toolCalls"][0]["callId"], "c1");

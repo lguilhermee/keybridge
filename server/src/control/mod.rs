@@ -131,51 +131,51 @@ pub fn api_router(service: ControlService) -> Router {
         )
         .route("/__byok-api__/api/llm-calls", get(calls::list))
         .route("/__byok-api__/api/llm-calls/{call_id}", get(calls::detail))
-        .route("/__byok-api__/api/plugins", get(providers::list))
+        .route("/__byok-api__/api/providers", get(providers::list))
         .route(
-            "/__byok-api__/api/plugins/runtime",
+            "/__byok-api__/api/providers/runtime",
             get(providers::runtime_status)
                 .post(providers::initialize_runtime)
                 .delete(providers::cancel_runtime_initialization),
         )
         .route(
-            "/__byok-api__/api/plugins/oauth/{session_id}/poll",
+            "/__byok-api__/api/providers/oauth/{session_id}/poll",
             post(providers::oauth_poll),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}",
+            "/__byok-api__/api/providers/{provider_id}",
             axum::routing::delete(providers::remove),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/resources/{resource_type}/add/{method_id}/begin",
+            "/__byok-api__/api/providers/{provider_id}/resources/{resource_type}/add/{method_id}/begin",
             post(providers::oauth_begin),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/resources/{resource_type}/import",
+            "/__byok-api__/api/providers/{provider_id}/resources/{resource_type}/import",
             post(providers::import),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/resources/{resource_type}/export",
+            "/__byok-api__/api/providers/{provider_id}/resources/{resource_type}/export",
             get(providers::export_resources),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/resources/{resource_type}/{resource_id}",
+            "/__byok-api__/api/providers/{provider_id}/resources/{resource_type}/{resource_id}",
             axum::routing::delete(providers::delete_resource),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/resources/{resource_type}/{resource_id}/actions/{action_id}",
+            "/__byok-api__/api/providers/{provider_id}/resources/{resource_type}/{resource_id}/actions/{action_id}",
             post(providers::action),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/resources/{resource_type}/{resource_id}/refresh",
+            "/__byok-api__/api/providers/{provider_id}/resources/{resource_type}/{resource_id}/refresh",
             post(providers::refresh_resource),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/providers/{provider_id}/models/sync",
+            "/__byok-api__/api/providers/{provider_id}/channels/{channel_id}/models/sync",
             post(providers::sync_models),
         )
         .route(
-            "/__byok-api__/api/plugins/{plugin_id}/providers/{provider_id}/models/enabled",
+            "/__byok-api__/api/providers/{provider_id}/channels/{channel_id}/models/enabled",
             put(providers::set_model_enabled),
         )
         .route(

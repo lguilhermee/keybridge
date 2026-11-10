@@ -820,10 +820,10 @@ mod tests {
     #[test]
     fn cli_provider_model_details_use_local_routing_credentials() {
         let details = usable_provider_model(&ProviderModelDescriptor {
-            id: "plugin:test/provider/model".into(),
-            provider_id: "plugin:test".into(),
+            id: "provider:test/channel/model".into(),
+            provider_id: "test".into(),
             provider_name: "Test Provider".into(),
-            channel_id: "provider".into(),
+            channel_id: "channel".into(),
             model_id: "model".into(),
             display_name: "Provider Model".into(),
             description: None,
@@ -833,7 +833,7 @@ mod tests {
             images: false,
             enabled: true,
         });
-        assert_eq!(details.model_id, "plugin:test/provider/model");
+        assert_eq!(details.model_id, "provider:test/channel/model");
         let agent::model_details::Credentials::ApiKeyCredentials(credentials) =
             details.credentials.expect("API credentials")
         else {

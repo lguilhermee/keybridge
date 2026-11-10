@@ -70,7 +70,7 @@ export function buildResponsesBody(call: OpenAiResponsesCall): Record<string, Js
   const input: JsonValue[] = [];
   for (const message of call.request.messages) {
     if (message.role === "assistant") {
-      if (message.replayState?.providerKind === REPLAY_KIND) {
+      if (message.replayState?.protocolKind === REPLAY_KIND) {
         input.push(...replayItems(message.replayState.value));
       }
       if (message.text) {
@@ -290,7 +290,7 @@ export async function streamOpenAiResponses(
   };
   const emitReplayState = () => {
     if (reasoningItems.length > 0) {
-      output.emit({ type: "replay-state", providerKind: REPLAY_KIND, value: { items: reasoningItems.slice() } });
+      output.emit({ type: "replay-state", protocolKind: REPLAY_KIND, value: { items: reasoningItems.slice() } });
       reasoningItems.length = 0;
     }
   };

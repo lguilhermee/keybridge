@@ -10,9 +10,9 @@ export type LlmContentPart =
   | { type: "text"; text: string }
   | { type: "image"; mediaType: string; dataBase64: string };
 
-/** Opaque Provider replay state (e.g. encrypted reasoning items); filtered by providerKind during replay. */
+/** Opaque Provider replay state (e.g. encrypted reasoning items); filtered by protocolKind during replay. */
 export type LlmReplayState = {
-  providerKind: string;
+  protocolKind: string;
   value: JsonValue;
 };
 
@@ -93,7 +93,7 @@ export type ModelEvent =
   | { type: "tool-call-start"; index: number; callId: string; name: string }
   | { type: "tool-call-arguments-delta"; index: number; delta: string }
   | { type: "tool-call-end"; index: number }
-  | { type: "replay-state"; providerKind: string; value: JsonValue }
+  | { type: "replay-state"; protocolKind: string; value: JsonValue }
   | { type: "usage"; usage: ModelUsage }
   | { type: "done"; reason: "stop" | "length" | "tool-use" };
 

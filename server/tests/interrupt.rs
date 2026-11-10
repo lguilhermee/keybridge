@@ -198,12 +198,11 @@ async fn a_replaced_run_cannot_overwrite_its_cancelled_status() {
     sqlx::query(
         "INSERT INTO llm_calls(
             call_id, run_id, conversation_id, provider_call_index,
-            provider_type, provider_url, request_type, request_url,
+            protocol_type, endpoint_url,
             model_id, display_name, status,
             created_at_ms, message_count, tool_count, detailed
          ) VALUES (
             'first:0', 'first', 'conversation', 0,
-            'openai-chat', 'https://example.com/v1',
             'openai-chat', 'https://example.com/v1/chat/completions',
             'model', 'Model', 'running',
             unixepoch('subsec') * 1000, 1, 0, 0

@@ -19,7 +19,7 @@ pub enum ProtocolType {
     #[serde(rename = "anthropic")]
     Anthropic,
     /// Calls executed by a provider; protocol details stay inside the provider while the core records a uniform event stream.
-    #[serde(rename = "plugin")]
+    #[serde(rename = "provider")]
     Provider,
 }
 
@@ -29,7 +29,7 @@ impl ProtocolType {
             Self::OpenAiChat => "openai-chat",
             Self::OpenAiResponses => "openai-responses",
             Self::Anthropic => "anthropic",
-            Self::Provider => "plugin",
+            Self::Provider => "provider",
         }
     }
 }
@@ -48,7 +48,7 @@ impl FromStr for ProtocolType {
             "openai-chat" => Ok(Self::OpenAiChat),
             "openai-responses" => Ok(Self::OpenAiResponses),
             "anthropic" => Ok(Self::Anthropic),
-            "plugin" => Ok(Self::Provider),
+            "provider" => Ok(Self::Provider),
             _ => Err(Error::Config(format!("unsupported protocol type: {value}"))),
         }
     }

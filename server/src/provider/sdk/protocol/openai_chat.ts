@@ -54,7 +54,7 @@ export function buildChatBody(call: OpenAiChatCall): Record<string, JsonValue> {
   }
   for (const message of call.request.messages) {
     if (message.role === "assistant") {
-      const reasoning = message.replayState?.providerKind === REPLAY_KIND
+      const reasoning = message.replayState?.protocolKind === REPLAY_KIND
         ? text(record(message.replayState.value)?.reasoning_content)
         : null;
       // Chat Completions rejects empty-string assistant content; an assistant message with
@@ -307,7 +307,7 @@ export async function streamOpenAiChat(
   if (reasoning) {
     output.emit({
       type: "replay-state",
-      providerKind: REPLAY_KIND,
+      protocolKind: REPLAY_KIND,
       value: { reasoning_content: reasoning },
     });
   }

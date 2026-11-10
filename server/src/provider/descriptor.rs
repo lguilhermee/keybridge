@@ -7,7 +7,7 @@ use super::state::{ResourceRecord, ResourceState, StoredModel};
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProviderModuleDefinition {
-    pub providers: Vec<ChannelDefinition>,
+    pub channels: Vec<ChannelDefinition>,
     #[serde(default)]
     pub resources: Vec<ResourceDefinition>,
 }
@@ -22,7 +22,6 @@ pub struct ChannelDefinition {
     pub display_name: LocalizedText,
     #[serde(default)]
     pub description: LocalizedText,
-    #[serde(rename = "providerType")]
     pub brand: String,
     #[serde(default)]
     pub resource_type: Option<String>,
@@ -104,7 +103,7 @@ pub struct ProviderDescriptor {
     pub version: String,
     pub author: Option<String>,
     pub icon: String,
-    pub providers: Vec<ChannelDescriptor>,
+    pub channels: Vec<ChannelDescriptor>,
     pub resources: Vec<ProviderResourceDescriptor>,
 }
 
@@ -112,11 +111,9 @@ pub struct ProviderDescriptor {
 #[serde(rename_all = "camelCase")]
 pub struct ChannelDescriptor {
     pub id: String,
-    #[serde(rename = "pluginId")]
     pub provider_id: String,
     pub display_name: LocalizedText,
     pub description: LocalizedText,
-    #[serde(rename = "providerType")]
     pub brand: String,
     pub resource_type: Option<String>,
     pub has_models: bool,
@@ -129,19 +126,15 @@ pub struct ChannelDescriptor {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderModelDescriptor {
-    /// Stable model ID: `plugin:<provider>/<channel>/<model>`.
+    /// Stable model ID: `provider:<provider>/<channel>/<model>`.
     pub id: String,
-    #[serde(rename = "pluginId")]
     pub provider_id: String,
-    #[serde(rename = "pluginName")]
     pub provider_name: String,
-    #[serde(rename = "providerId")]
     pub channel_id: String,
     pub model_id: String,
     pub display_name: String,
     pub description: Option<String>,
     pub icon: String,
-    #[serde(rename = "providerType")]
     pub brand: String,
     pub max_output_tokens: Option<u64>,
     pub images: bool,
@@ -264,7 +257,7 @@ impl ProviderResourceView {
     }
 }
 
-pub const ADAPTER_ID_PREFIX: &str = "plugin:";
+pub const ADAPTER_ID_PREFIX: &str = "provider:";
 
 pub fn model_id(provider_id: &str, channel_id: &str, model_id: &str) -> String {
     format!("{ADAPTER_ID_PREFIX}{provider_id}/{channel_id}/{model_id}")
@@ -318,7 +311,7 @@ mod tests {
             parse_model_id(&id),
             Some(("dev.example", "codex", "org/gpt-5"))
         );
-        assert_eq!(parse_model_id("plugin:only/one"), None);
+        assert_eq!(parse_model_id("provider:only/one"), None);
         assert_eq!(parse_model_id("model-hash"), None);
     }
 }

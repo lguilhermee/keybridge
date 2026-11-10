@@ -66,8 +66,6 @@ impl NativeForwarder {
             model_hash: model.model_hash.clone(),
             protocol_type: model.protocol_type(),
             endpoint_url: request_url.clone(),
-            request_type: model.protocol_type(),
-            request_url: request_url.clone(),
             model_id: model.model_id.clone(),
             display_name: model.display_name.clone(),
             reasoning_effort: model.reasoning_effort.clone(),

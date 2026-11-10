@@ -12,7 +12,7 @@ use crate::{config, Error, Result};
 
 const DEFINITION_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_OUTPUT_BYTES: u64 = 2 * 1024 * 1024;
-const OUTPUT_PREFIX: &str = "CURSOR_BYOK_PLUGIN_DEFINITION:";
+const OUTPUT_PREFIX: &str = "CURSOR_BYOK_PROVIDER_DEFINITION:";
 
 #[derive(Clone)]
 pub struct ProviderDefinitionLoader {
@@ -203,11 +203,11 @@ mod tests {
     use super::*;
     #[test]
     fn parses_descriptor_marker() {
-        let output = br#"CURSOR_BYOK_PLUGIN_DEFINITION:{"providers":[{"id":"codex","displayName":"OpenAI Codex","description":null,"providerType":"openai","resourceType":"chatgpt-account","hasModels":true}],"resources":[{"type":"chatgpt-account","displayName":"ChatGPT accounts","add":[{"type":"oauth2.0","id":"chatgpt-device","displayName":"Sign in","description":null}],"import":{"displayName":"Import","description":null,"accept":[".json"],"multiple":true},"canRefresh":true,"canRemove":false}]}"#;
+        let output = br#"CURSOR_BYOK_PROVIDER_DEFINITION:{"channels":[{"id":"codex","displayName":"OpenAI Codex","description":null,"brand":"openai","resourceType":"chatgpt-account","hasModels":true}],"resources":[{"type":"chatgpt-account","displayName":"ChatGPT accounts","add":[{"type":"oauth2.0","id":"chatgpt-device","displayName":"Sign in","description":null}],"import":{"displayName":"Import","description":null,"accept":[".json"],"multiple":true},"canRefresh":true,"canRemove":false}]}"#;
         let descriptor = parse_definition_output(output).unwrap();
-        assert_eq!(descriptor.providers[0].id, "codex");
+        assert_eq!(descriptor.channels[0].id, "codex");
         assert_eq!(
-            descriptor.providers[0].resource_type.as_deref(),
+            descriptor.channels[0].resource_type.as_deref(),
             Some("chatgpt-account")
         );
         assert_eq!(descriptor.resources[0].add[0].method_type, "oauth2.0");

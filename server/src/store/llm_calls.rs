@@ -70,10 +70,10 @@ impl Store {
         sqlx::query(
             r#"INSERT INTO llm_calls(
                 call_id, run_id, conversation_id, provider_call_index, model_hash,
-                provider_type, provider_url, request_type, request_url, model_id, display_name,
+                protocol_type, endpoint_url, model_id, display_name,
                 reasoning_effort, fast, status,
                 created_at_ms, request_started_at_ms, queue_ms, message_count, tool_count, detailed
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, 0, ?, ?, ?)"#,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, 0, ?, ?, ?)"#,
         )
         .bind(&call.call_id)
         .bind(&call.run_id)
@@ -82,8 +82,6 @@ impl Store {
         .bind(&call.model_hash)
         .bind(call.protocol_type.as_str())
         .bind(&call.endpoint_url)
-        .bind(call.request_type.as_str())
-        .bind(&call.request_url)
         .bind(&call.model_id)
         .bind(&call.display_name)
         .bind(&call.reasoning_effort)
@@ -367,10 +365,8 @@ fn summary_from_row(row: sqlx::sqlite::SqliteRow) -> Result<LlmCallSummary> {
         conversation_id: row.try_get("conversation_id")?,
         provider_call_index: row.try_get("provider_call_index")?,
         model_hash: row.try_get("model_hash")?,
-        protocol_type: row.try_get("provider_type")?,
-        endpoint_url: row.try_get("provider_url")?,
-        request_type: row.try_get("request_type")?,
-        request_url: row.try_get("request_url")?,
+        protocol_type: row.try_get("protocol_type")?,
+        endpoint_url: row.try_get("endpoint_url")?,
         model_id: row.try_get("model_id")?,
         display_name: row.try_get("display_name")?,
         reasoning_effort: row.try_get("reasoning_effort")?,
@@ -425,18 +421,16 @@ mod tests {
         ))
         .await
         .unwrap();
-        let provider_model = "plugin:dev.example/codex/gpt-test";
+        let provider_model = "provider:dev.example/codex/gpt-test";
         store
             .start_llm_call(&NewLlmCall {
-                call_id: "plugin-call".into(),
+                call_id: "provider-call".into(),
                 run_id: "run".into(),
                 conversation_id: "conversation".into(),
                 provider_call_index: 0,
                 model_hash: provider_model.into(),
                 protocol_type: ProtocolType::Provider,
-                endpoint_url: "plugin://dev.example/codex".into(),
-                request_type: ProtocolType::Provider,
-                request_url: "plugin://dev.example/codex".into(),
+                endpoint_url: "provider://dev.example/codex".into(),
                 model_id: "gpt-test".into(),
                 display_name: "GPT Test".into(),
                 reasoning_effort: None,
@@ -448,7 +442,7 @@ mod tests {
             .await
             .unwrap();
         store
-            .finish_llm_call("plugin-call", "completed", None, 10, None, None)
+            .finish_llm_call("provider-call", "completed", None, 10, None, None)
             .await
             .unwrap();
         let overview = store
@@ -488,9 +482,7 @@ mod tests {
                     provider_call_index: 0,
                     model_hash: model_id.into(),
                     protocol_type: ProtocolType::Provider,
-                    endpoint_url: "plugin://test".into(),
-                    request_type: ProtocolType::Provider,
-                    request_url: "plugin://test".into(),
+                    endpoint_url: "provider://test".into(),
                     model_id: model_id.into(),
                     display_name: model_id.into(),
                     reasoning_effort: None,

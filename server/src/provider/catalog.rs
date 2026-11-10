@@ -197,13 +197,13 @@ fn validate_localized_text(value: &serde_json::Value, label: &str) -> Result<()>
 }
 
 fn validate_definition(provider_id: &str, definition: &ProviderModuleDefinition) -> Result<()> {
-    if definition.providers.is_empty() {
+    if definition.channels.is_empty() {
         return Err(Error::Config(format!(
             "provider '{provider_id}' must define at least one channel"
         )));
     }
     let mut channel_ids = std::collections::HashSet::new();
-    for channel in &definition.providers {
+    for channel in &definition.channels {
         validate_id(&channel.id, "channel id")?;
         validate_localized_text(
             &channel.display_name,

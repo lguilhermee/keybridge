@@ -45,7 +45,6 @@ pub struct ToolResultContent {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ProtocolReplayState {
-    #[serde(rename = "provider_kind")]
     pub protocol_kind: String,
     pub value: Value,
 }

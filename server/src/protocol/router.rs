@@ -217,8 +217,6 @@ async fn start_recorder(
             model_hash: model_hash.into(),
             protocol_type,
             endpoint_url: request_url.into(),
-            request_type: protocol_type,
-            request_url: request_url.into(),
             model_id: model_id.into(),
             display_name: display_name.into(),
             reasoning_effort: invocation.request.model.reasoning.effort.clone(),
