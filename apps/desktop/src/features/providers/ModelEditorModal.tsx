@@ -25,6 +25,7 @@ export function ModelEditorModal({ open, editing, seed, tests, onClose }: {
   const [saved, setSaved] = useState<Model | null>(null);
   const [modelOptions, setModelOptions] = useState<string[]>([]);
   const [discovering, setDiscovering] = useState(false);
+  const [fetched, setFetched] = useState<{ type: string; baseUrl: string; apiKey: string; ids: string[] } | null>(null);
   const [savingAndTesting, setSavingAndTesting] = useState(false);
   const current = editing ?? saved;
 
@@ -35,6 +36,7 @@ export function ModelEditorModal({ open, editing, seed, tests, onClose }: {
       return;
     }
     setSaved(null);
+    setFetched(null);
     if (editing) {
       setModelOptions([editing.model_id]);
       setDraft({
@@ -66,13 +68,34 @@ export function ModelEditorModal({ open, editing, seed, tests, onClose }: {
         custom_headers_enabled: draft.model.custom_headers_enabled,
         custom_headers,
       });
-      setModelOptions([...new Set(result.models)]);
+      const ids = [...new Set(result.models)];
+      setModelOptions(ids);
+      setFetched({ type: draft.model.type, baseUrl: draft.model.base_url.trim(), apiKey: draft.model.api_key.trim(), ids });
       return true;
     } catch (cause) {
       message(errorText(cause));
       return false;
     } finally {
       setDiscovering(false);
+    }
+  };
+
+  /** Fetched IDs not yet configured for the current type, server address, and API key. Empty once the form no longer matches the fetch. */
+  const addable = draft && !current && fetched && fetched.type === draft.model.type && fetched.baseUrl === draft.model.base_url.trim() && fetched.apiKey === draft.model.api_key.trim()
+    ? fetched.ids.filter((id) => !models.some((model) => model.type === fetched.type && model.base_url === fetched.baseUrl && model.api_key === fetched.apiKey && model.model_id === id))
+    : [];
+  const addAll = async () => {
+    if (!draft) return;
+    try {
+      const inputs = addable.map((id, index) => draftInput({ ...draft, model: { ...draft.model, model_id: id, display_name: id, tooltip_data: draft.model.tooltip_data.trim() || id, sort_order: models.length + 1 + index } }));
+      if (await appStore.createModels(inputs)) {
+        message(t("{count} models added", { count: inputs.length }));
+        setDraft(null);
+        setSaved(null);
+        onClose();
+      }
+    } catch (cause) {
+      message(errorText(cause));
     }
   };
 
@@ -131,6 +154,6 @@ export function ModelEditorModal({ open, editing, seed, tests, onClose }: {
     submitLabel={t("Save")}
     secondaryAction={<button type="button" className={controls.secondary} disabled={cursorBusy || savingAndTesting} onClick={() => void (editorTesting && current ? tests.cancelTest(current.model_hash) : saveAndTest())}>{savingAndTesting ? t("Processing...") : editorTesting ? t("Cancel test") : t("Save and test")}</button>}
   >
-    {draft && <ModelEditor draft={draft} modelOptions={modelOptions} discovering={discovering} onChange={setDraft} onDiscover={discover} />}
+    {draft && <ModelEditor draft={draft} modelOptions={modelOptions} discovering={discovering} addAllCount={addable.length} onChange={setDraft} onDiscover={discover} onAddAll={() => void addAll()} />}
   </Modal>;
 }

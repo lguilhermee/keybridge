@@ -73,7 +73,8 @@ impl Protocol for AnthropicProtocol {
                 let tool_count = request.prompt.tools.len();
                 body["tools"] = json!(request.prompt.tools.iter().enumerate().map(|(index, tool)| {
                     let mut value = json!({
-                        "name": tool.name, "description": tool.description, "input_schema": tool.parameters
+                        "name": tool.name, "description": tool.description,
+                        "input_schema": anthropic_input_schema(&tool.parameters)
                     });
                     if index + 1 == tool_count {
                         value["cache_control"] = json!({"type": "ephemeral"});
@@ -347,6 +348,63 @@ fn merge_usage_field(total: &mut Option<u64>, update: Option<u64>) {
     }
 }
 
+/// Anthropic rejects `oneOf`/`anyOf`/`allOf` at the top level of a tool schema,
+/// so the branches are folded into one object schema: their properties are
+/// merged and only `allOf` branches contribute required fields.
+fn anthropic_input_schema(schema: &Value) -> Value {
+    let Some(object) = schema.as_object() else {
+        return schema.clone();
+    };
+    let combinators = ["oneOf", "anyOf", "allOf"];
+    if !combinators.iter().any(|key| object.contains_key(*key)) {
+        return schema.clone();
+    }
+    let mut base = object.clone();
+    let mut properties = serde_json::Map::new();
+    let mut required: Vec<Value> = Vec::new();
+    let mut merge = |branch: &Value, enforce: bool| {
+        if let Some(props) = branch.get("properties").and_then(Value::as_object) {
+            for (key, value) in props {
+                properties
+                    .entry(key.clone())
+                    .or_insert_with(|| value.clone());
+            }
+        }
+        if enforce {
+            for key in branch
+                .get("required")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+            {
+                if !required.contains(key) {
+                    required.push(key.clone());
+                }
+            }
+        }
+    };
+    merge(schema, true);
+    for (key, enforce) in [("allOf", true), ("anyOf", false), ("oneOf", false)] {
+        for branch in object
+            .get(key)
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            merge(branch, enforce);
+        }
+    }
+    for key in combinators {
+        base.remove(key);
+    }
+    base.insert("type".into(), json!("object"));
+    base.insert("properties".into(), Value::Object(properties));
+    if !required.is_empty() {
+        base.insert("required".into(), Value::Array(required));
+    }
+    Value::Object(base)
+}
+
 fn anthropic_messages(messages: &[ProjectedMessage]) -> Result<Vec<Value>> {
     let mut output = Vec::new();
     for message in messages {
@@ -514,6 +572,30 @@ pub(crate) fn anthropic_usage(value: &Value) -> Usage {
 mod tests {
     use super::*;
 
+    #[test]
+    fn top_level_combinators_are_folded_into_one_object_schema() {
+        let schema = anthropic_input_schema(&json!({
+            "type": "object",
+            "properties": {"a": {"type": "string"}},
+            "required": ["a"],
+            "allOf": [{"properties": {"b": {"type": "number"}}, "required": ["b"]}],
+            "oneOf": [{"properties": {"c": {"type": "boolean"}}, "required": ["c"]}]
+        }));
+        assert_eq!(
+            schema,
+            json!({
+                "type": "object",
+                "properties": {
+                    "a": {"type": "string"},
+                    "b": {"type": "number"},
+                    "c": {"type": "boolean"}
+                },
+                "required": ["a", "b"]
+            })
+        );
+        let plain = json!({"type": "object", "properties": {}});
+        assert_eq!(anthropic_input_schema(&plain), plain);
+    }
     #[test]
     fn cached_tokens_are_included_once_in_anthropic_context_input() {
         let usage = anthropic_usage(&serde_json::json!({

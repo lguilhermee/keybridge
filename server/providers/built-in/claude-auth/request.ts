@@ -158,6 +158,48 @@ function messagesFromRequest(request: LlmRequest): Block[] {
   return output;
 }
 
+// Anthropic rejects a tool schema with oneOf/anyOf/allOf at the top level, so
+// the branches are folded into one object schema: their properties are merged,
+// and only allOf branches contribute required fields.
+export function anthropicInputSchema(schema: JsonValue): JsonValue {
+  if (typeof schema !== "object" || schema === null || Array.isArray(schema)) {
+    return schema;
+  }
+  const { oneOf, anyOf, allOf, ...base } = schema as Record<string, JsonValue>;
+  if (oneOf === undefined && anyOf === undefined && allOf === undefined) {
+    return schema;
+  }
+  const properties: Record<string, JsonValue> = {};
+  const required = new Set<string>();
+  const merge = (branch: JsonValue, enforce: boolean) => {
+    if (typeof branch !== "object" || branch === null || Array.isArray(branch)) {
+      return;
+    }
+    const fields = branch as Record<string, JsonValue>;
+    const props = fields.properties;
+    if (typeof props === "object" && props !== null && !Array.isArray(props)) {
+      for (const [key, value] of Object.entries(props)) {
+        if (!(key in properties)) properties[key] = value;
+      }
+    }
+    if (enforce && Array.isArray(fields.required)) {
+      for (const key of fields.required) {
+        if (typeof key === "string") required.add(key);
+      }
+    }
+  };
+  merge(base, true);
+  for (const [branches, enforce] of [[allOf, true], [anyOf, false], [oneOf, false]] as const) {
+    if (Array.isArray(branches)) for (const branch of branches) merge(branch, enforce);
+  }
+  return {
+    ...base,
+    type: "object",
+    properties,
+    ...(required.size ? { required: [...required] } : {}),
+  };
+}
+
 function toolsFromRequest(request: LlmRequest): {
   tools: Block[];
   nameMap: Map<string, string>;
@@ -169,7 +211,7 @@ function toolsFromRequest(request: LlmRequest): {
     const declaration: Block = {
       name: suffixed,
       description: tool.description,
-      input_schema: tool.parameters,
+      input_schema: anthropicInputSchema(tool.parameters),
     };
     if (index + 1 === request.tools.length) {
       declaration.cache_control = { type: "ephemeral", ttl: "1h" };

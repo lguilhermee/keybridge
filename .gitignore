@@ -38,3 +38,4 @@ nul
 *devin-clippy.log
 /support/
 .superpowers/
+/apps/desktop/src-tauri/target

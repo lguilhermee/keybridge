@@ -59,12 +59,15 @@ export const emptyModelDraft = (seed?: ModelDraftSeed): ModelDraft => {
   };
 };
 
-export function ModelEditor({ draft, modelOptions, discovering, onChange, onDiscover }: {
+export function ModelEditor({ draft, modelOptions, discovering, addAllCount, onChange, onDiscover, onAddAll }: {
   draft: ModelDraft;
   modelOptions: string[];
   discovering: boolean;
   onChange: (draft: ModelDraft) => void;
   onDiscover: () => Promise<boolean>;
+  /** Number of fetched models that Add all would create; 0 hides the action. */
+  addAllCount: number;
+  onAddAll: () => void;
 }) {
   const modelCombobox = useRef<ComboboxHandle>(null);
   const setModel = (patch: Partial<ModelInput>) => onChange({ ...draft, model: { ...draft.model, ...patch } });
@@ -167,6 +170,7 @@ export function ModelEditor({ draft, modelOptions, discovering, onChange, onDisc
 
       <FormField label={t("Model name")} hint={t("Enter a model ID directly or load models returned by the API.")}><Combobox ref={modelCombobox} value={draft.model.model_id} options={combinedOptions} placeholder="gpt-5" append={<Button className={styles.discoverButton} disabled={discovering || !canDiscover} onClick={() => void discoverModels()}>{discovering ? t("Fetching...") : t("Fetch models")}</Button>} onChange={(model_id) => setModel({ model_id, display_name: draft.model.display_name || model_id })} /></FormField>
       <FormField label={t("Display name")} hint={t("Used only for display and does not change the model name sent to the model service.")}> <TextInput placeholder={t("For example: Primary model")} value={draft.model.display_name} onChange={(event) => setModel({ display_name: event.target.value })} /></FormField>
+      {addAllCount > 0 && <div className={`${styles.fullWidth} ${styles.addAll}`}><span>{t("{count} models fetched", { count: addAllCount })}</span><Button className={styles.discoverButton} disabled={discovering} onClick={onAddAll}>{t("Add all {count} models", { count: addAllCount })}</Button></div>}
       <FormField className={styles.fullWidth} label={t("Notes")} hint={t("Shown in the Cursor model description.")}> <TextInput placeholder={t("Enter model notes")} value={draft.model.tooltip_data} onChange={(event) => setModel({ tooltip_data: event.target.value })} /></FormField>
 
       <FormField label={t("Context window tokens")} hint={t("Leave blank to use the default.")}> <TextInput type="number" min={1} step={1} placeholder={t("Leave blank to use the default")} value={draft.model.context_window_tokens ?? ""} onChange={(event) => setModel({ context_window_tokens: numberValue(event.target.value) })} /></FormField>

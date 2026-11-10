@@ -631,8 +631,8 @@ impl ControlService {
         merged.sort_by_key(|call| std::cmp::Reverse(call.call.created_at_ms));
         let calls = merged
             .into_iter()
-            .skip(offset.min(usize::MAX as i64) as usize)
-            .take(limit as usize)
+            .skip(usize::try_from(offset).unwrap_or(usize::MAX))
+            .take(usize::try_from(limit).unwrap_or(usize::MAX))
             .collect();
         Ok(CallPage {
             calls,

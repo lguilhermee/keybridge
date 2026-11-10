@@ -236,6 +236,8 @@ async fn duplicate_public_model_ids_use_the_first_configured_model() {
         .unwrap()
         .iter()
         .map(|model| model["id"].as_str().unwrap())
+        // The managed registry also lists the machine's signed-in providers.
+        .filter(|id| !id.starts_with("provider:"))
         .collect::<Vec<_>>();
     assert_eq!(ids, ["work/qwen/model", "work/qwen/other"]);
 

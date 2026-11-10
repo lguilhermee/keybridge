@@ -1,6 +1,7 @@
 import { claudeModels } from "./models.ts";
 import { claudeChannel } from "./channel.ts";
 import {
+  anthropicInputSchema,
   anthropicUsage,
   buildRequest,
   decloakName,
@@ -320,6 +321,29 @@ Deno.test("Request building injects Claude Code identity and cloaks tool names",
   equal(decloakName("read_file_ide", nameMap), "read_file");
   equal(decloakName("Other", nameMap), "Other");
   assert(!("speed" in parsed), "standard latency must not request fast mode");
+});
+
+Deno.test("Tool schemas drop top-level oneOf/anyOf/allOf that Anthropic rejects", () => {
+  equal(
+    anthropicInputSchema({
+      type: "object",
+      properties: { a: { type: "string" } },
+      required: ["a"],
+      allOf: [{ properties: { b: { type: "number" } }, required: ["b"] }],
+      oneOf: [{ properties: { c: { type: "boolean" } }, required: ["c"] }],
+    }),
+    {
+      type: "object",
+      properties: {
+        a: { type: "string" },
+        b: { type: "number" },
+        c: { type: "boolean" },
+      },
+      required: ["a", "b"],
+    },
+  );
+  const plain = { type: "object", properties: {} };
+  equal(anthropicInputSchema(plain), plain);
 });
 
 Deno.test("Fast latency requests fast mode only on models that support it", async () => {

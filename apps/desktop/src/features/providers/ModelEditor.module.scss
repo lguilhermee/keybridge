@@ -23,6 +23,15 @@
   flex: 0 0 auto;
 }
 
+.addAll {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--oa-text-secondary);
+  font-size: type.$font-size-xs;
+}
+
 .urlField {
   min-width: 0;
   display: flex;

@@ -94,6 +94,10 @@ impl PromptAssets {
     }
 
     fn read(mut asset: impl FnMut(&str) -> Result<Option<String>>) -> Result<Self> {
+        // Git may check these files out with CRLF. Provider-visible prompt text must not
+        // depend on the checkout, so every asset is read as LF.
+        let mut asset =
+            |path: &str| Ok::<_, Error>(asset(path)?.map(|text| text.replace("\r\n", "\n")));
         let catalog = Catalog::parse(
             &asset("tools.json")?
                 .ok_or_else(|| Error::Config("missing Cursor tools.json".into()))?,
@@ -177,4 +181,40 @@ pub(super) fn runtime_expression() -> &'static regex::Regex {
     EXPRESSION.get_or_init(|| {
         regex::Regex::new(r"\{\{([A-Z_]+)\}\}").expect("valid runtime placeholder expression")
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn embedded_with_line_endings(line_ending: &str) -> PromptAssets {
+        PromptAssets::read(|path| {
+            Ok(EMBEDDED_PROMPTS
+                .get_file(path)
+                .and_then(|file| file.contents_utf8())
+                .map(|text| text.replace("\r\n", "\n").replace('\n', line_ending)))
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn crlf_checkouts_load_the_same_prompt_text_as_lf_checkouts() {
+        let lf = embedded_with_line_endings("\n");
+        let crlf = embedded_with_line_endings("\r\n");
+
+        for mode in [
+            Mode::Agent,
+            Mode::Ask,
+            Mode::Plan,
+            Mode::Debug,
+            Mode::Multitask,
+            Mode::Subagent,
+            Mode::Compaction,
+        ] {
+            assert_eq!(crlf.mode(mode).prompt, lf.mode(mode).prompt);
+            assert_eq!(crlf.mode(mode).runtime, lf.mode(mode).runtime);
+            assert_eq!(crlf.mode(mode).tools, lf.mode(mode).tools);
+            assert!(!lf.mode(mode).runtime.contains('\r'));
+        }
+    }
 }
