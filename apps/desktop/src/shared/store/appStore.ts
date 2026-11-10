@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { api, type CursorHarnessStatus, type LlmCall, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
+import { api, type CursorHarnessStatus, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
 import { applyTheme, isThemeId, type ThemeId } from "../theme/theme";
 
 export const DEFAULT_TOKEN_PRICING: TokenPricingSettings = {
@@ -7,11 +7,11 @@ export const DEFAULT_TOKEN_PRICING: TokenPricingSettings = {
   output_per_million: 25.0,
   cache_read_per_million: 0.5,
   cache_write_per_million: 6.25,
+  model_prices: {},
 };
 
 export type AppSnapshot = {
   models: Model[];
-  calls: LlmCall[];
   overview: Overview;
   detailed: boolean;
   ports: PortSettings;
@@ -32,7 +32,6 @@ const savedTheme = (): ThemeId => {
 
 let snapshot: AppSnapshot = {
   models: [],
-  calls: [],
   overview: {
     metrics: {
       llm_calls: 0,
@@ -44,9 +43,11 @@ let snapshot: AppSnapshot = {
       cache_read_tokens: 0,
       cache_write_tokens: 0,
       output_tokens: 0,
+      cost: 0,
     },
     token_usage_granularity: "day",
     token_usage_series: [],
+    by_model: [],
   },
   detailed: false,
   ports: { proxy_port: 0, service_port: 0 },
@@ -86,9 +87,8 @@ export const appStore = {
   async refresh() {
     update({ busy: true, error: null });
     try {
-      const [models, calls, overview, settings, ports, pricing, cursorHarness, providerRuntime, providers] = await Promise.all([
+      const [models, overview, settings, ports, pricing, cursorHarness, providerRuntime, providers] = await Promise.all([
         api.models(),
-        api.calls(),
         api.overview(),
         api.observability(),
         api.ports(),
@@ -97,7 +97,7 @@ export const appStore = {
         api.providerRuntime(),
         api.providers(),
       ]);
-      update({ models, calls, overview, detailed: settings.detailed, ports, pricing, cursorHarness, providerRuntime, providers });
+      update({ models, overview, detailed: settings.detailed, ports, pricing, cursorHarness, providerRuntime, providers });
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
     } finally {
@@ -239,14 +239,6 @@ export const appStore = {
       return false;
     } finally {
       update({ cursorBusy: false });
-    }
-  },
-
-  async refreshCalls() {
-    try {
-      update({ calls: await api.calls() });
-    } catch (cause) {
-      update({ error: cause instanceof Error ? cause.message : String(cause) });
     }
   },
 

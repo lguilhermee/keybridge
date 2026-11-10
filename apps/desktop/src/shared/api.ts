@@ -177,11 +177,32 @@ export interface CommitSettingsView extends CommitSettings {
   default_prompt: string;
 }
 
+/** Optional per-model price overrides; each field falls back to the global price when absent. */
+export interface ModelTokenPricing {
+  input_per_million?: number;
+  output_per_million?: number;
+  cache_read_per_million?: number;
+  cache_write_per_million?: number;
+}
+
 export interface TokenPricingSettings {
   input_per_million: number;
   output_per_million: number;
   cache_read_per_million: number;
   cache_write_per_million: number;
+  /** Per-model overrides keyed by the upstream `model_id`. */
+  model_prices: Record<string, ModelTokenPricing>;
+}
+
+/** The prices that apply to one model: its overrides where set, global values otherwise. */
+export function pricingForModel(pricing: TokenPricingSettings, modelId: string) {
+  const custom = pricing.model_prices[modelId];
+  return {
+    input: custom?.input_per_million ?? pricing.input_per_million,
+    output: custom?.output_per_million ?? pricing.output_per_million,
+    cacheRead: custom?.cache_read_per_million ?? pricing.cache_read_per_million,
+    cacheWrite: custom?.cache_write_per_million ?? pricing.cache_write_per_million,
+  };
 }
 
 export type ProviderRuntimeState = "uninitialized" | "initializing" | "ready" | "failed" | "unsupported";
@@ -302,6 +323,8 @@ export interface ProviderModelDescriptor {
   icon: string;
   brand: string;
   maxOutputTokens: number | null;
+  /** Total prompt window in tokens; null when unknown — the UI hides the context meter. */
+  contextWindow: number | null;
   images: boolean;
   enabled: boolean;
 }
@@ -370,6 +393,8 @@ export interface OverviewMetrics {
   cache_read_tokens: number;
   cache_write_tokens: number;
   output_tokens: number;
+  /** Estimated cost in USD over the filtered range using configured token pricing. */
+  cost: number;
 }
 
 export type TokenUsageGranularity = "minute" | "hour" | "day";
@@ -382,10 +407,36 @@ export interface OverviewTokenUsageBucket {
   output_tokens: number;
 }
 
+/** Token, call, and cost aggregates for one upstream model ID over the filtered range. */
+export interface OverviewModelUsage {
+  model_id: string;
+  display_name: string;
+  calls: number;
+  input_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  output_tokens: number;
+  cost: number;
+}
+
 export interface Overview {
   metrics: OverviewMetrics;
   token_usage_granularity: TokenUsageGranularity;
   token_usage_series: OverviewTokenUsageBucket[];
+  /** Per-model breakdown over the same filters as the headline metrics. */
+  by_model: OverviewModelUsage[];
+}
+
+/** Token usage reported by the provider, nested under `usage` on a call summary. */
+export interface LlmCallUsage {
+  input_tokens: number | null;
+  /** Full prompt size: input tokens plus cache read plus cache write. */
+  context_input_tokens: number | null;
+  output_tokens: number | null;
+  total_tokens: number | null;
+  cache_read_tokens: number | null;
+  cache_write_tokens: number | null;
+  reasoning_tokens: number | null;
 }
 
 export interface LlmCall {
@@ -415,12 +466,35 @@ export interface LlmCall {
   cache_read_tokens: number | null;
   cache_write_tokens: number | null;
   reasoning_tokens: number | null;
+  /** Live estimate of generated output tokens while the call runs; superseded by `output_tokens`. */
+  estimated_output_tokens: number | null;
+  /** True when the shown output count is an estimate (still running, or usage never reported). */
+  output_estimated: boolean;
+  usage: LlmCallUsage | null;
   message_count: number;
   tool_count: number;
   http_status: number | null;
   error_kind: string | null;
   error_message: string | null;
   detailed: boolean;
+}
+
+/** Server-side filtering and paging for `/llm-calls`. */
+export interface CallQuery {
+  /** `running`, `completed` (alias `success`), `error` (alias `failed`), `cancelled`. */
+  status?: string;
+  /** Stored `model_hash` or upstream `model_id`. */
+  model?: string;
+  /** Case-insensitive substring over model/display/conversation/call/endpoint/error fields. */
+  q?: string;
+  offset?: number;
+  limit?: number;
+}
+
+export interface CallPage {
+  calls: LlmCall[];
+  /** Total rows matching the filters (provider calls plus official Cursor traces). */
+  total: number;
 }
 
 export interface CallDetail {
@@ -534,7 +608,16 @@ export const api = {
     await writeText(text);
   },
   setCursorEnabled: (enabled: boolean) => request<CursorHarnessStatus>("/harness/cursor/enabled", { method: "PUT", body: JSON.stringify({ enabled }) }),
-  calls: () => request<LlmCall[]>("/llm-calls?limit=200"),
+  calls: (query: CallQuery = {}) => {
+    const params = new URLSearchParams();
+    if (query.status) params.set("status", query.status);
+    if (query.model) params.set("model", query.model);
+    if (query.q) params.set("q", query.q);
+    if (query.offset) params.set("offset", String(query.offset));
+    if (query.limit) params.set("limit", String(query.limit));
+    const suffix = params.toString();
+    return request<CallPage>(`/llm-calls${suffix ? `?${suffix}` : ""}`);
+  },
   call: (id: string) => request<CallDetail>(`/llm-calls/${encodeURIComponent(id)}`),
   openCallDetails: async (id: string) => {
     const url = new URL(window.location.href);

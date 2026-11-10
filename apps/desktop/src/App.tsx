@@ -8,7 +8,7 @@ import { AppLayout } from "./shell/AppLayout";
 import { CallsPage } from "./features/calls/CallsPage";
 import { CallDetailsPage } from "./features/calls/CallDetailsPage";
 import { CursorPage } from "./features/cursor/CursorPage";
-import { HomePage } from "./features/home/HomePage";
+import { OverviewPage } from "./features/overview/OverviewPage";
 import { ProvidersPage } from "./features/providers/ProvidersPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { defaultSettingsSection } from "./features/settings/sections";
@@ -25,7 +25,7 @@ export function App() {
           <Route path="calls/:callId" element={<CallDetailsPage />} />
           <Route element={<AppFrame />}>
             <Route element={<AppLayout />}>
-              <Route index element={<HomePage />} />
+              <Route index element={<OverviewPage />} />
               <Route path="calls" element={<CallsPage />} />
               <Route path="providers" element={<ProvidersPage />} />
               <Route path="cursor" element={<CursorPage />} />

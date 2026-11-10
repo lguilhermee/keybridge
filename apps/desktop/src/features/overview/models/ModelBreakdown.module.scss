@@ -1,0 +1,89 @@
+@use "../../../styles/typography" as type;
+
+.root {
+  width: 100%;
+  overflow: hidden;
+  background: var(--oa-surface-raised);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-card-radius);
+}
+
+.viewport {
+  max-height: 320px;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: type.$font-size-base;
+
+  th,
+  td {
+    max-width: 260px;
+    height: 34px;
+    padding: 0 12px;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--oa-border);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: 32px;
+    color: var(--oa-text-secondary);
+    background: var(--oa-surface);
+    font-size: type.$font-size-xs;
+    font-weight: 400;
+  }
+
+  tbody tr:hover td {
+    background: var(--oa-hover);
+  }
+
+  td {
+    font-family: var(--oa-number-font);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.modelName {
+  overflow: hidden;
+  color: var(--oa-text);
+  font-family: var(--oa-ui-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelId {
+  overflow: hidden;
+  color: var(--oa-text-muted);
+  font-size: type.$font-size-2xs;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cost {
+  color: var(--oa-text-secondary);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72px;
+  color: var(--oa-text-secondary);
+  background: var(--oa-surface-raised);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-card-radius);
+  font-size: type.$font-size-base;
+}

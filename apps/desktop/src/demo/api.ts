@@ -1,14 +1,17 @@
-import type {
-  CallDetail,
-  CursorHarnessStatus,
-  ExternalApiSettings,
-  LlmCall,
-  Model,
-  Overview,
-  OverviewTokenUsageBucket,
-  ProxySettings,
-  StatisticsStorage,
-  TabSettings,
+import {
+  pricingForModel,
+  type CallDetail,
+  type CursorHarnessStatus,
+  type ExternalApiSettings,
+  type LlmCall,
+  type Model,
+  type Overview,
+  type OverviewModelUsage,
+  type OverviewTokenUsageBucket,
+  type ProxySettings,
+  type StatisticsStorage,
+  type TabSettings,
+  type TokenPricingSettings,
 } from "../shared/api";
 
 const API_ROOT = "/__byok-api__/api";
@@ -68,6 +71,17 @@ const calls: LlmCall[] = Array.from({ length: 24 }, (_, index) => {
     http_status: failed ? 429 : 200,
     error_kind: failed ? "provider_rate_limit" : null,
     error_message: failed ? "Mock provider rate limit" : null,
+    estimated_output_tokens: null,
+    output_estimated: false,
+    usage: {
+      input_tokens: 4_800 + index * 337,
+      context_input_tokens: 8_220 + index * 607,
+      output_tokens: failed ? 0 : 820 + index * 43,
+      total_tokens: failed ? 4_800 + index * 337 : 5_620 + index * 380,
+      cache_read_tokens: 3_100 + index * 251,
+      cache_write_tokens: 320 + index * 19,
+      reasoning_tokens: index % 2 === 0 ? 420 + index * 11 : null,
+    },
     detailed: true,
   };
 });
@@ -94,6 +108,13 @@ let proxySettings: ProxySettings = {
   has_password: false,
 };
 let tabSettings: TabSettings = { mode: "public", address: "" };
+let pricingSettings: TokenPricingSettings = {
+  input_per_million: 5.0,
+  output_per_million: 25.0,
+  cache_read_per_million: 0.5,
+  cache_write_per_million: 6.25,
+  model_prices: {},
+};
 let storage: StatisticsStorage = { call_count: calls.length, trace_count: calls.length };
 
 export function installDemoApi() {
@@ -123,7 +144,7 @@ export function installDemoApi() {
       return method === "DELETE" ? empty() : json(models[0]);
     }
     if (path === "/overview") return json(createOverview(url.searchParams));
-    if (path === "/llm-calls") return json(calls);
+    if (path === "/llm-calls") return json(filterCalls(url.searchParams));
     if (path.startsWith("/llm-calls/")) return json(createCallDetail(path.slice("/llm-calls/".length)));
     if (path === "/harness/cursor/status") return json(harnessStatus);
     if (path === "/harness/cursor/ca/initialize") return json(harnessStatus);
@@ -168,6 +189,11 @@ export function installDemoApi() {
     if (path === "/settings/tab") {
       tabSettings = body as TabSettings;
       return json(tabSettings);
+    }
+    if (path === "/settings/pricing" && method === "GET") return json(pricingSettings);
+    if (path === "/settings/pricing") {
+      pricingSettings = body as TokenPricingSettings;
+      return json(pricingSettings);
     }
     if (path === "/settings/desktop" && method === "GET") return json({ silent_start: false, show_dock_icon: true });
     if (path === "/settings/desktop") return json(body);
@@ -238,6 +264,7 @@ function createOverview(params: URLSearchParams): Overview {
     output: sum.output + bucket.output_tokens,
   }), { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 });
   const llmCalls = Math.max(12, Math.round(count * 5.4));
+  const byModel = createByModel();
 
   return {
     metrics: {
@@ -250,10 +277,62 @@ function createOverview(params: URLSearchParams): Overview {
       cache_read_tokens: totals.cacheRead,
       cache_write_tokens: totals.cacheWrite,
       output_tokens: totals.output,
+      cost: byModel.reduce((sum, model) => sum + model.cost, 0),
     },
     token_usage_granularity: granularity,
     token_usage_series: series,
+    by_model: byModel,
   };
+}
+
+function createByModel(): OverviewModelUsage[] {
+  const groups = new Map<string, OverviewModelUsage>();
+  for (const call of calls) {
+    const group = groups.get(call.model_id) ?? {
+      model_id: call.model_id,
+      display_name: call.display_name,
+      calls: 0,
+      input_tokens: 0,
+      cache_read_tokens: 0,
+      cache_write_tokens: 0,
+      output_tokens: 0,
+      cost: 0,
+    };
+    group.calls += 1;
+    group.input_tokens += call.input_tokens ?? 0;
+    group.cache_read_tokens += call.cache_read_tokens ?? 0;
+    group.cache_write_tokens += call.cache_write_tokens ?? 0;
+    group.output_tokens += call.output_tokens ?? 0;
+    groups.set(call.model_id, group);
+  }
+  return Array.from(groups.values()).map((group) => {
+    const prices = pricingForModel(pricingSettings, group.model_id);
+    return {
+      ...group,
+      cost: (group.input_tokens * prices.input
+        + group.cache_read_tokens * prices.cacheRead
+        + group.cache_write_tokens * prices.cacheWrite
+        + group.output_tokens * prices.output) / 1_000_000,
+    };
+  }).sort((a, b) => (b.input_tokens + b.cache_read_tokens + b.cache_write_tokens + b.output_tokens)
+    - (a.input_tokens + a.cache_read_tokens + a.cache_write_tokens + a.output_tokens));
+}
+
+function filterCalls(params: URLSearchParams) {
+  const status = params.get("status");
+  const model = params.get("model");
+  const q = params.get("q")?.trim().toLowerCase();
+  const offset = Math.max(0, Number(params.get("offset") ?? 0) || 0);
+  const limit = Math.min(500, Math.max(1, Number(params.get("limit") ?? 100) || 100));
+  const normalizedStatus = status === "success" ? "completed" : status === "failed" ? "error" : status;
+  const filtered = calls.filter((call) => {
+    if (normalizedStatus && call.status !== normalizedStatus) return false;
+    if (model && call.model_hash !== model && call.model_id !== model) return false;
+    if (q && ![call.model_id, call.display_name, call.conversation_id, call.call_id, call.endpoint_url, call.error_message ?? ""]
+      .some((field) => field.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  return { calls: filtered.slice(offset, offset + limit), total: filtered.length };
 }
 
 function createSeries(count: number, step: number, end: number): OverviewTokenUsageBucket[] {

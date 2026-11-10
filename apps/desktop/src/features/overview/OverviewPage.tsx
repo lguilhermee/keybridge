@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
-import { api, providerText, type Overview } from "../../shared/api";
+import { api, providerText, type Overview, type OverviewModelUsage } from "../../shared/api";
 import { ContributionCalendarChart } from "./charts/ContributionCalendarChart";
 import { DailyTokenUsageChart } from "./charts/DailyTokenUsageChart";
-import { HomeMetrics } from "./metrics/HomeMetrics";
+import { OverviewMetrics } from "./metrics/OverviewMetrics";
+import { ModelBreakdown } from "./models/ModelBreakdown";
 import { PageContent } from "../../shell/layout/PageContent";
 import type { VirtualPageSection } from "../../shell/layout/VirtualPage";
-import { OverviewTimeRangeFilter, type OverviewRangePreset, type QuickPreset } from "./overview/OverviewTimeRangeFilter";
+import { OverviewTimeRangeFilter, type OverviewRangePreset, type QuickPreset } from "./OverviewTimeRangeFilter";
 import { PageActions } from "../../shell/PageActions";
 import { appStore, useAppStore } from "../../shared/store/appStore";
 import { formatTimeInput, parseTimeInput } from "../../shared/utils/parseTimeInput";
 import { modelProviderName } from "../../shared/utils/modelProvider";
-import { claudeIcon, flatColorOrganizationIcon, openAiIcon } from "../../shared/ui/icons";
+import { downloadTextFile, toCsv } from "../../shared/utils/csv";
+import { claudeIcon, downloadIcon, flatColorOrganizationIcon, openAiIcon } from "../../shared/ui/icons";
+import { Icon } from "../../shared/ui/Icon";
+import { TooltipTrigger } from "../../shared/ui/TooltipTrigger";
 import { useI18n } from "../../i18n/store";
+import controls from "../../shared/ui/Controls.module.scss";
+import { useMessage } from "../../shared/ui/message";
 
 type TimeRange = { startMs: number; endMs: number };
 
@@ -58,9 +64,37 @@ function presetRange(preset: Exclude<OverviewRangePreset, "custom">, now = new D
   return { startMs: now.getTime() - duration, endMs };
 }
 
-export function HomePage() {
+/** Seconds covered by the overview's buckets when no explicit range is applied. */
+function seriesDurationSeconds(overview: Overview): number | null {
+  const series = overview.token_usage_series;
+  if (series.length < 2) return null;
+  const first = series[0].bucket_start_ms;
+  const last = series[series.length - 1].bucket_start_ms;
+  const step = series[1].bucket_start_ms - first;
+  return Math.max(1, (last + step - first) / 1000);
+}
+
+function breakdownCsv(models: OverviewModelUsage[]) {
+  return toCsv(
+    [t("Model"), t("Model ID"), t("Calls"), t("Input tokens"), t("Cache read tokens"), t("Cache write tokens"), t("Output tokens"), t("Total tokens"), t("Cost (USD)")],
+    models.map((model) => [
+      model.display_name,
+      model.model_id,
+      model.calls,
+      model.input_tokens,
+      model.cache_read_tokens,
+      model.cache_write_tokens,
+      model.output_tokens,
+      model.input_tokens + model.cache_read_tokens + model.cache_write_tokens + model.output_tokens,
+      model.cost.toFixed(6),
+    ]),
+  );
+}
+
+export function OverviewPage() {
   const { overview, busy, models, providers } = useAppStore();
   const { locale } = useI18n();
+  const message = useMessage();
   const [preset, setPreset] = useState<OverviewRangePreset>("month");
   const [quick, setQuick] = useState<QuickPreset | null>(null);
   const [customRange, setCustomRange] = useState<TimeRange | null>(null);
@@ -104,8 +138,14 @@ export function HomePage() {
     failedCalls: filteredOverview.metrics.failed_calls,
     tokenUsage: filteredOverview.metrics.token_usage,
     promptTokens: filteredOverview.metrics.prompt_tokens,
+    inputTokens: filteredOverview.metrics.input_tokens,
     cacheReadTokens: filteredOverview.metrics.cache_read_tokens,
     cacheWriteTokens: filteredOverview.metrics.cache_write_tokens,
+    outputTokens: filteredOverview.metrics.output_tokens,
+    cost: filteredOverview.metrics.cost,
+    rangeSeconds: selectedRange
+      ? Math.max(1, (selectedRange.endMs - selectedRange.startMs) / 1000)
+      : seriesDurationSeconds(filteredOverview),
   };
   const openCustom = (open: boolean) => {
     if (open && !customStart && !customEnd) {
@@ -145,6 +185,14 @@ export function HomePage() {
     await appStore.refresh();
     setRefreshVersion((version) => version + 1);
   };
+  const exportBreakdown = () => {
+    try {
+      downloadTextFile(`model-breakdown-${new Date().toISOString().slice(0, 10)}.csv`, breakdownCsv(filteredOverview.by_model));
+      message(t("Breakdown exported"));
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
   const iconFor = (type: string) => type === "anthropic" ? claudeIcon : openAiIcon;
   const modelOptions = [
     ...models.map((model) => ({
@@ -165,6 +213,11 @@ export function HomePage() {
   ];
   const sections: VirtualPageSection[] = [
     {
+      key: "metrics",
+      estimatedHeight: 130,
+      content: <OverviewMetrics data={metrics} refreshVersion={refreshVersion} />,
+    },
+    {
       key: "daily-token-usage",
       estimatedHeight: 240,
       content: <DailyTokenUsageChart
@@ -173,11 +226,10 @@ export function HomePage() {
       />,
     },
     {
-      key: "metrics",
-      estimatedHeight: 130,
-      content: <HomeMetrics data={metrics} refreshVersion={refreshVersion} />,
+      key: "by-model",
+      estimatedHeight: 200,
+      content: <ModelBreakdown models={filteredOverview.by_model} />,
     },
-
     {
       key: "activity",
       estimatedHeight: 106,
@@ -186,24 +238,31 @@ export function HomePage() {
   ];
 
   return <>
-    <PageActions><OverviewTimeRangeFilter
-      value={preset}
-      quick={quick}
-      customOpen={customOpen}
-      customStart={customStart}
-      customEnd={customEnd}
-      modelOptions={modelOptions}
-      selectedModels={selectedModels}
-      busy={busy || rangeBusy}
-      onSelect={selectPreset}
-      onQuickSelect={selectQuick}
-      onCustomOpenChange={openCustom}
-      onCustomStartChange={setCustomStart}
-      onCustomEndChange={setCustomEnd}
-      onSelectedModelsChange={setSelectedModels}
-      onCustomApply={applyCustom}
-      onRefresh={() => void refresh()}
-    /></PageActions>
+    <PageActions>
+      <OverviewTimeRangeFilter
+        value={preset}
+        quick={quick}
+        customOpen={customOpen}
+        customStart={customStart}
+        customEnd={customEnd}
+        modelOptions={modelOptions}
+        selectedModels={selectedModels}
+        busy={busy || rangeBusy}
+        onSelect={selectPreset}
+        onQuickSelect={selectQuick}
+        onCustomOpenChange={openCustom}
+        onCustomStartChange={setCustomStart}
+        onCustomEndChange={setCustomEnd}
+        onSelectedModelsChange={setSelectedModels}
+        onCustomApply={applyCustom}
+        onRefresh={() => void refresh()}
+      />
+      <TooltipTrigger label={t("Export model breakdown as CSV")}>
+        <button className={controls.iconButton} aria-label={t("Export model breakdown as CSV")} disabled={filteredOverview.by_model.length === 0} onClick={exportBreakdown}>
+          <Icon icon={downloadIcon} size="1.1em" />
+        </button>
+      </TooltipTrigger>
+    </PageActions>
     <PageContent title={t("Overview")} sections={sections} />
   </>;
 }

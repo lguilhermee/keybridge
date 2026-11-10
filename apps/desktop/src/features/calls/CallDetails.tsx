@@ -5,6 +5,11 @@ import styles from "./CallDetails.module.scss";
 
 const show = (value: string | number | null) => value ?? "-";
 const timing = (value: number | null) => value == null ? "-" : `${value} ms`;
+const outputValue = (call: CallDetail["call"]) => {
+  const output = call.output_tokens ?? (call.output_estimated ? call.estimated_output_tokens : null);
+  if (output == null) return "-";
+  return call.output_estimated ? `${output} ${t("(est.)")}` : output;
+};
 
 export function CallDetails({ detail }: { detail: CallDetail }) {
   const { call, request, response_chunks: chunks, cursor_trace: cursorTrace } = detail;
@@ -33,7 +38,8 @@ export function CallDetails({ detail }: { detail: CallDetail }) {
     ["TTFR", timing(call.ttfr_ms)],
     ["TTFT", timing(call.ttft_ms)],
     ["Input Token", show(call.input_tokens)],
-    ["Output Token", show(call.output_tokens)],
+    ["Context Input", show(call.usage?.context_input_tokens ?? null)],
+    ["Output Token", outputValue(call)],
     ["Total Token", show(call.total_tokens)],
     ["Cache Read Token", show(call.cache_read_tokens)],
     ["Cache Write Token", show(call.cache_write_tokens)],

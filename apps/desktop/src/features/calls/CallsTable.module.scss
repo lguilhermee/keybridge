@@ -1,0 +1,198 @@
+@use "../../styles/typography" as type;
+
+.tableRegion {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  background: var(--oa-surface-raised);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-card-radius);
+}
+
+.viewport {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tableViewport {
+  overflow-x: auto;
+}
+
+.tableContent {
+  width: max-content;
+  min-width: 100%;
+}
+
+.emptyViewport {
+  min-height: 0;
+}
+
+.emptyState {
+  position: absolute;
+  z-index: 4;
+  inset: 33px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--oa-text-secondary);
+  font-size: type.$font-size-base;
+  pointer-events: none;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: type.$font-size-base;
+
+  th,
+  td {
+    max-width: 260px;
+    height: 38px;
+    padding: 0 12px;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--oa-border);
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: 33px;
+    color: var(--oa-text-secondary);
+    background: var(--oa-surface);
+    font-size: type.$font-size-xs;
+    font-weight: 400;
+  }
+
+  tbody tr:hover td {
+    background: var(--oa-hover);
+  }
+
+  tbody tr[data-selected] td {
+    background: var(--oa-active);
+  }
+}
+
+.callRow {
+  cursor: pointer;
+}
+
+.timeCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time {
+  font-family: var(--oa-number-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  flex: 0 0 auto;
+  min-width: 64px;
+  padding: 2px 7px;
+  color: var(--oa-text-secondary);
+  background: var(--oa-surface-input);
+  border-radius: 99px;
+  font-size: type.$font-size-2xs;
+  text-align: center;
+
+  &[data-status="running"] { color: var(--oa-accent); }
+  &[data-status="completed"] { color: var(--oa-success); }
+  &[data-status="error"] { color: var(--oa-danger); }
+  &[data-status="cancelled"] { color: var(--oa-text-muted); }
+}
+
+.modelName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelId {
+  overflow: hidden;
+  color: var(--oa-text-muted);
+  font-family: var(--oa-number-font);
+  font-size: type.$font-size-2xs;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.estimated {
+  margin-left: 4px;
+  color: var(--oa-warning);
+  font-size: type.$font-size-2xs;
+}
+
+.groupRow td {
+  padding-top: 2px;
+  padding-bottom: 2px;
+  color: var(--oa-text-secondary);
+  background: var(--oa-surface-sunken);
+  font-size: type.$font-size-xs;
+
+  &:hover {
+    background: var(--oa-surface-sunken) !important;
+  }
+}
+
+.groupLabel {
+  display: inline-block;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.groupMeta {
+  margin-left: 10px;
+  color: var(--oa-text-muted);
+  font-size: type.$font-size-2xs;
+}
+
+.contextMeter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  vertical-align: bottom;
+}
+
+.contextMeterBar {
+  width: 72px;
+  height: 5px;
+  overflow: hidden;
+  background: var(--oa-surface-input);
+  border-radius: 999px;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--oa-accent);
+    border-radius: 999px;
+
+    &[data-warn] {
+      background: var(--oa-warning);
+    }
+  }
+}
+
+.contextMeterText {
+  color: var(--oa-text-muted);
+  font-family: var(--oa-number-font);
+  font-variant-numeric: tabular-nums;
+  font-size: type.$font-size-2xs;
+}

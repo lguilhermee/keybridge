@@ -1,12 +1,12 @@
 import { autoUpdate, computePosition, flip, offset, shift, size } from "@floating-ui/dom";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { parseTimeInput } from "../../../shared/utils/parseTimeInput";
-import controls from "../../../shared/ui/Controls.module.scss";
-import { Icon } from "../../../shared/ui/Icon";
-import { ModelSelect, type ModelSelectOption } from "../../../shared/ui/ModelSelect";
-import { TooltipTrigger } from "../../../shared/ui/TooltipTrigger";
-import { refreshIcon } from "../../../shared/ui/icons";
+import { parseTimeInput } from "../../shared/utils/parseTimeInput";
+import controls from "../../shared/ui/Controls.module.scss";
+import { Icon } from "../../shared/ui/Icon";
+import { ModelSelect, type ModelSelectOption } from "../../shared/ui/ModelSelect";
+import { TooltipTrigger } from "../../shared/ui/TooltipTrigger";
+import { refreshIcon } from "../../shared/ui/icons";
 import styles from "./OverviewTimeRangeFilter.module.scss";
 
 export type OverviewRangePreset = "ten-minutes" | "hour" | "today" | "week" | "month" | "custom";

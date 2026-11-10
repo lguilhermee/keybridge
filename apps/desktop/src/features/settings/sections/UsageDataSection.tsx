@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { api, type StatisticsStorage, type StatisticsStorageScope, type TokenPricingSettings } from "../../../shared/api";
+import { api, configuredProviderModels, type ModelTokenPricing, type StatisticsStorage, type StatisticsStorageScope, type TokenPricingSettings } from "../../../shared/api";
 import { appStore, DEFAULT_TOKEN_PRICING, useAppStore } from "../../../shared/store/appStore";
 import { Button } from "../../../shared/ui/Button";
 import { ConfirmDialog } from "../../../shared/ui/ConfirmDialog";
 import { FormField, TextInput } from "../../../shared/ui/FormControls";
+import { Icon } from "../../../shared/ui/Icon";
 import { useMessage } from "../../../shared/ui/message";
-import { Select } from "../../../shared/ui/Select";
+import { Combobox, Select } from "../../../shared/ui/Select";
 import { Switch } from "../../../shared/ui/Switch";
+import { trashIcon } from "../../../shared/ui/icons";
+import controls from "../../../shared/ui/Controls.module.scss";
 import type { VirtualPageSection } from "../../../shell/layout/VirtualPage";
 import { LegacyModelImport } from "../../cursor/LegacyModelImport";
 import { SectionCard } from "../SectionCard";
@@ -15,7 +18,7 @@ import styles from "./sections.module.scss";
 export function usageDataGroups(): VirtualPageSection[] {
   return [
     { key: "observability", estimatedHeight: 96, content: <ObservabilityGroup /> },
-    { key: "pricing", estimatedHeight: 200, content: <PricingGroup /> },
+    { key: "pricing", estimatedHeight: 340, content: <PricingGroup /> },
     { key: "storage", estimatedHeight: 96, content: <StorageGroup /> },
     { key: "import", estimatedHeight: 96, content: <ImportGroup /> },
   ];
@@ -40,12 +43,23 @@ function ObservabilityGroup() {
   </SectionCard>;
 }
 
+type ModelPriceDraft = {
+  modelId: string;
+  input: string;
+  output: string;
+  cacheRead: string;
+  cacheWrite: string;
+};
+
 type PricingDraft = {
   input_per_million: string;
   output_per_million: string;
   cache_read_per_million: string;
   cache_write_per_million: string;
+  models: ModelPriceDraft[];
 };
+
+const priceField = (value: number | undefined) => value == null ? "" : String(value);
 
 function toDraft(pricing: TokenPricingSettings): PricingDraft {
   return {
@@ -53,6 +67,13 @@ function toDraft(pricing: TokenPricingSettings): PricingDraft {
     output_per_million: String(pricing.output_per_million),
     cache_read_per_million: String(pricing.cache_read_per_million),
     cache_write_per_million: String(pricing.cache_write_per_million),
+    models: Object.entries(pricing.model_prices).map(([modelId, prices]) => ({
+      modelId,
+      input: priceField(prices.input_per_million),
+      output: priceField(prices.output_per_million),
+      cacheRead: priceField(prices.cache_read_per_million),
+      cacheWrite: priceField(prices.cache_write_per_million),
+    })),
   };
 }
 
@@ -68,17 +89,44 @@ function parsePrice(value: string, label: string) {
   return price;
 }
 
+/** Empty override fields stay unset so the model falls back to the global price. */
+function parseOptionalPrice(value: string, label: string): number | undefined {
+  if (value.trim() === "") return undefined;
+  return parsePrice(value, label);
+}
+
 function toSettings(draft: PricingDraft): TokenPricingSettings {
+  const modelPrices: Record<string, ModelTokenPricing> = {};
+  for (const row of draft.models) {
+    const modelId = row.modelId.trim();
+    if (!modelId) {
+      if (row.input.trim() || row.output.trim() || row.cacheRead.trim() || row.cacheWrite.trim()) {
+        throw new Error(t("Each override needs a model ID"));
+      }
+      continue;
+    }
+    if (modelPrices[modelId]) throw new Error(t("Duplicate model override: {model}", { model: modelId }));
+    const label = (name: string) => t("{name} price for {model}", { name, model: modelId });
+    const entry: ModelTokenPricing = {
+      input_per_million: parseOptionalPrice(row.input, label(t("Input"))),
+      output_per_million: parseOptionalPrice(row.output, label(t("Output"))),
+      cache_read_per_million: parseOptionalPrice(row.cacheRead, label(t("Cache read"))),
+      cache_write_per_million: parseOptionalPrice(row.cacheWrite, label(t("Cache write"))),
+    };
+    if (Object.values(entry).every((value) => value === undefined)) continue;
+    modelPrices[modelId] = entry;
+  }
   return {
     input_per_million: parsePrice(draft.input_per_million, t("Input price")),
     output_per_million: parsePrice(draft.output_per_million, t("Output price")),
     cache_read_per_million: parsePrice(draft.cache_read_per_million, t("Cache read price")),
     cache_write_per_million: parsePrice(draft.cache_write_per_million, t("Cache write price")),
+    model_prices: modelPrices,
   };
 }
 
 function PricingGroup() {
-  const { pricing } = useAppStore();
+  const { pricing, overview, models, providers } = useAppStore();
   const message = useMessage();
   const [draft, setDraft] = useState<PricingDraft>(() => toDraft(pricing));
   const [editing, setEditing] = useState(false);
@@ -117,6 +165,31 @@ function PricingGroup() {
     setDraft(toDraft(DEFAULT_TOKEN_PRICING));
   };
 
+  const modelSuggestions = Array.from(new Set([
+    ...overview.by_model.map((model) => model.model_id),
+    ...models.map((model) => model.model_id),
+    ...configuredProviderModels(providers).map((model) => model.modelId),
+    ...Object.keys(pricing.model_prices),
+  ])).sort();
+
+  const setModelRow = (index: number, patch: Partial<ModelPriceDraft>) => {
+    setDraft((current) => ({
+      ...current,
+      models: current.models.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row),
+    }));
+  };
+  const removeModelRow = (index: number) => {
+    setDraft((current) => ({ ...current, models: current.models.filter((_, rowIndex) => rowIndex !== index) }));
+  };
+  const addModelRow = () => {
+    const unused = modelSuggestions.find((candidate) => !draft.models.some((row) => row.modelId === candidate));
+    setDraft((current) => ({
+      ...current,
+      models: [...current.models, { modelId: unused ?? "", input: "", output: "", cacheRead: "", cacheWrite: "" }],
+    }));
+  };
+
+  const overrideCount = Object.keys(pricing.model_prices).length;
   const action = editing ? (
     <div className={styles.actions}>
       <Button size="small" disabled={saving} onClick={restoreDefault}>{t("Restore default")}</Button>
@@ -192,6 +265,66 @@ function PricingGroup() {
             </div>
           </>
         )}
+        <div className={styles.modelPrices}>
+          <div className={styles.modelPricesHeader}>
+            <strong>{t("Per-model prices")}</strong>
+            {editing
+              ? <button type="button" className={styles.textAction} onClick={addModelRow}>{t("Add model")}</button>
+              : <small>{overrideCount === 0 ? t("All models use the global prices") : t("{count} overrides", { count: overrideCount })}</small>}
+          </div>
+          {editing ? (
+            draft.models.length === 0 ? null : (
+              <div className={styles.modelPriceTable} role="table" aria-label={t("Per-model prices")}>
+                <div className={styles.modelPriceRow} role="row">
+                  <span role="columnheader">{t("Model")}</span>
+                  <span role="columnheader">{t("Input")}</span>
+                  <span role="columnheader">{t("Output")}</span>
+                  <span role="columnheader">{t("Cache read")}</span>
+                  <span role="columnheader">{t("Cache write")}</span>
+                  <span />
+                </div>
+                {draft.models.map((row, index) => (
+                  <div className={styles.modelPriceRow} role="row" key={index}>
+                    <Combobox
+                      value={row.modelId}
+                      options={modelSuggestions}
+                      placeholder={t("Model ID")}
+                      onChange={(value) => setModelRow(index, { modelId: value })}
+                    />
+                    <TextInput type="number" min={0} step="any" placeholder={formatPrice(pricing.input_per_million)} value={row.input} onChange={(event) => setModelRow(index, { input: event.target.value })} />
+                    <TextInput type="number" min={0} step="any" placeholder={formatPrice(pricing.output_per_million)} value={row.output} onChange={(event) => setModelRow(index, { output: event.target.value })} />
+                    <TextInput type="number" min={0} step="any" placeholder={formatPrice(pricing.cache_read_per_million)} value={row.cacheRead} onChange={(event) => setModelRow(index, { cacheRead: event.target.value })} />
+                    <TextInput type="number" min={0} step="any" placeholder={formatPrice(pricing.cache_write_per_million)} value={row.cacheWrite} onChange={(event) => setModelRow(index, { cacheWrite: event.target.value })} />
+                    <button type="button" className={controls.iconButton} aria-label={t("Remove override")} onClick={() => removeModelRow(index)}>
+                      <Icon icon={trashIcon} size="1.1em" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            overrideCount > 0 && (
+              <div className={styles.modelPriceTable} role="table" aria-label={t("Per-model prices")}>
+                <div className={styles.modelPriceRow} role="row">
+                  <span role="columnheader">{t("Model")}</span>
+                  <span role="columnheader">{t("Input")}</span>
+                  <span role="columnheader">{t("Output")}</span>
+                  <span role="columnheader">{t("Cache read")}</span>
+                  <span role="columnheader">{t("Cache write")}</span>
+                </div>
+                {Object.entries(pricing.model_prices).map(([modelId, prices]) => (
+                  <div className={styles.modelPriceRow} role="row" key={modelId}>
+                    <span className={styles.modelPriceId} title={modelId}>{modelId}</span>
+                    <span>{prices.input_per_million != null ? formatPrice(prices.input_per_million) : t("Global")}</span>
+                    <span>{prices.output_per_million != null ? formatPrice(prices.output_per_million) : t("Global")}</span>
+                    <span>{prices.cache_read_per_million != null ? formatPrice(prices.cache_read_per_million) : t("Global")}</span>
+                    <span>{prices.cache_write_per_million != null ? formatPrice(prices.cache_write_per_million) : t("Global")}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </div>
       </div>
     </SectionCard>
   );

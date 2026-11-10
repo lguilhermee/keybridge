@@ -192,6 +192,65 @@
   }
 }
 
+/* Per-model price overrides table inside the pricing section */
+.modelPrices {
+  display: grid;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--oa-border);
+}
+
+.modelPricesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  small {
+    color: var(--oa-text-secondary);
+    font-size: type.$font-size-xs;
+  }
+}
+
+.modelPriceTable {
+  display: grid;
+  gap: 6px;
+}
+
+.modelPriceRow {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) repeat(4, minmax(64px, 1fr)) 28px;
+  align-items: center;
+  gap: 8px;
+  font-size: type.$font-size-xs;
+
+  &:first-child {
+    color: var(--oa-text-secondary);
+    font-size: type.$font-size-2xs;
+  }
+
+  span[role="columnheader"] + span[role="columnheader"],
+  span + span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Read-mode rows have no trailing remove button */
+.modelPriceTable:not(:has(button)) .modelPriceRow {
+  grid-template-columns: minmax(140px, 1.4fr) repeat(4, minmax(64px, 1fr));
+}
+
+.modelPriceId {
+  overflow: hidden;
+  color: var(--oa-text);
+  font-family: var(--oa-code-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .updateDot {
   width: 7px;
   height: 7px;

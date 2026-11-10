@@ -1,5 +1,32 @@
 {
   "entries": {
+    "0008ce30b97d72fb": {
+      "source": "Cache read",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 26,
+          "column": 16
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 113,
+          "column": 71
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 282,
+          "column": 46
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 312,
+          "column": 46
+        }
+      ]
+    },
     "000eab79d8c95312": {
       "source": "All statistics cleared",
       "kind": "text",
@@ -7,7 +34,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 218,
+          "line": 351,
           "column": 38
         }
       ]
@@ -121,13 +148,18 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 41,
+          "line": 47,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 130,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 54,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 73,
+          "column": 32
         }
       ]
     },
@@ -165,7 +197,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 236,
+          "line": 369,
           "column": 29
         }
       ]
@@ -177,23 +209,23 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 15,
+          "line": 20,
           "column": 61
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 16,
+          "line": 21,
           "column": 53
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 60,
-          "column": 48
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 29,
+          "column": 61
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 66,
-          "column": 44
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 30,
+          "column": 53
         }
       ]
     },
@@ -226,6 +258,28 @@
         }
       ]
     },
+    "089ef2b6dbb34fa9": {
+      "source": "Model ID",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 18
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 18
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 291,
+          "column": 36
+        }
+      ]
+    },
     "08b5420f7189b360": {
       "source": "Available again at {time}",
       "kind": "template",
@@ -249,8 +303,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 83,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 76,
           "column": 5
         }
       ]
@@ -262,7 +316,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 63,
+          "line": 69,
           "column": 44
         }
       ]
@@ -275,8 +329,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 156,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 118,
           "column": 46
         }
       ]
@@ -300,8 +354,32 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 19,
+          "line": 24,
           "column": 6
+        },
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 31,
+          "column": 6
+        }
+      ]
+    },
+    "0b5403d22c9dc405": {
+      "source": "Output {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 125,
+          "column": 46
+        },
+        {
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 143,
+          "column": 46
         }
       ]
     },
@@ -322,18 +400,32 @@
         }
       ]
     },
+    "0e6b00ca9ff6cdfc": {
+      "source": "{count} calls",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 91,
+          "column": 53
+        }
+      ]
+    },
     "0e91610117029a62": {
       "source": "Refresh",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 94,
           "column": 28
         },
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 94,
           "column": 94
         },
@@ -375,6 +467,18 @@
           "file": "features/providers/ModelEditor.tsx",
           "line": 179,
           "column": 162
+        }
+      ]
+    },
+    "0f589c19cd5c9c86": {
+      "source": "All models",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 202,
+          "column": 27
         }
       ]
     },
@@ -432,7 +536,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 121,
           "column": 76
         }
@@ -466,7 +570,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 76,
           "column": 51
         }
@@ -512,7 +616,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 105,
           "column": 14
         }
@@ -537,7 +641,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 229,
+          "line": 362,
           "column": 7
         }
       ]
@@ -573,7 +677,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 228,
+          "line": 361,
           "column": 7
         }
       ]
@@ -604,7 +708,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 66,
+          "line": 87,
           "column": 21
         }
       ]
@@ -661,7 +765,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 125,
+          "line": 198,
           "column": 36
         },
         {
@@ -680,6 +784,18 @@
           "file": "features/providers/AccountProviderDetail.tsx",
           "line": 269,
           "column": 22
+        }
+      ]
+    },
+    "157b0f67b44284d4": {
+      "source": "Reasoning tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 71,
+          "column": 26
         }
       ]
     },
@@ -756,7 +872,7 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/CacheHitRateChart.tsx",
+          "file": "features/overview/metrics/CacheHitRateChart.tsx",
           "line": 58,
           "column": 62
         }
@@ -769,7 +885,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 472,
+          "line": 546,
           "column": 21
         }
       ]
@@ -802,7 +918,7 @@
           "column": 20
         },
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 125,
           "column": 105
         },
@@ -858,12 +974,12 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 123,
+          "line": 196,
           "column": 64
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 251,
+          "line": 384,
           "column": 20
         },
         {
@@ -875,6 +991,20 @@
           "file": "shared/ui/Modal.tsx",
           "line": 42,
           "column": 200
+        }
+      ]
+    },
+    "19abba5de9d2c5a3": {
+      "source": "Conversation {id}",
+      "kind": "template",
+      "placeholders": [
+        "id"
+      ],
+      "refs": [
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 90,
+          "column": 81
         }
       ]
     },
@@ -890,7 +1020,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 122,
+          "line": 195,
           "column": 72
         }
       ]
@@ -930,12 +1060,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 106,
           "column": 46
         },
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 146,
           "column": 15
         }
@@ -950,6 +1080,18 @@
           "file": "features/providers/ProvidersPage.tsx",
           "line": 274,
           "column": 18
+        }
+      ]
+    },
+    "1d3bf55cc68214ee": {
+      "source": "Per-model breakdown",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 109,
+          "column": 20
         }
       ]
     },
@@ -973,7 +1115,7 @@
       ],
       "refs": [
         {
-          "file": "features/home/charts/ContributionCalendarChart.tsx",
+          "file": "features/overview/charts/ContributionCalendarChart.tsx",
           "line": 128,
           "column": 16
         }
@@ -986,23 +1128,23 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 26,
+          "line": 31,
           "column": 63
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 43,
+          "line": 49,
           "column": 56
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 53,
-          "column": 74
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 40,
+          "column": 63
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 141,
-          "column": 53
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 56,
+          "column": 56
         }
       ]
     },
@@ -1042,6 +1184,28 @@
         }
       ]
     },
+    "204a5eb2cd28bcfd": {
+      "source": "Cost",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 53,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 70,
+          "column": 3
+        },
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 30,
+          "column": 16
+        }
+      ]
+    },
     "20d57200f8abaf7e": {
       "source": "Total: {cost}",
       "kind": "template",
@@ -1050,8 +1214,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 133,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 104,
           "column": 5
         }
       ]
@@ -1091,7 +1255,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 122,
           "column": 74
         }
@@ -1109,6 +1273,18 @@
         }
       ]
     },
+    "22a970d2e5b1cc23": {
+      "source": "Completed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 248,
+          "column": 34
+        }
+      ]
+    },
     "232df4337df282bc": {
       "source": "Failed calls: {count}",
       "kind": "template",
@@ -1117,8 +1293,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 93,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 86,
           "column": 5
         }
       ]
@@ -1132,6 +1308,28 @@
           "file": "features/providers/ProviderRuntimeBanner.tsx",
           "line": 33,
           "column": 23
+        }
+      ]
+    },
+    "2402e8848260a3b6": {
+      "source": "Cost (USD)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 152
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 71,
+          "column": 49
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 152
         }
       ]
     },
@@ -1171,12 +1369,12 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 89,
+          "line": 95,
           "column": 28
         },
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 90,
+          "line": 96,
           "column": 27
         }
       ]
@@ -1188,7 +1386,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 22,
+          "line": 27,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 38,
           "column": 6
         }
       ]
@@ -1260,6 +1463,18 @@
         }
       ]
     },
+    "2aa1229753344b4f": {
+      "source": "Breakdown exported",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 191,
+          "column": 15
+        }
+      ]
+    },
     "2b7f6a84de917e38": {
       "source": "Display name",
       "kind": "text",
@@ -1267,13 +1482,8 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 24,
+          "line": 29,
           "column": 6
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 30,
-          "column": 15
         },
         {
           "file": "features/providers/ModelEditor.tsx",
@@ -1306,7 +1516,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 273,
+          "line": 406,
           "column": 82
         }
       ]
@@ -1318,7 +1528,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 261,
+          "line": 394,
           "column": 40
         }
       ]
@@ -1342,7 +1552,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 49,
+          "line": 55,
           "column": 29
         }
       ]
@@ -1353,7 +1563,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 122,
           "column": 21
         }
@@ -1444,7 +1654,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 35,
           "column": 30
         }
@@ -1457,7 +1667,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 69,
+          "line": 75,
           "column": 55
         }
       ]
@@ -1468,7 +1678,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 126,
           "column": 109
         }
@@ -1481,13 +1691,13 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 25,
+          "line": 30,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 47,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 39,
+          "column": 6
         },
         {
           "file": "features/providers/ModelEditor.tsx",
@@ -1543,9 +1753,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 36,
-          "column": 15
+          "file": "features/calls/CallsPage.tsx",
+          "line": 69,
+          "column": 7
+        },
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 65,
+          "column": 3
         }
       ]
     },
@@ -1555,7 +1770,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 41,
           "column": 35
         }
@@ -1587,6 +1802,18 @@
         }
       ]
     },
+    "348213a18790e7de": {
+      "source": "Open full details",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 86,
+          "column": 85
+        }
+      ]
+    },
     "349456979688d8be": {
       "source": "Shown in the Cursor model description.",
       "kind": "text",
@@ -1596,6 +1823,32 @@
           "file": "features/providers/ModelEditor.tsx",
           "line": 170,
           "column": 72
+        }
+      ]
+    },
+    "35143d753fc84db6": {
+      "source": "Model output: {tokens}",
+      "kind": "template",
+      "placeholders": [
+        "tokens"
+      ],
+      "refs": [
+        {
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 109,
+          "column": 5
+        }
+      ]
+    },
+    "35d6a4d3158d6b9b": {
+      "source": "Duration (ms)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 72,
+          "column": 7
         }
       ]
     },
@@ -1611,6 +1864,38 @@
         }
       ]
     },
+    "36ecb4f8669133ce": {
+      "source": "Input",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 67,
+          "column": 3
+        },
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 25,
+          "column": 16
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 111,
+          "column": 62
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 280,
+          "column": 46
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 310,
+          "column": 46
+        }
+      ]
+    },
     "3729f9c348dff8b9": {
       "source": "Call type",
       "kind": "text",
@@ -1618,13 +1903,18 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 15,
+          "line": 20,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 58,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 29,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 69,
+          "column": 31
         }
       ]
     },
@@ -1640,14 +1930,26 @@
         }
       ]
     },
+    "3a7e9c3c257835e4": {
+      "source": "Each override needs a model ID",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 104,
+          "column": 25
+        }
+      ]
+    },
     "3b41ba9c7cb8c5d6": {
       "source": "No data",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 26,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 31,
           "column": 27
         },
         {
@@ -1741,12 +2043,12 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 156,
+          "line": 229,
           "column": 31
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 186,
+          "line": 259,
           "column": 24
         }
       ]
@@ -1775,12 +2077,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 67,
+          "line": 73,
           "column": 62
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 72,
+          "line": 78,
           "column": 20
         }
       ]
@@ -1853,6 +2155,23 @@
         }
       ]
     },
+    "4295ac6f766a5a22": {
+      "source": "Group by conversation",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 299,
+          "column": 30
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 304,
+          "column": 23
+        }
+      ]
+    },
     "4318541457e17dd6": {
       "source": "Manage models",
       "kind": "text",
@@ -1862,6 +2181,18 @@
           "file": "features/cursor/CursorPage.tsx",
           "line": 173,
           "column": 48
+        }
+      ]
+    },
+    "43f9deff98e8d5d8": {
+      "source": "Unable to load calls",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 263,
+          "column": 32
         }
       ]
     },
@@ -1877,7 +2208,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 232,
+          "line": 365,
           "column": 25
         }
       ]
@@ -1996,7 +2327,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 129,
+          "line": 202,
           "column": 73
         }
       ]
@@ -2081,12 +2412,12 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 147,
+          "line": 220,
           "column": 31
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 182,
+          "line": 255,
           "column": 24
         }
       ]
@@ -2114,7 +2445,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 92,
           "column": 9
         },
@@ -2182,8 +2513,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 54,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 55,
           "column": 17
         }
       ]
@@ -2239,6 +2570,21 @@
         }
       ]
     },
+    "4cad60d1d6752f49": {
+      "source": "Context: {used} of {size} tokens",
+      "kind": "template",
+      "placeholders": [
+        "used",
+        "size"
+      ],
+      "refs": [
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 58,
+          "column": 55
+        }
+      ]
+    },
     "4d8000301fccdede": {
       "source": "Bytes",
       "kind": "text",
@@ -2246,12 +2592,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 54,
+          "line": 60,
           "column": 39
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 61,
+          "line": 67,
           "column": 72
         }
       ]
@@ -2263,7 +2609,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 57,
+          "line": 63,
           "column": 44
         }
       ]
@@ -2316,13 +2662,18 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 31,
+          "line": 36,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 80,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 42,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 71,
+          "column": 3
         }
       ]
     },
@@ -2332,9 +2683,31 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 135,
           "column": 15
+        }
+      ]
+    },
+    "518670caea315160": {
+      "source": "Per-model prices",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 270,
+          "column": 22
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 277,
+          "column": 80
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 307,
+          "column": 80
         }
       ]
     },
@@ -2345,13 +2718,13 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 43,
+          "line": 49,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 140,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 56,
+          "column": 6
         }
       ]
     },
@@ -2441,6 +2814,35 @@
         }
       ]
     },
+    "54a0e8c17ebb21a1": {
+      "source": "Error",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 249,
+          "column": 30
+        }
+      ]
+    },
+    "54a159ada9ed4e20": {
+      "source": "Search calls",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 292,
+          "column": 24
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 293,
+          "column": 23
+        }
+      ]
+    },
     "5593d36fbffd3075": {
       "source": "The local proxy port used by Cursor. Enter 0 to select a random port at startup.",
       "kind": "text",
@@ -2465,12 +2867,12 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 138,
+          "line": 211,
           "column": 31
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 178,
+          "line": 251,
           "column": 24
         }
       ]
@@ -2516,7 +2918,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 133,
+          "line": 206,
           "column": 25
         }
       ]
@@ -2547,6 +2949,20 @@
           "file": "shell/IconRail.tsx",
           "line": 29,
           "column": 56
+        }
+      ]
+    },
+    "580bf2a76c940d5b": {
+      "source": "{rate} success",
+      "kind": "template",
+      "placeholders": [
+        "rate"
+      ],
+      "refs": [
+        {
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 136,
+          "column": 46
         }
       ]
     },
@@ -2612,7 +3028,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 52,
+          "line": 58,
           "column": 32
         }
       ]
@@ -2633,6 +3049,23 @@
           "file": "features/providers/ProviderResourceList.tsx",
           "line": 110,
           "column": 72
+        }
+      ]
+    },
+    "5a97a821a7469142": {
+      "source": "Export filtered calls as CSV",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 308,
+          "column": 30
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 312,
+          "column": 23
         }
       ]
     },
@@ -2670,7 +3103,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 42,
           "column": 42
         }
@@ -2714,7 +3147,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 226,
+          "line": 359,
           "column": 45
         }
       ]
@@ -2725,9 +3158,49 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 69,
+          "column": 59
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 298,
+          "column": 57
+        },
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 66,
+          "column": 3
+        },
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 23,
+          "column": 16
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 6
+        },
+        {
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 123,
           "column": 77
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 279,
+          "column": 46
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 309,
+          "column": 46
         }
       ]
     },
@@ -2743,14 +3216,31 @@
         }
       ]
     },
+    "5f5d0af52225e0b0": {
+      "source": "No calls match the current filters",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 263,
+          "column": 60
+        },
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 74,
+          "column": 83
+        }
+      ]
+    },
     "5f7864d17c245382": {
       "source": "LLM calls",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 143,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 133,
           "column": 40
         }
       ]
@@ -2803,8 +3293,20 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 218,
+          "line": 351,
           "column": 68
+        }
+      ]
+    },
+    "6237473122e7cf62": {
+      "source": "All models use the global prices",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 273,
+          "column": 47
         }
       ]
     },
@@ -2844,7 +3346,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 252,
+          "line": 385,
           "column": 21
         }
       ]
@@ -2881,8 +3383,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 102,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 95,
           "column": 5
         }
       ]
@@ -2917,7 +3419,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 113,
           "column": 56
         }
@@ -2935,7 +3437,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 277,
+          "line": 410,
           "column": 17
         }
       ]
@@ -3001,8 +3503,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 153,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 115,
           "column": 40
         }
       ]
@@ -3028,22 +3530,6 @@
           "file": "features/providers/ModelEditor.tsx",
           "line": 168,
           "column": 48
-        }
-      ]
-    },
-    "693197e2e4fffc2a": {
-      "source": "Regular input: {tokens} x ${price}/1M = {cost}",
-      "kind": "template",
-      "placeholders": [
-        "tokens",
-        "price",
-        "cost"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 112,
-          "column": 5
         }
       ]
     },
@@ -3163,7 +3649,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 259,
+          "line": 392,
           "column": 22
         }
       ]
@@ -3243,6 +3729,18 @@
         }
       ]
     },
+    "6d43eea1425fd306": {
+      "source": "Remove override",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 298,
+          "column": 87
+        }
+      ]
+    },
     "6dc217262b435056": {
       "source": "The install command has been copied. Click 'Open terminal', paste it into the terminal, and enter your password when prompted.",
       "kind": "text",
@@ -3301,8 +3799,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 82,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 75,
           "column": 5
         }
       ]
@@ -3415,18 +3913,6 @@
         }
       ]
     },
-    "72bdb2f14b607f6d": {
-      "source": "Estimated using configured token pricing.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 109,
-          "column": 5
-        }
-      ]
-    },
     "743641a10389f4e1": {
       "source": "The model configuration changed. Refresh and try again.",
       "kind": "text",
@@ -3452,8 +3938,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 103,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 96,
           "column": 5
         }
       ]
@@ -3465,12 +3951,12 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 84,
+          "line": 90,
           "column": 54
         },
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 137,
+          "line": 143,
           "column": 30
         },
         {
@@ -3572,7 +4058,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 107,
+          "line": 155,
           "column": 17
         }
       ]
@@ -3589,8 +4075,20 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 280,
+          "line": 413,
           "column": 23
+        }
+      ]
+    },
+    "7696d0855331622d": {
+      "source": "Context window",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 74,
+          "column": 18
         }
       ]
     },
@@ -3642,7 +4140,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 280,
+          "line": 413,
           "column": 41
         }
       ]
@@ -3726,7 +4224,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 532,
+          "line": 606,
           "column": 43
         }
       ]
@@ -3736,6 +4234,16 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 67,
+          "column": 30
+        },
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 68,
+          "column": 61
+        },
         {
           "file": "features/cursor/CursorPage.tsx",
           "line": 103,
@@ -3767,22 +4275,6 @@
           "file": "shell/IconRail.tsx",
           "line": 47,
           "column": 18
-        }
-      ]
-    },
-    "7e7397ea94a4e66b": {
-      "source": "Cache read: {tokens} x ${price}/1M = {cost}",
-      "kind": "template",
-      "placeholders": [
-        "tokens",
-        "price",
-        "cost"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 122,
-          "column": 5
         }
       ]
     },
@@ -3976,25 +4468,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 37,
           "column": 29
-        }
-      ]
-    },
-    "8517d512587265d3": {
-      "source": "Cache write: {tokens} x ${price}/1M = {cost}",
-      "kind": "template",
-      "placeholders": [
-        "tokens",
-        "price",
-        "cost"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 127,
-          "column": 5
         }
       ]
     },
@@ -4005,23 +4481,23 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 26,
+          "line": 31,
           "column": 52
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 43,
+          "line": 49,
           "column": 45
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 53,
-          "column": 63
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 40,
+          "column": 52
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 141,
-          "column": 42
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 56,
+          "column": 45
         }
       ]
     },
@@ -4089,7 +4565,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 54,
           "column": 25
         }
@@ -4101,12 +4577,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 107,
           "column": 50
         },
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 155,
           "column": 15
         }
@@ -4213,20 +4689,6 @@
         }
       ]
     },
-    "89904b8cdcc01aa6": {
-      "source": "Cache statistics policy: default ({rate})",
-      "kind": "template",
-      "placeholders": [
-        "rate"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 110,
-          "column": 5
-        }
-      ]
-    },
     "89a38d317081759b": {
       "source": "Enable {model}",
       "kind": "template",
@@ -4250,6 +4712,18 @@
           "file": "features/providers/ModelTestResult.tsx",
           "line": 42,
           "column": 50
+        }
+      ]
+    },
+    "89ec3e12b1a6dd29": {
+      "source": "Output speed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 140,
+          "column": 40
         }
       ]
     },
@@ -4279,6 +4753,28 @@
           "file": "features/providers/ProvidersPage.tsx",
           "line": 125,
           "column": 46
+        }
+      ]
+    },
+    "8adc5ef2db289d49": {
+      "source": "(est.)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 11,
+          "column": 47
+        },
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 94,
+          "column": 62
+        },
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 123,
+          "column": 139
         }
       ]
     },
@@ -4417,6 +4913,18 @@
         }
       ]
     },
+    "8ee57323a6f24cc7": {
+      "source": "All statuses",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 246,
+          "column": 25
+        }
+      ]
+    },
     "9046da16aea909ba": {
       "source": "Pages",
       "kind": "text",
@@ -4479,8 +4987,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 101,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 94,
           "column": 5
         }
       ]
@@ -4504,13 +5012,23 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 27,
+          "line": 32,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 16,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 32,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 69,
+          "column": 18
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 297,
+          "column": 57
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
@@ -4640,8 +5158,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 99,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 92,
           "column": 5
         }
       ]
@@ -4677,12 +5195,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 59,
+          "line": 65,
           "column": 33
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 62,
+          "line": 68,
           "column": 32
         }
       ]
@@ -4706,7 +5224,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 21,
+          "line": 26,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 37,
           "column": 6
         }
       ]
@@ -4792,8 +5315,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 91,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 84,
           "column": 5
         }
       ]
@@ -4828,7 +5351,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 36,
           "column": 36
         }
@@ -4852,7 +5375,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 102,
           "column": 19
         }
@@ -4936,21 +5459,9 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 92,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 85,
           "column": 5
-        }
-      ]
-    },
-    "a0a1074faa44dfa0": {
-      "source": "Output Tokens",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/charts/TokenTrendChart.tsx",
-          "line": 17,
-          "column": 15
         }
       ]
     },
@@ -4984,9 +5495,48 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/ContributionCalendarChart.tsx",
+          "file": "features/overview/charts/ContributionCalendarChart.tsx",
           "line": 252,
           "column": 50
+        }
+      ]
+    },
+    "a251c18205f10e5c": {
+      "source": "Cached",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 68,
+          "column": 3
+        }
+      ]
+    },
+    "a258b30f88c30650": {
+      "source": "Global",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 318,
+          "column": 103
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 319,
+          "column": 105
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 320,
+          "column": 113
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 321,
+          "column": 115
         }
       ]
     },
@@ -5008,8 +5558,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 139,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 129,
           "column": 40
         }
       ]
@@ -5019,11 +5569,6 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 41,
-          "column": 15
-        },
         {
           "file": "features/providers/ModelEditor.tsx",
           "line": 168,
@@ -5038,7 +5583,7 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 110,
+          "line": 116,
           "column": 55
         },
         {
@@ -5137,7 +5682,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 235,
+          "line": 368,
           "column": 20
         }
       ]
@@ -5160,7 +5705,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 34,
           "column": 29
         }
@@ -5185,13 +5730,35 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 56,
+          "line": 62,
           "column": 14
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 56,
+          "line": 62,
           "column": 60
+        }
+      ]
+    },
+    "a9b50ea0c4a7e346": {
+      "source": "Output tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 113
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 70,
+          "column": 75
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 113
         }
       ]
     },
@@ -5204,6 +5771,28 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 52,
           "column": 17
+        }
+      ]
+    },
+    "aae343c46321cfa1": {
+      "source": "Cache write tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 88
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 70,
+          "column": 50
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 88
         }
       ]
     },
@@ -5231,7 +5820,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 31,
+          "line": 34,
           "column": 12
         }
       ]
@@ -5315,13 +5904,18 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 16,
+          "line": 21,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 64,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 30,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 69,
+          "column": 47
         }
       ]
     },
@@ -5373,6 +5967,38 @@
         }
       ]
     },
+    "b2439bcb8dee14b6": {
+      "source": "Output",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsTable.tsx",
+          "line": 69,
+          "column": 3
+        },
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 28,
+          "column": 16
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 112,
+          "column": 64
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 281,
+          "column": 46
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 311,
+          "column": 46
+        }
+      ]
+    },
     "b2609f7d7b0979ee": {
       "source": "Add model",
       "kind": "text",
@@ -5397,6 +6023,11 @@
           "file": "features/providers/ModelEditorModal.tsx",
           "line": 126,
           "column": 40
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 272,
+          "column": 92
         }
       ]
     },
@@ -5406,7 +6037,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 38,
           "column": 30
         }
@@ -5436,7 +6067,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 61,
+          "line": 67,
           "column": 39
         }
       ]
@@ -5447,7 +6078,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 187,
           "column": 24
         }
@@ -5460,12 +6091,12 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 165,
+          "line": 238,
           "column": 31
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 190,
+          "line": 263,
           "column": 24
         }
       ]
@@ -5476,7 +6107,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/ContributionCalendarChart.tsx",
+          "file": "features/overview/charts/ContributionCalendarChart.tsx",
           "line": 258,
           "column": 23
         }
@@ -5494,6 +6125,21 @@
         }
       ]
     },
+    "b69e4cbbc4419c18": {
+      "source": "{name} price for {model}",
+      "kind": "template",
+      "placeholders": [
+        "name",
+        "model"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 109,
+          "column": 37
+        }
+      ]
+    },
     "b6ae91e261440a39": {
       "source": "Cache write price",
       "kind": "text",
@@ -5501,7 +6147,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 76,
+          "line": 123,
           "column": 72
         }
       ]
@@ -5525,8 +6171,23 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 33,
-          "column": 36
+          "line": 54,
+          "column": 33
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 318,
+          "column": 31
+        },
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 24,
+          "column": 16
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 33
         },
         {
           "file": "shell/CommandPalette.tsx",
@@ -5578,21 +6239,6 @@
           "file": "features/providers/ProvidersPage.tsx",
           "line": 291,
           "column": 50
-        }
-      ]
-    },
-    "b9a4c38179678d83": {
-      "source": "Successful {successful} / failed {failed}",
-      "kind": "template",
-      "placeholders": [
-        "successful",
-        "failed"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 146,
-          "column": 46
         }
       ]
     },
@@ -5657,7 +6303,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
+          "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 121,
           "column": 21
         }
@@ -5675,6 +6321,20 @@
         }
       ]
     },
+    "beab29d1bba2df02": {
+      "source": "{count} overrides",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 273,
+          "column": 87
+        }
+      ]
+    },
     "bec126aa4e12b071": {
       "source": "Paste the authorization command into the terminal and enter your password, then click the button below",
       "kind": "text",
@@ -5684,6 +6344,18 @@
           "file": "features/cursor/CursorGates.tsx",
           "line": 21,
           "column": 31
+        }
+      ]
+    },
+    "beef08a83bdf7585": {
+      "source": "tokens/s",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 142,
+          "column": 174
         }
       ]
     },
@@ -5706,7 +6378,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 276,
+          "line": 409,
           "column": 18
         }
       ]
@@ -5760,6 +6432,20 @@
         }
       ]
     },
+    "c313cf88979e8113": {
+      "source": "Duplicate model override: {model}",
+      "kind": "template",
+      "placeholders": [
+        "model"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 108,
+          "column": 47
+        }
+      ]
+    },
     "c3812fc4acb861d5": {
       "source": "Remove",
       "kind": "text",
@@ -5796,26 +6482,14 @@
         }
       ]
     },
-    "c54a41f6d6262498": {
-      "source": "Input Tokens",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/charts/TokenTrendChart.tsx",
-          "line": 16,
-          "column": 15
-        }
-      ]
-    },
     "c5cfb642ded824ec": {
       "source": "Estimated value",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 160,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 122,
           "column": 40
         }
       ]
@@ -5864,6 +6538,18 @@
         }
       ]
     },
+    "c9b3c38247f744e1": {
+      "source": "Total",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 29,
+          "column": 16
+        }
+      ]
+    },
     "ca17b54a12d3936f": {
       "source": "Authorization is required to install the certificate",
       "kind": "text",
@@ -5876,6 +6562,23 @@
         }
       ]
     },
+    "ca1ea3292ec3453c": {
+      "source": "Export model breakdown as CSV",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 260,
+          "column": 30
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 261,
+          "column": 61
+        }
+      ]
+    },
     "caaf42b6940ebf37": {
       "source": "Call details",
       "kind": "text",
@@ -5885,6 +6588,11 @@
           "file": "features/calls/CallDetailsPage.tsx",
           "line": 36,
           "column": 41
+        },
+        {
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 61,
+          "column": 54
         }
       ]
     },
@@ -5915,13 +6623,25 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 55,
+          "line": 61,
           "column": 14
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 55,
+          "line": 61,
           "column": 63
+        }
+      ]
+    },
+    "cc516936eb269cb2": {
+      "source": "No calls recorded in this range",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 17,
+          "column": 43
         }
       ]
     },
@@ -5958,6 +6678,43 @@
           "file": "features/providers/modelEditing.ts",
           "line": 44,
           "column": 87
+        }
+      ]
+    },
+    "ce35edae87b9fb4c": {
+      "source": "Exported the first {count} of {total} calls",
+      "kind": "template",
+      "placeholders": [
+        "count",
+        "total"
+      ],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 236,
+          "column": 11
+        }
+      ]
+    },
+    "ce570993f284bd02": {
+      "source": "Cache read tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 64
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 70,
+          "column": 26
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 64
         }
       ]
     },
@@ -6079,16 +6836,6 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 184,
-          "column": 32
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 187,
-          "column": 25
-        },
-        {
           "file": "features/providers/ModelTestResult.tsx",
           "line": 58,
           "column": 86
@@ -6133,7 +6880,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 74,
+          "line": 121,
           "column": 62
         }
       ]
@@ -6179,6 +6926,18 @@
         }
       ]
     },
+    "d353a99eb4556847": {
+      "source": "Cancelled",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 250,
+          "column": 34
+        }
+      ]
+    },
     "d3720a1754fd4863": {
       "source": "Provider runtime is not supported on this system",
       "kind": "text",
@@ -6209,8 +6968,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/HomePage.tsx",
-          "line": 207,
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 266,
           "column": 25
         },
         {
@@ -6237,12 +6996,12 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 29,
+          "line": 32,
           "column": 18
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 35,
+          "line": 38,
           "column": 16
         }
       ]
@@ -6266,7 +7025,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 236,
+          "line": 369,
           "column": 142
         }
       ]
@@ -6326,7 +7085,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 527,
+          "line": 601,
           "column": 43
         }
       ]
@@ -6337,8 +7096,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 137,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 113,
           "column": 50
         }
       ]
@@ -6351,8 +7110,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 81,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 74,
           "column": 5
         }
       ]
@@ -6368,22 +7127,6 @@
           "file": "App.tsx",
           "line": 64,
           "column": 21
-        }
-      ]
-    },
-    "db9c0b2de5dece8b": {
-      "source": "Model output: {tokens} x ${price}/1M = {cost}",
-      "kind": "template",
-      "placeholders": [
-        "tokens",
-        "price",
-        "cost"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 117,
-          "column": 5
         }
       ]
     },
@@ -6410,7 +7153,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 53,
           "column": 25
         }
@@ -6453,7 +7196,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 125,
+          "line": 198,
           "column": 19
         }
       ]
@@ -6501,6 +7244,28 @@
           "file": "features/settings/sections/GeneralSection.tsx",
           "line": 108,
           "column": 56
+        }
+      ]
+    },
+    "dd856eeb50463bae": {
+      "source": "Input tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 45
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 70,
+          "column": 7
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 45
         }
       ]
     },
@@ -6615,8 +7380,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 94,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 87,
           "column": 5
         }
       ]
@@ -6650,7 +7415,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 75,
+          "line": 122,
           "column": 70
         }
       ]
@@ -6735,6 +7500,18 @@
         }
       ]
     },
+    "e45d6755c0310638": {
+      "source": "Average output tokens per second over the selected range.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 107,
+          "column": 5
+        }
+      ]
+    },
     "e50cc1e72e2a5ddd": {
       "source": "Add {name} account",
       "kind": "template",
@@ -6790,6 +7567,28 @@
         }
       ]
     },
+    "e7601ca1178ad955": {
+      "source": "Total tokens",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 54,
+          "column": 133
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 71,
+          "column": 7
+        },
+        {
+          "file": "features/overview/OverviewPage.tsx",
+          "line": 79,
+          "column": 133
+        }
+      ]
+    },
     "e7a85607901ec8f6": {
       "source": "Enter model notes",
       "kind": "text",
@@ -6842,14 +7641,34 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 108,
           "column": 51
         },
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 164,
           "column": 15
+        },
+        {
+          "file": "features/overview/models/ModelBreakdown.tsx",
+          "line": 27,
+          "column": 16
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 114,
+          "column": 73
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 283,
+          "column": 46
+        },
+        {
+          "file": "features/settings/sections/UsageDataSection.tsx",
+          "line": 313,
+          "column": 46
         }
       ]
     },
@@ -6880,6 +7699,20 @@
         }
       ]
     },
+    "e85372761c5fa8eb": {
+      "source": "Exported {count} calls",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 237,
+          "column": 11
+        }
+      ]
+    },
     "e86985124c840a91": {
       "source": "Cache write: {tokens}",
       "kind": "template",
@@ -6888,8 +7721,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 104,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 97,
           "column": 5
         }
       ]
@@ -6900,8 +7733,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 97,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 90,
           "column": 5
         }
       ]
@@ -6925,7 +7758,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 243,
+          "line": 376,
           "column": 12
         }
       ]
@@ -6937,13 +7770,18 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 42,
+          "line": 48,
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 135,
-          "column": 15
+          "file": "features/calls/CallSidePanel.tsx",
+          "line": 55,
+          "column": 6
+        },
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 73,
+          "column": 47
         }
       ]
     },
@@ -6955,8 +7793,8 @@
       ],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 100,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 93,
           "column": 5
         }
       ]
@@ -6984,8 +7822,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 106,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 99,
           "column": 5
         }
       ]
@@ -7055,6 +7893,18 @@
         }
       ]
     },
+    "ef8916c285878bab": {
+      "source": "Output estimated",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 70,
+          "column": 95
+        }
+      ]
+    },
     "efb52e7172b77731": {
       "source": "Theme",
       "kind": "text",
@@ -7078,12 +7928,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 109,
           "column": 47
         },
         {
-          "file": "features/home/charts/DailyTokenUsageChart.tsx",
+          "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 173,
           "column": 15
         }
@@ -7108,7 +7958,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 226,
+          "line": 359,
           "column": 74
         }
       ]
@@ -7131,8 +7981,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 89,
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 82,
           "column": 5
         }
       ]
@@ -7156,7 +8006,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 262,
+          "line": 395,
           "column": 36
         }
       ]
@@ -7200,6 +8050,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "features/calls/CallsPage.tsx",
+          "line": 247,
+          "column": 32
+        },
         {
           "file": "features/settings/sections/CursorSection.tsx",
           "line": 353,
@@ -7277,7 +8132,7 @@
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 135,
+          "line": 208,
           "column": 17
         }
       ]
@@ -7289,22 +8144,20 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 73,
+          "line": 120,
           "column": 60
         }
       ]
     },
-    "fb0e781e0a998249": {
-      "source": "Cache I/O {cost}",
-      "kind": "template",
-      "placeholders": [
-        "cost"
-      ],
+    "fb50c347f81184d5": {
+      "source": "Estimated using configured token pricing; per-model prices apply where set.",
+      "kind": "text",
+      "placeholders": [],
       "refs": [
         {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 163,
-          "column": 46
+          "file": "features/overview/metrics/OverviewMetrics.tsx",
+          "line": 102,
+          "column": 5
         }
       ]
     },
@@ -7315,7 +8168,7 @@
       "refs": [
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
-          "line": 26,
+          "line": 29,
           "column": 30
         }
       ]
@@ -7334,18 +8187,6 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 252,
           "column": 30
-        }
-      ]
-    },
-    "fcdcdd5afa3310ca": {
-      "source": "Total duration",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/charts/LatencyChart.tsx",
-          "line": 18,
-          "column": 15
         }
       ]
     },
@@ -7370,18 +8211,6 @@
           "file": "shared/ui/FormControls.tsx",
           "line": 15,
           "column": 81
-        }
-      ]
-    },
-    "ff8059dc6752afdd": {
-      "source": "Actions",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 181,
-          "column": 15
         }
       ]
     },

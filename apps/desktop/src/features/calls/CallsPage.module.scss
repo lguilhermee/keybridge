@@ -1,3 +1,5 @@
+@use "../../styles/typography" as type;
+
 .pageContent {
   height: 100%;
 }
@@ -8,4 +10,98 @@
   min-width: 0;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.errorBar {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  color: var(--oa-danger);
+  background: var(--oa-surface-raised);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-card-radius);
+  font-size: type.$font-size-xs;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.tableWrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Top-bar controls portaled through PageActions */
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 180px;
+
+  input {
+    width: 100%;
+    height: 25px;
+    padding: 0 8px 0 25px;
+    color: var(--oa-text);
+    background: var(--oa-surface-input);
+    border: 1px solid var(--oa-border);
+    border-radius: var(--oa-radius-md);
+    font-size: type.$font-size-xs;
+    outline: none;
+
+    &:focus {
+      border-color: var(--oa-accent);
+    }
+
+    &::placeholder {
+      color: var(--oa-text-muted);
+    }
+  }
+}
+
+.searchIcon {
+  position: absolute;
+  left: 7px;
+  color: var(--oa-text-muted);
+  pointer-events: none;
+}
+
+.filter {
+  width: 128px;
+  flex: 0 0 auto;
+}
+
+.toggle {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--oa-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--oa-radius-md);
+
+  &:hover {
+    color: var(--oa-text);
+    background: var(--oa-hover);
+  }
+
+  &[aria-pressed="true"] {
+    color: var(--oa-accent);
+    background: var(--oa-active);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
 }

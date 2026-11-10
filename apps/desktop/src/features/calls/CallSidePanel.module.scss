@@ -1,0 +1,130 @@
+@use "../../styles/typography" as type;
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: clamp(240px, 30%, 320px);
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--oa-surface-raised);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-card-radius);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--oa-border);
+}
+
+.headerText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  color: var(--oa-text-secondary);
+  background: var(--oa-surface-input);
+  border-radius: 99px;
+  font-size: type.$font-size-2xs;
+
+  &[data-status="running"] { color: var(--oa-accent); }
+  &[data-status="completed"] { color: var(--oa-success); }
+  &[data-status="error"] { color: var(--oa-danger); }
+  &[data-status="cancelled"] { color: var(--oa-text-muted); }
+}
+
+.context {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--oa-border);
+}
+
+.contextLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--oa-text-secondary);
+  font-size: type.$font-size-2xs;
+  font-variant-numeric: tabular-nums;
+}
+
+.contextBar {
+  height: 5px;
+  overflow: hidden;
+  background: var(--oa-surface-input);
+  border-radius: 999px;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--oa-accent);
+    border-radius: 999px;
+
+    &[data-warn] {
+      background: var(--oa-warning);
+    }
+  }
+}
+
+.fields {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.fieldsViewport {
+  padding: 4px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  padding: 4px 12px;
+  font-size: type.$font-size-xs;
+
+  dt {
+    flex: 0 0 108px;
+    color: var(--oa-text-secondary);
+  }
+
+  dd {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--oa-text);
+    font-family: var(--oa-number-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--oa-border);
+}
