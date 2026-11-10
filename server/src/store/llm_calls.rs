@@ -8,6 +8,27 @@ use crate::{
 
 use super::{now_ms, Store};
 
+/// Server-side filters for the call history list. All fields are optional;
+/// absent filters match every row.
+#[derive(Clone, Debug, Default)]
+pub struct LlmCallFilter {
+    /// Exact status match (`running`, `completed`, `error`, `cancelled`).
+    pub(crate) status: Option<String>,
+    /// Matches either the stored `model_hash` or the upstream `model_id`.
+    pub(crate) model: Option<String>,
+    /// Case-insensitive substring over the identity/display columns and the error text.
+    pub(crate) q: Option<String>,
+}
+
+/// Escapes LIKE metacharacters and wraps the needle for a contains-match.
+pub(crate) fn like_pattern(value: &str) -> String {
+    let escaped = value
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    format!("%{escaped}%")
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct ContextUsageAnchor {
     pub(crate) context_input_tokens: u64,
@@ -158,16 +179,21 @@ impl Store {
         } else {
             BufferedLlmChunk::metrics(seq, elapsed_ms, data.len())
         };
-        self.record_llm_chunks(call_id, &[chunk], detailed).await
+        self.record_llm_chunks(call_id, &[chunk], detailed, None)
+            .await
     }
 
+    /// Records a batch of response chunks and, when given, the running estimate
+    /// of generated output tokens (recomputed from streamed deltas, so callers
+    /// pass the absolute value rather than an increment).
     pub(crate) async fn record_llm_chunks(
         &self,
         call_id: &str,
         chunks: &[BufferedLlmChunk],
         detailed: bool,
+        estimated_output_tokens: Option<i64>,
     ) -> Result<()> {
-        if chunks.is_empty() {
+        if chunks.is_empty() && estimated_output_tokens.is_none() {
             return Ok(());
         }
         let byte_count = chunks
@@ -193,13 +219,22 @@ impl Store {
                     .await?;
             }
         }
-        sqlx::query("UPDATE llm_calls SET first_event_at_ms = COALESCE(first_event_at_ms, ?), response_bytes = response_bytes + ?, stream_event_count = stream_event_count + ? WHERE call_id = ?")
-            .bind(now_ms())
-            .bind(byte_count)
-            .bind(event_count)
-            .bind(call_id)
-            .execute(&mut *transaction)
-            .await?;
+        if chunks.is_empty() {
+            sqlx::query("UPDATE llm_calls SET estimated_output_tokens = ? WHERE call_id = ?")
+                .bind(estimated_output_tokens)
+                .bind(call_id)
+                .execute(&mut *transaction)
+                .await?;
+        } else {
+            sqlx::query("UPDATE llm_calls SET first_event_at_ms = COALESCE(first_event_at_ms, ?), response_bytes = response_bytes + ?, stream_event_count = stream_event_count + ?, estimated_output_tokens = COALESCE(?, estimated_output_tokens) WHERE call_id = ?")
+                .bind(now_ms())
+                .bind(byte_count)
+                .bind(event_count)
+                .bind(estimated_output_tokens)
+                .bind(call_id)
+                .execute(&mut *transaction)
+                .await?;
+        }
         transaction.commit().await?;
         Ok(())
     }
@@ -301,12 +336,74 @@ impl Store {
         }))
     }
 
-    pub async fn llm_calls(&self, limit: i64) -> Result<Vec<LlmCallSummary>> {
-        let rows = sqlx::query("SELECT * FROM llm_calls ORDER BY created_at_ms DESC LIMIT ?")
-            .bind(limit.clamp(1, 500))
-            .fetch_all(&self.pool)
-            .await?;
-        rows.into_iter().map(summary_from_row).collect()
+    /// Filtered, paginated call history plus the total number of matching rows.
+    pub async fn llm_calls_page(
+        &self,
+        filter: &LlmCallFilter,
+        offset: i64,
+        limit: i64,
+    ) -> Result<(Vec<LlmCallSummary>, i64)> {
+        let like = filter.q.as_deref().map(like_pattern);
+        let rows = sqlx::query(
+            "SELECT * FROM llm_calls
+             WHERE (? IS NULL OR status = ?)
+               AND (? IS NULL OR model_hash = ? OR model_id = ?)
+               AND (? IS NULL OR model_id LIKE ? ESCAPE '\\'
+                    OR display_name LIKE ? ESCAPE '\\'
+                    OR conversation_id LIKE ? ESCAPE '\\'
+                    OR call_id LIKE ? ESCAPE '\\'
+                    OR endpoint_url LIKE ? ESCAPE '\\'
+                    OR error_message LIKE ? ESCAPE '\\')
+             ORDER BY created_at_ms DESC
+             LIMIT ? OFFSET ?",
+        )
+        .bind(&filter.status)
+        .bind(&filter.status)
+        .bind(&filter.model)
+        .bind(&filter.model)
+        .bind(&filter.model)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(limit.max(1))
+        .bind(offset.max(0))
+        .fetch_all(&self.pool)
+        .await?;
+        let total: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM llm_calls
+             WHERE (? IS NULL OR status = ?)
+               AND (? IS NULL OR model_hash = ? OR model_id = ?)
+               AND (? IS NULL OR model_id LIKE ? ESCAPE '\\'
+                    OR display_name LIKE ? ESCAPE '\\'
+                    OR conversation_id LIKE ? ESCAPE '\\'
+                    OR call_id LIKE ? ESCAPE '\\'
+                    OR endpoint_url LIKE ? ESCAPE '\\'
+                    OR error_message LIKE ? ESCAPE '\\')",
+        )
+        .bind(&filter.status)
+        .bind(&filter.status)
+        .bind(&filter.model)
+        .bind(&filter.model)
+        .bind(&filter.model)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok((
+            rows.into_iter()
+                .map(summary_from_row)
+                .collect::<Result<Vec<_>>>()?,
+            total,
+        ))
     }
 
     pub async fn llm_call(&self, call_id: &str) -> Result<Option<LlmCallSummary>> {
@@ -391,6 +488,7 @@ fn summary_from_row(row: sqlx::sqlite::SqliteRow) -> Result<LlmCallSummary> {
         cache_read_tokens: row.try_get("cache_read_tokens")?,
         cache_write_tokens: row.try_get("cache_write_tokens")?,
         reasoning_tokens: row.try_get("reasoning_tokens")?,
+        estimated_output_tokens: row.try_get("estimated_output_tokens")?,
         usage: usage
             .map(|value| serde_json::from_str(&value))
             .transpose()?,
@@ -516,5 +614,234 @@ mod tests {
             })
         );
         assert_eq!(store.latest_context_usage("other").await.unwrap(), None);
+    }
+
+    async fn test_store() -> (tempfile::TempDir, Store) {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            directory.path().join("test.db").display()
+        ))
+        .await
+        .unwrap();
+        (directory, store)
+    }
+
+    async fn seed_call(
+        store: &Store,
+        call_id: &str,
+        model_hash: &str,
+        model_id: &str,
+        display_name: &str,
+        status: &str,
+        created_at_ms: i64,
+    ) {
+        store
+            .start_llm_call(&NewLlmCall {
+                call_id: call_id.into(),
+                run_id: format!("run-{call_id}"),
+                conversation_id: format!("conv-{call_id}"),
+                provider_call_index: 0,
+                model_hash: model_hash.into(),
+                protocol_type: ProtocolType::Provider,
+                endpoint_url: "provider://test/channel".into(),
+                model_id: model_id.into(),
+                display_name: display_name.into(),
+                reasoning_effort: None,
+                fast: false,
+                message_count: 1,
+                tool_count: 0,
+                detailed: false,
+            })
+            .await
+            .unwrap();
+        sqlx::query("UPDATE llm_calls SET created_at_ms = ? WHERE call_id = ?")
+            .bind(created_at_ms)
+            .bind(call_id)
+            .execute(&store.pool)
+            .await
+            .unwrap();
+        if status != "running" {
+            store
+                .finish_llm_call(call_id, status, None, 10, None, None)
+                .await
+                .unwrap();
+        }
+    }
+
+    fn ids(calls: &[LlmCallSummary]) -> Vec<&str> {
+        calls.iter().map(|call| call.call_id.as_str()).collect()
+    }
+
+    #[tokio::test]
+    async fn llm_calls_page_filters_by_status() {
+        let (_directory, store) = test_store().await;
+        seed_call(
+            &store,
+            "done",
+            "hash-a",
+            "model-a",
+            "Model A",
+            "completed",
+            3,
+        )
+        .await;
+        seed_call(&store, "broken", "hash-b", "model-b", "Model B", "error", 2).await;
+        seed_call(&store, "live", "hash-c", "model-c", "Model C", "running", 1).await;
+
+        let filter = |status: &str| LlmCallFilter {
+            status: Some(status.into()),
+            ..Default::default()
+        };
+        let (calls, total) = store
+            .llm_calls_page(&filter("completed"), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(ids(&calls), ["done"]);
+        assert_eq!(total, 1);
+        let (calls, total) = store
+            .llm_calls_page(&filter("running"), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(ids(&calls), ["live"]);
+        assert_eq!(total, 1);
+        let (calls, _) = store
+            .llm_calls_page(&filter("cancelled"), 0, 50)
+            .await
+            .unwrap();
+        assert!(calls.is_empty());
+        let (_, total) = store
+            .llm_calls_page(&LlmCallFilter::default(), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(total, 3);
+    }
+
+    #[tokio::test]
+    async fn llm_calls_page_matches_model_by_hash_or_upstream_id() {
+        let (_directory, store) = test_store().await;
+        seed_call(&store, "first", "hash-gpt", "gpt-4o", "GPT", "completed", 2).await;
+        seed_call(
+            &store,
+            "second",
+            "hash-claude",
+            "claude-sonnet",
+            "Claude",
+            "completed",
+            1,
+        )
+        .await;
+
+        let filter = |model: &str| LlmCallFilter {
+            model: Some(model.into()),
+            ..Default::default()
+        };
+        let (calls, total) = store
+            .llm_calls_page(&filter("hash-gpt"), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(ids(&calls), ["first"]);
+        assert_eq!(total, 1);
+        let (calls, _) = store
+            .llm_calls_page(&filter("claude-sonnet"), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(ids(&calls), ["second"]);
+        let (calls, _) = store.llm_calls_page(&filter("other"), 0, 50).await.unwrap();
+        assert!(calls.is_empty());
+    }
+
+    #[tokio::test]
+    async fn llm_calls_page_searches_text_and_escapes_like_wildcards() {
+        let (_directory, store) = test_store().await;
+        seed_call(
+            &store,
+            "a",
+            "hash-a",
+            "100x-model",
+            "Claude Sonnet",
+            "completed",
+            2,
+        )
+        .await;
+        seed_call(&store, "b", "hash-b", "gpt-4o", "GPT", "completed", 1).await;
+
+        let filter = |q: &str| LlmCallFilter {
+            q: Some(q.into()),
+            ..Default::default()
+        };
+        // display_name, model_id, conversation_id, and call_id are all searched.
+        for needle in ["sonnet", "gpt-4o", "conv-a", "b"] {
+            let (calls, _) = store.llm_calls_page(&filter(needle), 0, 50).await.unwrap();
+            assert_eq!(calls.len(), 1, "needle {needle}");
+        }
+        let (calls, _) = store
+            .llm_calls_page(&filter("conv-b"), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(ids(&calls), ["b"]);
+        // A literal % must not act as a wildcard: "100%" does not match "100x-model".
+        let (calls, total) = store.llm_calls_page(&filter("100%"), 0, 50).await.unwrap();
+        assert!(calls.is_empty());
+        assert_eq!(total, 0);
+        let (calls, _) = store.llm_calls_page(&filter("100x"), 0, 50).await.unwrap();
+        assert_eq!(ids(&calls), ["a"]);
+    }
+
+    #[tokio::test]
+    async fn llm_calls_page_paginates_and_reports_the_filtered_total() {
+        let (_directory, store) = test_store().await;
+        for index in 0..5 {
+            seed_call(
+                &store,
+                &format!("call-{index}"),
+                "hash",
+                "model",
+                "Model",
+                "completed",
+                index,
+            )
+            .await;
+        }
+
+        let (calls, total) = store
+            .llm_calls_page(&LlmCallFilter::default(), 0, 2)
+            .await
+            .unwrap();
+        assert_eq!(ids(&calls), ["call-4", "call-3"]);
+        assert_eq!(total, 5);
+        let (calls, total) = store
+            .llm_calls_page(&LlmCallFilter::default(), 4, 2)
+            .await
+            .unwrap();
+        assert_eq!(ids(&calls), ["call-0"]);
+        assert_eq!(total, 5);
+        let (calls, total) = store
+            .llm_calls_page(
+                &LlmCallFilter {
+                    status: Some("running".into()),
+                    ..Default::default()
+                },
+                0,
+                2,
+            )
+            .await
+            .unwrap();
+        assert!(calls.is_empty());
+        assert_eq!(total, 0);
+    }
+
+    #[tokio::test]
+    async fn a_running_call_keeps_the_streamed_output_estimate() {
+        let (_directory, store) = test_store().await;
+        seed_call(&store, "live", "hash", "model", "Model", "running", 1).await;
+        store
+            .record_llm_chunks("live", &[], false, Some(64))
+            .await
+            .unwrap();
+
+        let summary = store.llm_call("live").await.unwrap().unwrap();
+        assert_eq!(summary.estimated_output_tokens, Some(64));
+        assert_eq!(summary.output_tokens, None);
     }
 }

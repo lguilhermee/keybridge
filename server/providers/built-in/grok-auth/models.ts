@@ -4,16 +4,21 @@ import { accountData } from "./resources.ts";
 const LANGUAGE_MODELS_URL = "https://api.x.ai/v1/language-models";
 const MODELS_URL = "https://api.x.ai/v1/models";
 
+/** Grok 4-family models expose a 256K-token context window per xAI's model docs. */
+const GROK_4_CONTEXT_WINDOW = 256_000;
+
 /** Free accounts cannot call the model list endpoint (403 spending-limit); falls back to known models. */
 export const FALLBACK_MODELS: ModelDefinition[] = [
   {
     id: "grok-4.6",
     displayName: "Grok 4.6",
+    contextWindow: GROK_4_CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "grok-4.5",
     displayName: "Grok 4.5",
+    contextWindow: GROK_4_CONTEXT_WINDOW,
     capabilities: { images: true },
   },
 ];
@@ -32,6 +37,24 @@ function modalities(value: unknown): string[] {
   return Array.isArray(value)
     ? value.flatMap((item) => (typeof item === "string" ? [item.toLowerCase()] : []))
     : [];
+}
+
+function positiveInteger(value: unknown): number | null {
+  const parsed = typeof value === "number"
+    ? value
+    : typeof value === "string"
+    ? Number(value)
+    : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : null;
+}
+
+/** xAI /v1/language-models reports prompt limits under a few names across versions. */
+function contextWindow(model: Record<string, unknown>): number | undefined {
+  return positiveInteger(
+    model.prompt_text_token_limit ?? model.promptTextTokenLimit ?? model.context_length ??
+      model.contextLength ?? model.max_context_length ?? model.maxContextLength ??
+      model.context_window ?? model.contextWindow,
+  ) ?? undefined;
 }
 
 /** Turns a model ID into a readable name, e.g. grok-4-fast -> Grok 4 Fast. */
@@ -57,9 +80,11 @@ export function parseGrokModels(body: unknown): ModelDefinition[] {
     if (!id || seen.has(id)) continue;
     seen.add(id);
     const inputs = modalities(model?.input_modalities ?? model?.inputModalities);
+    const window = contextWindow(model ?? {});
     models.push({
       id,
       displayName: displayName(id),
+      ...(window !== undefined ? { contextWindow: window } : {}),
       capabilities: {
         images: inputs.length === 0 || inputs.includes("image"),
       },

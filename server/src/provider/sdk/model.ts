@@ -10,6 +10,8 @@ export type ModelDefinition = {
   displayName: string;
   description?: string;
   maxOutputTokens?: number;
+  /** Total prompt window in tokens; powers the UI context-window meter when present. */
+  contextWindow?: number;
   capabilities?: ModelCapabilities;
   /** Passed back verbatim on later calls; never shown to the user. */
   privateData?: JsonValue;

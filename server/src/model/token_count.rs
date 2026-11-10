@@ -82,7 +82,7 @@ fn estimate_json_tokens(value: &impl serde::Serialize) -> u64 {
         .unwrap_or_default()
 }
 
-fn estimate_text_tokens(text: &str) -> u64 {
+pub(crate) fn estimate_text_tokens(text: &str) -> u64 {
     bpe_openai::o200k_base().count(text) as u64
 }
 

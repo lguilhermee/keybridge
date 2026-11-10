@@ -72,6 +72,9 @@ struct Inner {
     detailed: bool,
     attempt: Mutex<AttemptState>,
     next_generation: AtomicU64,
+    /// BPE estimate of generated output so far (text + thinking + tool arguments);
+    /// persisted on chunk flushes so running calls can show an estimated count.
+    estimated_output_tokens: AtomicU64,
     finished: AtomicBool,
 }
 
@@ -120,6 +123,7 @@ impl CallRecorder {
                 detailed: call.detailed,
                 attempt: Mutex::new(AttemptState::new(call.call_id.clone())),
                 next_generation: AtomicU64::new(0),
+                estimated_output_tokens: AtomicU64::new(0),
                 finished: AtomicBool::new(false),
             }),
         })
@@ -208,6 +212,16 @@ impl CallRecorder {
     }
 
     pub async fn event(&self, event: &ModelEvent) -> Result<()> {
+        match event {
+            ModelEvent::TextDelta(delta)
+            | ModelEvent::ThinkingDelta(delta)
+            | ModelEvent::ToolCallArgumentsDelta { delta, .. } => {
+                self.inner
+                    .estimated_output_tokens
+                    .fetch_add(crate::model::estimate_text_tokens(delta), Ordering::Relaxed);
+            }
+            _ => {}
+        }
         let attempt = self.inner.attempt.lock().await;
         if is_valid_response_event(event)
             && attempt
@@ -322,16 +336,18 @@ impl CallRecorder {
 
     async fn flush_locked(&self, attempt: &mut AttemptState) -> Result<()> {
         let buffer = &mut attempt.chunks;
-        if buffer.chunks.is_empty() {
+        let estimated = self.inner.estimated_output_tokens.load(Ordering::Relaxed);
+        if buffer.chunks.is_empty() && estimated == 0 {
             return Ok(());
         }
         let chunks = std::mem::take(&mut buffer.chunks);
         buffer.bytes = 0;
         buffer.first_chunk_at = None;
+        let estimated = (estimated > 0).then_some(estimated.min(i64::MAX as u64) as i64);
         if let Err(error) = self
             .inner
             .store
-            .record_llm_chunks(&attempt.call_id, &chunks, self.inner.detailed)
+            .record_llm_chunks(&attempt.call_id, &chunks, self.inner.detailed, estimated)
             .await
         {
             buffer.bytes = chunks.iter().map(|chunk| chunk.byte_count).sum();
@@ -379,6 +395,58 @@ mod tests {
     };
 
     use super::*;
+
+    async fn test_store() -> (tempfile::TempDir, Store) {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            directory.path().join("test.db").display()
+        ))
+        .await
+        .unwrap();
+        (directory, store)
+    }
+
+    fn base_call(call_id: &str) -> NewLlmCall {
+        NewLlmCall {
+            call_id: call_id.into(),
+            run_id: "run".into(),
+            conversation_id: "conversation".into(),
+            provider_call_index: 0,
+            model_hash: "hash".into(),
+            protocol_type: ProtocolType::Provider,
+            endpoint_url: "provider://test/channel".into(),
+            model_id: "model".into(),
+            display_name: "Model".into(),
+            reasoning_effort: None,
+            fast: false,
+            message_count: 1,
+            tool_count: 0,
+            detailed: false,
+        }
+    }
+
+    #[tokio::test]
+    async fn finishing_a_call_persists_the_streamed_output_estimate() {
+        let (_directory, store) = test_store().await;
+        let recorder = CallRecorder::start(store.clone(), base_call("estimated"))
+            .await
+            .unwrap();
+
+        recorder
+            .event(&ModelEvent::TextDelta("hello world".into()))
+            .await
+            .unwrap();
+        recorder
+            .event(&ModelEvent::Done(FinishReason::Stop))
+            .await
+            .unwrap();
+
+        let call = store.llm_call("estimated").await.unwrap().unwrap();
+        assert_eq!(call.status, "completed");
+        assert_eq!(call.estimated_output_tokens, Some(2));
+        assert_eq!(call.output_tokens, None);
+    }
 
     #[tokio::test]
     async fn dropping_an_unfinished_call_guard_marks_the_call_cancelled() {

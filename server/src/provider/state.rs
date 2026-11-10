@@ -136,6 +136,9 @@ pub struct StoredModel {
     pub description: Option<String>,
     #[serde(default)]
     pub max_output_tokens: Option<u64>,
+    /// Total prompt window in tokens (`contextWindow` on the wire); absent when unknown.
+    #[serde(default)]
+    pub context_window: Option<u64>,
     #[serde(default)]
     pub images: bool,
     #[serde(default = "default_model_enabled")]
@@ -184,6 +187,9 @@ impl StoredModel {
             max_output_tokens: object
                 .get("maxOutputTokens")
                 .and_then(serde_json::Value::as_u64),
+            context_window: object
+                .get("contextWindow")
+                .and_then(serde_json::Value::as_u64),
             images: capability("images"),
             enabled: true,
             private_data: object
@@ -200,6 +206,7 @@ impl StoredModel {
             "displayName": self.display_name,
             "description": self.description,
             "maxOutputTokens": self.max_output_tokens,
+            "contextWindow": self.context_window,
             "capabilities": { "images": self.images },
             "privateData": self.private_data,
         })
@@ -495,5 +502,28 @@ mod tests {
         assert_eq!(models.len(), 1);
         assert!(models[0].images);
         assert_eq!(models[0].private_data["reasoningEfforts"][0], "low");
+    }
+
+    #[test]
+    fn model_definitions_carry_context_window_through_the_snapshot() {
+        let model = StoredModel::from_definition(&serde_json::json!({
+            "id": "claude-test",
+            "displayName": "Claude Test",
+            "contextWindow": 200_000,
+        }))
+        .unwrap();
+        assert_eq!(model.context_window, Some(200_000));
+        assert_eq!(
+            model.snapshot()["contextWindow"],
+            serde_json::json!(200_000)
+        );
+
+        let unknown = StoredModel::from_definition(&serde_json::json!({
+            "id": "m",
+            "displayName": "M",
+        }))
+        .unwrap();
+        assert_eq!(unknown.context_window, None);
+        assert!(unknown.snapshot()["contextWindow"].is_null());
     }
 }

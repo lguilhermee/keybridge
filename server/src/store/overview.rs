@@ -7,7 +7,9 @@ use chrono::Utc;
 use sqlx::Row;
 
 use crate::{
-    model::{Overview, OverviewMetrics, TokenUsageBucket, TokenUsageGranularity},
+    model::{
+        Overview, OverviewMetrics, OverviewModelUsage, TokenUsageBucket, TokenUsageGranularity,
+    },
     Result,
 };
 
@@ -75,6 +77,62 @@ impl Store {
         let cache_write_tokens = non_negative(token_row.try_get("cache_write_tokens")?);
         let output_tokens = non_negative(token_row.try_get("output_tokens")?);
         let prompt_tokens = saturating_sum(&[input_tokens, cache_read_tokens, cache_write_tokens]);
+
+        let pricing = self.pricing_settings().await?;
+        let model_rows = sqlx::query(
+            "SELECT
+                model_id,
+                MAX(display_name) AS display_name,
+                COALESCE(SUM(status != 'running'), 0) AS calls,
+                COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens,
+                COALESCE(SUM(COALESCE(cache_read_tokens, 0)), 0) AS cache_read_tokens,
+                COALESCE(SUM(COALESCE(cache_write_tokens, 0)), 0) AS cache_write_tokens,
+                COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens
+             FROM llm_calls
+             WHERE (? IS NULL OR created_at_ms >= ?)
+               AND (? IS NULL OR created_at_ms < ?)
+               AND (? IS NULL OR model_hash IN (SELECT value FROM json_each(?)))
+             GROUP BY model_id
+             ORDER BY (input_tokens + cache_read_tokens + cache_write_tokens + output_tokens) DESC, model_id",
+        )
+        .bind(start_ms)
+        .bind(start_ms)
+        .bind(end_ms)
+        .bind(end_ms)
+        .bind(model_hashes)
+        .bind(model_hashes)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut cost = 0.0_f64;
+        let by_model = model_rows
+            .into_iter()
+            .map(|row| {
+                let model_id: String = row.try_get("model_id")?;
+                let model_input = non_negative(row.try_get("input_tokens")?);
+                let model_cache_read = non_negative(row.try_get("cache_read_tokens")?);
+                let model_cache_write = non_negative(row.try_get("cache_write_tokens")?);
+                let model_output = non_negative(row.try_get("output_tokens")?);
+                let (input_price, output_price, cache_read_price, cache_write_price) =
+                    pricing.prices_for(&model_id);
+                let model_cost = (model_input as f64 * input_price
+                    + model_cache_read as f64 * cache_read_price
+                    + model_cache_write as f64 * cache_write_price
+                    + model_output as f64 * output_price)
+                    / 1_000_000.0;
+                cost += model_cost;
+                Ok(OverviewModelUsage {
+                    model_id,
+                    display_name: row.try_get("display_name")?,
+                    calls: row.try_get("calls")?,
+                    input_tokens: model_input,
+                    cache_read_tokens: model_cache_read,
+                    cache_write_tokens: model_cache_write,
+                    output_tokens: model_output,
+                    cost: model_cost,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
         let metrics = OverviewMetrics {
             llm_calls: call_row.try_get("llm_calls")?,
             successful_calls: call_row.try_get("successful_calls")?,
@@ -85,6 +143,7 @@ impl Store {
             cache_read_tokens,
             cache_write_tokens,
             output_tokens,
+            cost,
         };
 
         let (token_usage_granularity, bucket_ms, series_start_ms, bucket_count) =
@@ -142,6 +201,7 @@ impl Store {
             metrics,
             token_usage_granularity,
             token_usage_series,
+            by_model,
         })
     }
 }
@@ -228,7 +288,10 @@ fn saturating_sum(values: &[i64]) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{NewLlmCall, ProtocolType, Usage};
+    use crate::{
+        model::{NewLlmCall, ProtocolType, Usage},
+        store::{ModelTokenPricing, TokenPricingSettings},
+    };
 
     async fn store() -> (tempfile::TempDir, Store) {
         let directory = tempfile::tempdir().unwrap();
@@ -242,6 +305,17 @@ mod tests {
     }
 
     async fn record(store: &Store, call_id: &str, protocol_type: ProtocolType, usage: Usage) {
+        record_model(store, call_id, "model", "Model", protocol_type, usage).await
+    }
+
+    async fn record_model(
+        store: &Store,
+        call_id: &str,
+        model_id: &str,
+        display_name: &str,
+        protocol_type: ProtocolType,
+        usage: Usage,
+    ) {
         store
             .start_llm_call(&NewLlmCall {
                 call_id: call_id.into(),
@@ -251,8 +325,8 @@ mod tests {
                 model_hash: "model".into(),
                 protocol_type,
                 endpoint_url: "https://example.test".into(),
-                model_id: "model".into(),
-                display_name: "Model".into(),
+                model_id: model_id.into(),
+                display_name: display_name.into(),
                 reasoning_effort: None,
                 fast: false,
                 message_count: 1,
@@ -402,5 +476,104 @@ mod tests {
                 (ms("2026-01-11T03:00:00Z"), 2),
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn by_model_groups_tokens_and_prices_per_model_override() {
+        let (_directory, store) = store().await;
+        let usage = |input, output| Usage {
+            input_tokens: Some(input),
+            output_tokens: Some(output),
+            ..Default::default()
+        };
+        record_model(
+            &store,
+            "a1",
+            "model-a",
+            "Model A",
+            ProtocolType::Provider,
+            usage(1_000_000, 100_000),
+        )
+        .await;
+        record_model(
+            &store,
+            "a2",
+            "model-a",
+            "Model A",
+            ProtocolType::Provider,
+            usage(500_000, 0),
+        )
+        .await;
+        record_model(
+            &store,
+            "b1",
+            "model-b",
+            "Model B",
+            ProtocolType::Provider,
+            usage(0, 200_000),
+        )
+        .await;
+        // A still-running call contributes its reported tokens but not a call count.
+        store
+            .start_llm_call(&NewLlmCall {
+                call_id: "live".into(),
+                run_id: "run-live".into(),
+                conversation_id: "conversation".into(),
+                provider_call_index: 0,
+                model_hash: "model".into(),
+                protocol_type: ProtocolType::Provider,
+                endpoint_url: "https://example.test".into(),
+                model_id: "model-a".into(),
+                display_name: "Model A".into(),
+                reasoning_effort: None,
+                fast: false,
+                message_count: 1,
+                tool_count: 0,
+                detailed: false,
+            })
+            .await
+            .unwrap();
+        store
+            .record_llm_usage("live", usage(50_000, 10_000))
+            .await
+            .unwrap();
+
+        // Global pricing: input 5, output 25. Override model-a's input to 1.
+        store
+            .set_pricing_settings(TokenPricingSettings {
+                input_per_million: 5.0,
+                output_per_million: 25.0,
+                cache_read_per_million: 0.5,
+                cache_write_per_million: 6.25,
+                model_prices: [(
+                    "model-a".to_owned(),
+                    ModelTokenPricing {
+                        input_per_million: Some(1.0),
+                        ..Default::default()
+                    },
+                )]
+                .into_iter()
+                .collect(),
+            })
+            .await
+            .unwrap();
+
+        let overview = store.overview(None, None, None, None, None).await.unwrap();
+
+        assert_eq!(overview.by_model.len(), 2);
+        let model_a = &overview.by_model[0];
+        assert_eq!(model_a.model_id, "model-a");
+        assert_eq!(model_a.display_name, "Model A");
+        assert_eq!(model_a.calls, 2);
+        assert_eq!(model_a.input_tokens, 1_550_000);
+        assert_eq!(model_a.output_tokens, 110_000);
+        // model-a: (1.55M * 1 + 110k * 25) / 1M = 4.30
+        assert!((model_a.cost - 4.30).abs() < 1e-9);
+        let model_b = &overview.by_model[1];
+        assert_eq!(model_b.model_id, "model-b");
+        assert_eq!(model_b.calls, 1);
+        // model-b uses global prices: 200k * 25 / 1M = 5.0
+        assert!((model_b.cost - 5.0).abs() < 1e-9);
+        assert!((overview.metrics.cost - 9.30).abs() < 1e-9);
     }
 }

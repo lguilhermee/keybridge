@@ -4,6 +4,9 @@ import { accountData, accountHeaders } from "./resources.ts";
 
 const MODELS_URL = "https://chatgpt.com/backend-api/codex/models?client_version=1.0.0";
 
+/** Codex (gpt-*-codex) models carry a ~272K context window; used when discovery omits it. */
+const CODEX_CONTEXT_WINDOW = 272_000;
+
 function object(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -91,11 +94,16 @@ export function parseOfficialModels(body: unknown): ModelDefinition[] {
       model.max_output_tokens ?? model.maxOutputTokens ?? model.max_completion_tokens ??
         model.maxCompletionTokens,
     );
+    const contextWindow = positiveInteger(
+      model.context_window ?? model.contextWindow ?? model.context_length ??
+        model.contextLength ?? model.max_input_tokens ?? model.maxInputTokens,
+    ) ?? CODEX_CONTEXT_WINDOW;
     const displayName =
       text(model.display_name ?? model.displayName ?? model.title ?? model.name) ?? id;
     const shared = {
       ...(description ? { description } : {}),
       ...(maxOutputTokens !== null ? { maxOutputTokens } : {}),
+      contextWindow,
       capabilities: { images: true },
     };
     const serviceTiers = serviceTierIds(model);

@@ -830,6 +830,7 @@ mod tests {
             icon: String::new(),
             brand: "test".into(),
             max_output_tokens: None,
+            context_window: None,
             images: false,
             enabled: true,
         });

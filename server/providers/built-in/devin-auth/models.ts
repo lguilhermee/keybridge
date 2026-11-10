@@ -53,6 +53,7 @@ export function parseModels(body: Record<string, any>): ModelDefinition[] {
     const info = model.modelInfo ?? {};
     const key = fastModeSiblingKey(model);
     const fastModelId = key && !isFastMode(model) ? fastModels.get(key) : undefined;
+    const contextWindow = Number(model.maxTokens ?? info.maxTokens) || undefined;
     return [{
       id,
       displayName: model.label || id,
@@ -60,12 +61,13 @@ export function parseModels(body: Record<string, any>): ModelDefinition[] {
         model.modelFamilyMetadata?.modelFamilyLabel ?? id
       }`,
       maxOutputTokens: Number(info.maxOutputTokens) || undefined,
+      ...(contextWindow !== undefined ? { contextWindow } : {}),
       capabilities: {
         images: model.supportsImages === true ||
           info.modelFeatures?.supportsImages === true,
       },
       privateData: {
-        contextWindow: Number(model.maxTokens ?? info.maxTokens) || null,
+        contextWindow: contextWindow ?? null,
         provider: model.provider ?? null,
         ...(fastModelId ? { fastModelId } : {}),
       },

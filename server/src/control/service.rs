@@ -117,6 +117,16 @@ pub struct CallSummary {
     pub call: LlmCallSummary,
     pub call_kind: &'static str,
     pub route: &'static str,
+    /// The shown output count is provisional: the call is still running or it
+    /// finished without the provider reporting usage, so only the estimate is known.
+    pub output_estimated: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct CallPage {
+    pub calls: Vec<CallSummary>,
+    /// Total rows matching the filters (provider calls plus official Cursor traces).
+    pub total: i64,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -554,37 +564,54 @@ impl ControlService {
         })
     }
 
-    pub async fn calls(&self, limit: i64) -> Result<Vec<CallSummary>> {
-        let mut calls = self
+    /// One page of the merged call history. `offset`/`limit` apply to the merged
+    /// provider-call + official-trace stream; `total` counts both sources.
+    pub async fn calls(
+        &self,
+        filter: &crate::store::LlmCallFilter,
+        offset: i64,
+        limit: i64,
+    ) -> Result<CallPage> {
+        let offset = offset.max(0);
+        let limit = limit.clamp(1, 500);
+        // The merged page needs each source's first offset+limit rows at most.
+        let fetch = offset.saturating_add(limit);
+        let (calls, llm_total) = self.store.llm_calls_page(filter, 0, fetch).await?;
+        let (traces, trace_total) = self
             .store
-            .llm_calls(limit)
-            .await?
+            .official_cursor_traces_page(filter, 0, fetch)
+            .await?;
+        let mut merged = calls
             .into_iter()
             .map(|call| {
                 let route = call_route(&call.run_id);
+                let output_estimated = output_is_estimated(&call);
                 CallSummary {
                     call,
                     call_kind: "provider_llm",
                     route,
+                    output_estimated,
                 }
             })
             .collect::<Vec<_>>();
-        calls.extend(
-            self.store
-                .official_cursor_traces(limit)
-                .await?
-                .into_iter()
-                .map(official_call),
-        );
-        calls.sort_by_key(|call| std::cmp::Reverse(call.call.created_at_ms));
-        calls.truncate(limit.clamp(1, 500) as usize);
-        Ok(calls)
+        merged.extend(traces.into_iter().map(official_call));
+        merged.sort_by_key(|call| std::cmp::Reverse(call.call.created_at_ms));
+        let calls = merged
+            .into_iter()
+            .skip(offset.min(usize::MAX as i64) as usize)
+            .take(limit as usize)
+            .collect();
+        Ok(CallPage {
+            calls,
+            total: llm_total.saturating_add(trace_total),
+        })
     }
 
     pub async fn call(&self, call_id: &str) -> Result<CallDetail> {
         if let Some(call) = self.store.llm_call(call_id).await? {
             let cursor_trace = self.cursor_trace_detail(&call.run_id).await?;
             let route = call_route(&call.run_id);
+            let output_estimated = output_is_estimated(&call);
             return Ok(CallDetail {
                 request: self.store.llm_call_request(call_id).await?,
                 response_chunks: self.store.llm_call_chunks(call_id).await?,
@@ -592,6 +619,7 @@ impl ControlService {
                     call,
                     call_kind: "provider_llm",
                     route,
+                    output_estimated,
                 },
                 cursor_trace,
             });
@@ -731,6 +759,13 @@ impl ControlService {
     }
 }
 
+/// The output count shown for this call is an estimate, not a provider report:
+/// true while the call runs, and afterwards when usage was never reported.
+fn output_is_estimated(call: &LlmCallSummary) -> bool {
+    call.status == "running"
+        || (call.output_tokens.is_none() && call.estimated_output_tokens.is_some())
+}
+
 fn call_route(run_id: &str) -> &'static str {
     if run_id.starts_with("external-api:") {
         "external_api"
@@ -784,6 +819,7 @@ fn official_call(trace: CursorRunTraceSummary) -> CallSummary {
             cache_read_tokens: None,
             cache_write_tokens: None,
             reasoning_tokens: None,
+            estimated_output_tokens: None,
             usage: None,
             message_count: 0,
             tool_count: 0,
@@ -797,6 +833,7 @@ fn official_call(trace: CursorRunTraceSummary) -> CallSummary {
         },
         call_kind: "cursor_official",
         route: "cursor_official",
+        output_estimated: trace.status == "running",
     }
 }
 

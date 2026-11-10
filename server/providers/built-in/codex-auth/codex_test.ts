@@ -278,12 +278,20 @@ Deno.test("official model discovery excludes hidden models and puts the default 
           { effort: "medium", description: "Balanced" },
         ],
       },
-      { slug: "gpt-second", supported_in_api: true, visibility: "list" },
+      {
+        slug: "gpt-second",
+        supported_in_api: true,
+        visibility: "list",
+        context_window: 400_000,
+      },
       { slug: "gpt-hidden", supported_in_api: true, visibility: "hidden" },
       { slug: "gpt-internal", supported_in_api: false, visibility: "list" },
     ],
   });
   assertEquals(models.map((model) => model.id), ["gpt-second", "gpt-first"]);
+  // An upstream window wins; models without one get the 272K Codex fallback.
+  assertEquals(models[0].contextWindow, 400_000);
+  assertEquals(models[1].contextWindow, 272_000);
   assertEquals(models[1].capabilities, { images: true });
   assertEquals(models[1].privateData, { reasoningEfforts: ["low", "medium"], serviceTiers: [] });
 });

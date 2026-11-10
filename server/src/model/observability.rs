@@ -157,6 +157,10 @@ mod llm_call {
         pub cache_read_tokens: Option<i64>,
         pub cache_write_tokens: Option<i64>,
         pub reasoning_tokens: Option<i64>,
+        /// Live estimate of generated output tokens accumulated from streamed
+        /// deltas while the call runs; superseded by `output_tokens` once the
+        /// provider reports real usage.
+        pub estimated_output_tokens: Option<i64>,
         pub usage: Option<serde_json::Value>,
         pub message_count: i64,
         pub tool_count: i64,
@@ -223,7 +227,7 @@ mod overview {
 
     use serde::Serialize;
 
-    #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+    #[derive(Clone, Debug, Default, PartialEq, Serialize)]
     pub struct OverviewMetrics {
         pub llm_calls: i64,
         pub successful_calls: i64,
@@ -234,6 +238,9 @@ mod overview {
         pub cache_read_tokens: i64,
         pub cache_write_tokens: i64,
         pub output_tokens: i64,
+        /// Estimated cost in USD over the filtered range using configured token
+        /// pricing (per-model price when the model has one).
+        pub cost: f64,
     }
 
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
@@ -263,11 +270,30 @@ mod overview {
         }
     }
 
-    #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+    /// Token, call, and cost aggregates for one upstream model ID over the
+    /// overview's filtered range. `display_name` is the most recent name
+    /// recorded for the model; `cost` follows the same pricing rules as
+    /// `OverviewMetrics::cost`.
+    #[derive(Clone, Debug, Default, PartialEq, Serialize)]
+    pub struct OverviewModelUsage {
+        pub model_id: String,
+        pub display_name: String,
+        /// Finished calls (everything except `running`), matching `llm_calls` in metrics.
+        pub calls: i64,
+        pub input_tokens: i64,
+        pub cache_read_tokens: i64,
+        pub cache_write_tokens: i64,
+        pub output_tokens: i64,
+        pub cost: f64,
+    }
+
+    #[derive(Clone, Debug, Default, PartialEq, Serialize)]
     pub struct Overview {
         pub metrics: OverviewMetrics,
         pub token_usage_granularity: TokenUsageGranularity,
         pub token_usage_series: Vec<TokenUsageBucket>,
+        /// Per-model breakdown over the same filters as the headline metrics.
+        pub by_model: Vec<OverviewModelUsage>,
     }
 }
 pub use overview::*;

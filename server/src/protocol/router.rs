@@ -75,6 +75,9 @@ impl Protocol for ProtocolRouter {
                     if let Some(tokens) = plan.model.max_output_tokens {
                         routed.request.model.max_output_tokens.get_or_insert(tokens);
                     }
+                    if let Some(tokens) = plan.model.context_window {
+                        routed.request.model.context_window_tokens.get_or_insert(tokens);
+                    }
                     let protocol: Arc<dyn Protocol> = Arc::new(NormalizedProtocol::new(Arc::new(ProviderModelProtocol {
                         registry: providers.clone(),
                         recorder: recorder.clone(),

@@ -6,7 +6,10 @@ use crate::{
     Result,
 };
 
-use super::{now_ms, BlobId, Store};
+use super::{
+    llm_calls::{like_pattern, LlmCallFilter},
+    now_ms, BlobId, Store,
+};
 
 #[derive(Clone, Debug)]
 pub(crate) struct BufferedCursorTraceChunk {
@@ -281,16 +284,66 @@ impl Store {
             .transpose()
     }
 
-    pub async fn official_cursor_traces(&self, limit: i64) -> Result<Vec<CursorRunTraceSummary>> {
+    /// Filtered official-trace rows plus the total matching the call-history
+    /// filters; `model` only matches `model_id` (traces have no model hash).
+    pub async fn official_cursor_traces_page(
+        &self,
+        filter: &LlmCallFilter,
+        offset: i64,
+        limit: i64,
+    ) -> Result<(Vec<CursorRunTraceSummary>, i64)> {
+        let like = filter.q.as_deref().map(like_pattern);
         let rows = sqlx::query(
             "SELECT * FROM cursor_run_traces
              WHERE route = 'cursor_official'
-             ORDER BY received_at_ms DESC LIMIT ?",
+               AND (? IS NULL OR status = ?)
+               AND (? IS NULL OR model_id = ?)
+               AND (? IS NULL OR request_id LIKE ? ESCAPE '\\'
+                    OR conversation_id LIKE ? ESCAPE '\\'
+                    OR model_id LIKE ? ESCAPE '\\'
+                    OR error_message LIKE ? ESCAPE '\\')
+             ORDER BY received_at_ms DESC LIMIT ? OFFSET ?",
         )
-        .bind(limit.clamp(1, 500))
+        .bind(&filter.status)
+        .bind(&filter.status)
+        .bind(&filter.model)
+        .bind(&filter.model)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(limit.max(1))
+        .bind(offset.max(0))
         .fetch_all(&self.pool)
         .await?;
-        rows.into_iter().map(trace_from_row).collect()
+        let total: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM cursor_run_traces
+             WHERE route = 'cursor_official'
+               AND (? IS NULL OR status = ?)
+               AND (? IS NULL OR model_id = ?)
+               AND (? IS NULL OR request_id LIKE ? ESCAPE '\\'
+                    OR conversation_id LIKE ? ESCAPE '\\'
+                    OR model_id LIKE ? ESCAPE '\\'
+                    OR error_message LIKE ? ESCAPE '\\')",
+        )
+        .bind(&filter.status)
+        .bind(&filter.status)
+        .bind(&filter.model)
+        .bind(&filter.model)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .bind(&like)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok((
+            rows.into_iter()
+                .map(trace_from_row)
+                .collect::<Result<_>>()?,
+            total,
+        ))
     }
 
     pub async fn cursor_trace_artifacts(
@@ -342,4 +395,156 @@ fn trace_from_row(row: sqlx::sqlite::SqliteRow) -> Result<CursorRunTraceSummary>
 
 fn as_i64(value: usize) -> i64 {
     value.min(i64::MAX as usize) as i64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    async fn test_store() -> (tempfile::TempDir, Store) {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            directory.path().join("test.db").display()
+        ))
+        .await
+        .unwrap();
+        (directory, store)
+    }
+
+    async fn seed_trace(
+        store: &Store,
+        request_id: &str,
+        route: &str,
+        model_id: Option<&str>,
+        status: &str,
+        received_at_ms: i64,
+    ) {
+        sqlx::query(
+            "INSERT INTO cursor_run_traces(request_id, conversation_id, route, model_id, status, received_at_ms)
+             VALUES (?, ?, ?, ?, ?, ?)",
+        )
+        .bind(request_id)
+        .bind(format!("conv-{request_id}"))
+        .bind(route)
+        .bind(model_id)
+        .bind(status)
+        .bind(received_at_ms)
+        .execute(&store.pool)
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn official_traces_page_filters_and_reports_total() {
+        let (_directory, store) = test_store().await;
+        seed_trace(
+            &store,
+            "t-auto",
+            "cursor_official",
+            Some("auto"),
+            "completed",
+            3,
+        )
+        .await;
+        seed_trace(
+            &store,
+            "t-gpt",
+            "cursor_official",
+            Some("gpt-5"),
+            "error",
+            2,
+        )
+        .await;
+        seed_trace(
+            &store,
+            "t-live",
+            "cursor_official",
+            Some("auto"),
+            "running",
+            1,
+        )
+        .await;
+
+        let filter = |status: &str| LlmCallFilter {
+            status: Some(status.into()),
+            ..Default::default()
+        };
+        let (traces, total) = store
+            .official_cursor_traces_page(&filter("completed"), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(traces.len(), 1);
+        assert_eq!(traces[0].request_id, "t-auto");
+        assert_eq!(total, 1);
+
+        // The model filter matches the trace's model_id.
+        let (traces, total) = store
+            .official_cursor_traces_page(
+                &LlmCallFilter {
+                    model: Some("auto".into()),
+                    ..Default::default()
+                },
+                0,
+                50,
+            )
+            .await
+            .unwrap();
+        assert_eq!(traces.len(), 2);
+        assert_eq!(total, 2);
+
+        // Text search covers request/conversation/model fields.
+        let (traces, _) = store
+            .official_cursor_traces_page(
+                &LlmCallFilter {
+                    q: Some("conv-t-gpt".into()),
+                    ..Default::default()
+                },
+                0,
+                50,
+            )
+            .await
+            .unwrap();
+        assert_eq!(traces.len(), 1);
+        assert_eq!(traces[0].request_id, "t-gpt");
+
+        // Paging keeps the merged stream order (received_at_ms desc).
+        let (traces, total) = store
+            .official_cursor_traces_page(&LlmCallFilter::default(), 1, 1)
+            .await
+            .unwrap();
+        assert_eq!(traces[0].request_id, "t-gpt");
+        assert_eq!(total, 3);
+    }
+
+    #[tokio::test]
+    async fn official_traces_page_excludes_local_byok_rows() {
+        let (_directory, store) = test_store().await;
+        seed_trace(
+            &store,
+            "t-local",
+            "local_byok",
+            Some("auto"),
+            "completed",
+            2,
+        )
+        .await;
+        seed_trace(
+            &store,
+            "t-official",
+            "cursor_official",
+            Some("auto"),
+            "completed",
+            1,
+        )
+        .await;
+
+        // local_byok rows never enter the calls list even though they share the table.
+        let (traces, total) = store
+            .official_cursor_traces_page(&LlmCallFilter::default(), 0, 50)
+            .await
+            .unwrap();
+        assert_eq!(traces.len(), 1);
+        assert_eq!(total, 1);
+    }
 }

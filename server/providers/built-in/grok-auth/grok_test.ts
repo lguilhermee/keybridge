@@ -162,7 +162,10 @@ Deno.test("model discovery parses both language-models and standard list shapes"
   assertEquals(richModels.map((model) => model.id), ["grok-4", "grok-3-mini"]);
   assertEquals(richModels[0].displayName, "Grok 4");
   assertEquals(richModels[0].capabilities, { images: true });
+  assertEquals(richModels[0].contextWindow, 256_000);
   assertEquals(richModels[1].capabilities, { images: false });
+  // An upstream without a reported limit gets no window rather than a guess.
+  assertEquals("contextWindow" in richModels[1], false);
 
   const plainModels = parseGrokModels({ data: [{ id: "grok-4-fast" }] });
   assertEquals(plainModels.map((model) => model.id), ["grok-4-fast"]);

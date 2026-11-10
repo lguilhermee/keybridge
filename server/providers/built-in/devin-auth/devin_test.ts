@@ -169,6 +169,7 @@ Deno.test("Catalog uses current model limits, images and stable IDs, excluding r
           modelUid: "m",
           label: "Model",
           supportsImages: true,
+          maxTokens: 500_000,
           modelInfo: { maxOutputTokens: 300 },
         },
         { modelUid: "m", label: "Duplicate" },
@@ -180,8 +181,9 @@ Deno.test("Catalog uses current model limits, images and stable IDs, excluding r
       displayName: "Model",
       description: "Devin - m",
       maxOutputTokens: 300,
+      contextWindow: 500_000,
       capabilities: { images: true },
-      privateData: { contextWindow: null, provider: null },
+      privateData: { contextWindow: 500_000, provider: null },
     }],
   );
 });

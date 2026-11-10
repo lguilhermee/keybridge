@@ -1,6 +1,8 @@
 import type { ModelDefinition, ModelSupport } from "cursor-byok:model";
 
 const MAX_OUTPUT_TOKENS = 64_000;
+/** Every Claude subscription model shares the 200K-token context window. */
+const CONTEXT_WINDOW = 200_000;
 
 /** Models that accept `speed: "fast"`; other models reject it, so they run at standard speed. */
 export const FAST_MODE_MODELS: ReadonlySet<string> = new Set([
@@ -15,48 +17,56 @@ const CATALOG: ModelDefinition[] = [
     id: "claude-opus-5-5",
     displayName: "Claude Opus 5.5",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "claude-opus-5",
     displayName: "Claude Opus 5",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "claude-fable-5-2",
     displayName: "Claude Fable 5.2",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "claude-fable-5-1",
     displayName: "Claude Fable 5.1",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "claude-fable-5",
     displayName: "Claude Fable 5",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "claude-sonnet-5-5",
     displayName: "Claude Sonnet 5.5",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "claude-sonnet-5",
     displayName: "Claude Sonnet 5",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
   {
     id: "claude-haiku-4-5-20251001",
     displayName: "Claude Haiku 4.5",
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    contextWindow: CONTEXT_WINDOW,
     capabilities: { images: true },
   },
 ];

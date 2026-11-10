@@ -33,12 +33,51 @@ pub struct ExternalApiSettings {
     pub api_key: String,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+/// Optional per-model price overrides keyed by the upstream `model_id` seen on
+/// call rows and in the overview breakdown. Each field falls back to the global
+/// `TokenPricingSettings` value when absent.
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct ModelTokenPricing {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_per_million: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_per_million: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache_read_per_million: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache_write_per_million: Option<f64>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TokenPricingSettings {
     pub input_per_million: f64,
     pub output_per_million: f64,
     pub cache_read_per_million: f64,
     pub cache_write_per_million: f64,
+    /// Per-model overrides: `model_id` -> prices (USD per million tokens).
+    #[serde(default)]
+    pub model_prices: std::collections::BTreeMap<String, ModelTokenPricing>,
+}
+
+impl TokenPricingSettings {
+    /// The prices that apply to one model: its overrides where set, global values otherwise.
+    pub fn prices_for(&self, model_id: &str) -> (f64, f64, f64, f64) {
+        let custom = self.model_prices.get(model_id);
+        (
+            custom
+                .and_then(|prices| prices.input_per_million)
+                .unwrap_or(self.input_per_million),
+            custom
+                .and_then(|prices| prices.output_per_million)
+                .unwrap_or(self.output_per_million),
+            custom
+                .and_then(|prices| prices.cache_read_per_million)
+                .unwrap_or(self.cache_read_per_million),
+            custom
+                .and_then(|prices| prices.cache_write_per_million)
+                .unwrap_or(self.cache_write_per_million),
+        )
+    }
 }
 
 impl Default for TokenPricingSettings {
@@ -48,6 +87,7 @@ impl Default for TokenPricingSettings {
             output_per_million: 25.0,
             cache_read_per_million: 0.5,
             cache_write_per_million: 6.25,
+            model_prices: std::collections::BTreeMap::new(),
         }
     }
 }
@@ -560,9 +600,10 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::{
-        read_proxy_settings, CommitPromptLocale, CommitSettings, ExternalApiSettings, ProxyMode,
-        ProxySettingsInput, ProxySettingsSecret, Store, TokenPricingSettings,
-        DEFAULT_COMMIT_PROMPT_EN_US, DEFAULT_COMMIT_PROMPT_ZH_CN, PROXY_SETTINGS_KEY,
+        read_proxy_settings, CommitPromptLocale, CommitSettings, ExternalApiSettings,
+        ModelTokenPricing, ProxyMode, ProxySettingsInput, ProxySettingsSecret, Store,
+        TokenPricingSettings, DEFAULT_COMMIT_PROMPT_EN_US, DEFAULT_COMMIT_PROMPT_ZH_CN,
+        PROXY_SETTINGS_KEY,
     };
 
     /// The `outbound_proxy` row exactly as builds before the `system` -> `default`
@@ -691,11 +732,51 @@ mod tests {
             output_per_million: 15.0,
             cache_read_per_million: 0.3,
             cache_write_per_million: 3.75,
+            model_prices: [(
+                "claude-opus-5".to_owned(),
+                ModelTokenPricing {
+                    input_per_million: Some(9.0),
+                    output_per_million: Some(45.0),
+                    cache_read_per_million: None,
+                    cache_write_per_million: None,
+                },
+            )]
+            .into_iter()
+            .collect(),
         };
-        let saved = store.set_pricing_settings(custom).await.unwrap();
+        let saved = store.set_pricing_settings(custom.clone()).await.unwrap();
         assert_eq!(saved, custom);
 
         assert_eq!(store.pricing_settings().await.unwrap(), custom);
+    }
+
+    #[test]
+    fn pricing_from_an_older_build_reads_with_no_model_prices() {
+        let legacy = r#"{"input_per_million":1.0,"output_per_million":2.0,"cache_read_per_million":0.1,"cache_write_per_million":0.2}"#;
+        let settings: TokenPricingSettings = serde_json::from_str(legacy).unwrap();
+        assert!(settings.model_prices.is_empty());
+        assert_eq!(settings.prices_for("any-model"), (1.0, 2.0, 0.1, 0.2));
+    }
+
+    #[test]
+    fn per_model_prices_fall_back_per_field_to_the_global_prices() {
+        let mut settings = TokenPricingSettings {
+            input_per_million: 3.0,
+            output_per_million: 15.0,
+            cache_read_per_million: 0.3,
+            cache_write_per_million: 3.75,
+            ..TokenPricingSettings::default()
+        };
+        settings.model_prices.insert(
+            "gpt-special".to_owned(),
+            ModelTokenPricing {
+                output_per_million: Some(60.0),
+                ..ModelTokenPricing::default()
+            },
+        );
+
+        assert_eq!(settings.prices_for("gpt-special"), (3.0, 60.0, 0.3, 3.75));
+        assert_eq!(settings.prices_for("other"), (3.0, 15.0, 0.3, 3.75));
     }
 
     #[tokio::test]

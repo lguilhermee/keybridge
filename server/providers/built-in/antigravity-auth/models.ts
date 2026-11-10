@@ -20,7 +20,20 @@ export const ANTIGRAVITY_CLIENT_HEADERS: Record<string, string> = {};
 
 const ANTIGRAVITY_DENYLIST = new Set(["chat_20706", "chat_23310"]);
 
-export const STATIC_ANTIGRAVITY_MODELS: ModelDefinition[] = [
+/**
+ * Context windows by model family as documented by each upstream vendor
+ * (Gemini 1M, Claude 200K, GPT-4o 128K, gpt-oss-120b 128K). Unknown families
+ * report no window rather than a guess.
+ */
+function contextWindowFor(id: string): number | undefined {
+  if (id.startsWith("gemini")) return 1_048_576;
+  if (id.startsWith("claude")) return 200_000;
+  if (id.startsWith("gpt-4o")) return 128_000;
+  if (id.startsWith("gpt-oss")) return 131_072;
+  return undefined;
+}
+
+const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
   // Gemini 3.8 Series
   {
     id: "gemini-3.8-flash-high",
@@ -267,6 +280,10 @@ export const STATIC_ANTIGRAVITY_MODELS: ModelDefinition[] = [
   },
 ];
 
+export const STATIC_ANTIGRAVITY_MODELS: ModelDefinition[] = STATIC_ANTIGRAVITY_CATALOG.map(
+  (model) => ({ ...model, contextWindow: contextWindowFor(model.id) }),
+);
+
 function object(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -275,6 +292,15 @@ function object(value: unknown): Record<string, unknown> | null {
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function positiveInteger(value: unknown): number | null {
+  const parsed = typeof value === "number"
+    ? value
+    : typeof value === "string"
+    ? Number(value)
+    : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : null;
 }
 
 export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
@@ -300,6 +326,9 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
     const maxOutputTokens = typeof model.maxOutputTokens === "number" && model.maxOutputTokens > 0
       ? model.maxOutputTokens
       : 65_536;
+    const contextWindow = positiveInteger(
+      model.contextWindow ?? model.context_window ?? model.maxContextTokens ?? model.maxTokens,
+    ) ?? contextWindowFor(id);
 
     models.push({
       id,
@@ -308,6 +337,7 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
         images: model.supportsImages === true || id.includes("gemini") || id.includes("claude"),
       },
       maxOutputTokens,
+      ...(contextWindow !== undefined ? { contextWindow } : {}),
       privateData: { reasoningEfforts },
     });
   }

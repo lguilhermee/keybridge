@@ -763,6 +763,10 @@ Deno.test("Model catalog exposes the Claude subscription models", async () => {
     models.every((model) => model.capabilities?.images === true),
     "all models accept images",
   );
+  assert(
+    models.every((model) => model.contextWindow === 200_000),
+    "all models share the 200K context window",
+  );
 });
 
 Deno.test("Present shows plan, quota windows, and reset grants without credentials", async () => {

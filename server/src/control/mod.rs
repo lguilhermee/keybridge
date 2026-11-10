@@ -21,7 +21,7 @@ use tower_http::{
 use url::{Host, Url};
 
 pub use service::{
-    CallDetail, CallSummary, ControlService, DiscoveredModels, LegacyModelImportPreview,
+    CallDetail, CallPage, CallSummary, ControlService, DiscoveredModels, LegacyModelImportPreview,
     LegacyModelImportResult, ModelConnectivityResult, ModelDiscoveryInput, ObservabilitySettings,
 };
 

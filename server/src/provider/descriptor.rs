@@ -137,6 +137,8 @@ pub struct ProviderModelDescriptor {
     pub icon: String,
     pub brand: String,
     pub max_output_tokens: Option<u64>,
+    /// Total prompt window in tokens; serialized as `contextWindow`. Null when unknown — the UI hides the context meter.
+    pub context_window: Option<u64>,
     pub images: bool,
     pub enabled: bool,
 }
@@ -294,6 +296,7 @@ impl ProviderModelDescriptor {
             icon: icon.to_owned(),
             brand: channel.brand.clone(),
             max_output_tokens: model.max_output_tokens,
+            context_window: model.context_window,
             images: model.images,
             enabled: model.enabled,
         }
