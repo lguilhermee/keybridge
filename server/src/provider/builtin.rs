@@ -282,37 +282,14 @@ const PROVIDERS: &[(&str, &[(&str, &str)])] = &[
     ("opencode-auth", OPENCODE_AUTH),
 ];
 
-/// Preinstalls built-in providers into the installed directory. The manifest version is the cache key:
-/// identical version means zero writes; a version change syncs the whole directory and removes leftover files.
+/// Syncs built-in providers into the installed directory on every start. The binary owns these
+/// directories: file content is compared byte-for-byte, so unchanged files cost no writes, changed
+/// files are replaced, and files absent from the embedded bundle are removed.
 pub(super) fn install(installed: &Path) -> Result<()> {
     for (name, files) in PROVIDERS {
-        let directory = installed.join(name);
-        if disk_version(&directory) == Some(embedded_version(files)?) {
-            continue;
-        }
-        write_provider(&directory, files)?;
+        write_provider(&installed.join(name), files)?;
     }
     Ok(())
-}
-
-fn embedded_version(files: &[(&str, &str)]) -> Result<String> {
-    let manifest = files
-        .iter()
-        .find(|(name, _)| *name == "provider.json")
-        .map(|(_, content)| *content)
-        .expect("built-in provider bundles provider.json");
-    let value: serde_json::Value = serde_json::from_str(manifest)?;
-    value
-        .get("version")
-        .and_then(serde_json::Value::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| crate::Error::Config("built-in provider manifest requires version".into()))
-}
-
-fn disk_version(directory: &Path) -> Option<String> {
-    let manifest = std::fs::read_to_string(directory.join("provider.json")).ok()?;
-    let value: serde_json::Value = serde_json::from_str(&manifest).ok()?;
-    Some(value.get("version")?.as_str()?.to_owned())
 }
 
 fn write_provider(directory: &Path, files: &[(&str, &str)]) -> Result<()> {
@@ -371,7 +348,7 @@ mod tests {
     }
 
     #[test]
-    fn install_is_version_gated_and_syncs_on_version_change() {
+    fn install_syncs_content_even_when_version_is_unchanged() {
         let root = tempfile::tempdir().unwrap();
         let provider = root.path().join("codex-auth");
 
@@ -386,21 +363,10 @@ mod tests {
             .is_file());
         assert!(root.path().join("devin-auth/channel.ts").is_file());
 
-        // Version identical: local edits and extra files are left alone and nothing is written.
-        std::fs::write(provider.join("main.ts"), "edited").unwrap();
+        // Same manifest version, stale content on disk (an older build shipped different code
+        // without bumping the version): content is restored and leftovers are removed.
+        std::fs::write(provider.join("main.ts"), "stale").unwrap();
         std::fs::write(provider.join("stale.ts"), "extra").unwrap();
-        install(root.path()).unwrap();
-        assert_eq!(
-            std::fs::read_to_string(provider.join("main.ts")).unwrap(),
-            "edited"
-        );
-        assert!(provider.join("stale.ts").exists());
-
-        // Version changed: the whole directory is synced back to the embedded content and leftovers are cleaned up.
-        let manifest = std::fs::read_to_string(provider.join("provider.json")).unwrap();
-        let mut value: serde_json::Value = serde_json::from_str(&manifest).unwrap();
-        value["version"] = serde_json::Value::String("0.0.1".into());
-        std::fs::write(provider.join("provider.json"), value.to_string()).unwrap();
         install(root.path()).unwrap();
         assert_eq!(
             std::fs::read_to_string(provider.join("main.ts")).unwrap(),

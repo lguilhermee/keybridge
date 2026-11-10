@@ -67,6 +67,57 @@
   box-shadow: var(--oa-dropdown-shadow);
 }
 
+.searchBox {
+  height: 30px;
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+  color: var(--oa-text-secondary);
+  background: var(--oa-surface-input);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-sm);
+
+  &:focus-within {
+    border-color: var(--oa-accent);
+  }
+
+  input {
+    min-width: 0;
+    flex: 1;
+    padding: 0;
+    color: var(--oa-text);
+    background: transparent;
+    border: 0;
+    outline: none;
+    font-size: type.$font-size-xs;
+
+    &::placeholder {
+      color: var(--oa-text-muted);
+    }
+  }
+}
+
+.searchClear {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--oa-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--oa-radius-sm);
+
+  &:hover {
+    color: var(--oa-text);
+    background: var(--oa-hover);
+  }
+}
+
 .listFrame,
 .list {
   min-height: 32px;

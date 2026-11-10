@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, matchPath, useLocation, useNavigate } from "react-router-dom";
+import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "../../i18n/store";
 import { Icon } from "../../shared/ui/Icon";
 import { searchIcon } from "../../shared/ui/icons";
@@ -42,6 +42,7 @@ export function SettingsPage() {
   // the only route state that stays current, so the section is read from it.
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const onSettingsRoute = pathname === "/settings" || pathname.startsWith("/settings/");
   const sectionParam = matchPath("/settings/:section", pathname)?.params.section;
   const valid = isSettingsSectionId(sectionParam);
   // While another page is shown there is no section in the location; keep the last one.
@@ -52,6 +53,14 @@ export function SettingsPage() {
   const listApi = useRef<VirtualListApi | null>(null);
   // Re-render (and rebuild the search index) when the display language changes.
   const { locale } = useI18n();
+
+  // Canonicalize `/settings` and unknown `/settings/*` segments without ever mounting
+  // `<Navigate />` as the kept-alive route element (which freezes a blank outlet).
+  useEffect(() => {
+    if (onSettingsRoute && !valid) {
+      navigate(`/settings/${active}`, { replace: true });
+    }
+  }, [active, navigate, onSettingsRoute, valid]);
 
   const groups = useMemo(() => sectionGroups[active](), [active]);
   const displayGroups = useMemo(() => groups.map((group) => ({
@@ -77,8 +86,6 @@ export function SettingsPage() {
       window.clearTimeout(clear);
     };
   }, [focus, groups]);
-
-  if (sectionParam !== undefined && !valid) return <Navigate to={`/settings/${defaultSettingsSection}`} replace />;
 
   const jumpTo = (entry: SettingsSearchEntry) => {
     setFocus({ key: entry.group, nonce: Date.now() });

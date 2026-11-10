@@ -14,6 +14,8 @@ import {
   ANTIGRAVITY_ENDPOINTS,
   ANTIGRAVITY_USER_AGENT,
   antigravityModels,
+  gemini4Family,
+  gemini4Tier,
 } from "./models.ts";
 import {
   type AccountData,
@@ -63,14 +65,15 @@ async function readBody(lines: AsyncIterable<string>): Promise<string> {
   return collected.join("\n");
 }
 
-function resolveAntigravityModel(modelId: string): string {
+function resolveAntigravityModel(modelId: string, effort: string | null): string {
   const raw = modelId.trim();
   const lower = raw.toLowerCase();
 
+  const family = gemini4Family(lower);
+  if (family !== null) return `${family}-${gemini4Tier(effort)}`;
+
   // 1. If explicit tier is already specified in the model ID, pass it directly!
   if (
-    lower.startsWith("gemini-4-carbon-") ||
-    lower.startsWith("gemini-4-argon-") ||
     lower.startsWith("gemini-3.8-flash-") ||
     lower.startsWith("gemini-3.7-flash-") ||
     lower.startsWith("gemini-3.6-flash-") ||
@@ -123,16 +126,12 @@ function resolveAntigravityModel(modelId: string): string {
   if (lower === "gemini-3-pro-high") {
     return "gemini-pro-agent";
   }
-  if (lower === "gemini-4-carbon" || lower === "gemini-4-argon") {
-    return `${lower}-medium`;
-  }
-
   return raw;
 }
 
 /** Antigravity clients send Gemini 4 Argon requests without toolConfig. */
 function isGeminiArgonModel(model: string): boolean {
-  return /^gemini-4-argon(?:-(?:low|medium|high))?$/.test(model.toLowerCase());
+  return gemini4Family(model) === "gemini-4-argon";
 }
 
 function randomHex(length = 8): string {
@@ -143,6 +142,23 @@ function randomHex(length = 8): string {
 
 function generateRequestId(): string {
   return `agent/${Date.now()}/${randomHex(8)}`;
+}
+
+/**
+ * Antigravity's language server sends a per-conversation `request.sessionId` so multi-turn calls
+ * stay on the replica holding Gemini's implicit prefix cache. A decimal int63 digest of Cursor's
+ * cacheKey gives the same per-conversation stability.
+ */
+export async function antigravitySessionId(cacheKey: string): Promise<string> {
+  const digest = new Uint8Array(
+    await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(`antigravity\0cursor-byok\0${cacheKey}`),
+    ),
+  );
+  let value = 0n;
+  for (const byte of digest.subarray(0, 8)) value = (value << 8n) | BigInt(byte);
+  return (value & 0x7fff_ffff_ffff_ffffn).toString();
 }
 
 // Keys the CloudCode v1internal Schema proto rejects with "Cannot find field"
@@ -324,7 +340,7 @@ async function streamCloudCode(
   output: ChannelOutput,
   context: ProviderContext,
 ): Promise<void> {
-  const actualModel = resolveAntigravityModel(modelId);
+  const actualModel = resolveAntigravityModel(modelId, input.request.reasoning.effort);
   const { contents, systemInstruction } = convertToCloudCodeContents(
     input.request.instructions,
     input.request.messages,
@@ -348,6 +364,12 @@ async function streamCloudCode(
     }
     : undefined;
 
+  // Priority inference is verified on Gemini 4 Argon/Carbon over cloudcode-pa; other models keep standard.
+  const priority = input.request.latency === "fast" && gemini4Family(actualModel) !== null;
+  const sessionId = input.request.cacheKey === null
+    ? null
+    : await antigravitySessionId(input.request.cacheKey);
+
   const payload = {
     project: projectId || "bamboo-precept-lgxtn",
     model: actualModel,
@@ -363,6 +385,8 @@ async function streamCloudCode(
       generationConfig: {
         maxOutputTokens: 65536,
       },
+      ...(sessionId ? { sessionId } : {}),
+      ...(priority ? { serviceTier: "SERVICE_TIER_PRIORITY" } : {}),
     },
   };
 
@@ -373,6 +397,7 @@ async function streamCloudCode(
     "user-agent": ANTIGRAVITY_USER_AGENT,
     ...ANTIGRAVITY_CLIENT_HEADERS,
   };
+  if (priority) headers["X-Vertex-AI-LLM-Shared-Request-Type"] = "priority";
   if (actualModel.toLowerCase().includes("claude")) {
     headers["anthropic-beta"] =
       "claude-code-20250219,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14";

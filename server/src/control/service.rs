@@ -18,7 +18,7 @@ use crate::{
         ComboConfig, ComboInput, ContentPart, CursorRunTraceArtifact, CursorRunTraceSummary,
         LlmCallRequest, LlmCallResponseChunk, LlmCallSummary, ModelConfig, ModelConfigInput,
         ModelInvocation, ModelRequest, ModelSpec, ModelType, Overview, ProjectedContent,
-        ProjectedMessage, PromptSpec, ProtocolType, RefusalFallback, RefusalFallbackInput, Role,
+        ProjectedMessage, PromptSpec, ProtocolType, RefusalFallback, Role,
     },
     protocol::{is_valid_response_event, ModelEvent, Protocol},
     provider::{ProviderDescriptor, ProviderRegistry, ProviderRuntime, ProviderRuntimeStatus},
@@ -392,16 +392,25 @@ impl ControlService {
         self.store.refusal_fallbacks().await
     }
 
-    pub async fn set_refusal_fallback(&self, input: &RefusalFallbackInput) -> Result<()> {
-        if let Some(fallback_model_id) = &input.fallback_model_id {
-            let models = [
-                input.model_id.trim().to_owned(),
-                fallback_model_id.trim().to_owned(),
-            ];
-            self.ensure_models_exist(&models, "refusal fallback model")
+    pub async fn set_refusal_fallbacks(
+        &self,
+        fallbacks: &[RefusalFallback],
+    ) -> Result<Vec<RefusalFallback>> {
+        let normalized = crate::model::normalize_refusal_fallbacks(fallbacks)?;
+        let existing = self.store.refusal_fallback_map().await?;
+        let mut to_verify = BTreeSet::new();
+        for entry in &normalized {
+            if existing.get(&entry.model_id) != Some(&entry.fallback_model_id) {
+                to_verify.insert(entry.model_id.clone());
+                to_verify.insert(entry.fallback_model_id.clone());
+            }
+        }
+        if !to_verify.is_empty() {
+            let model_ids = to_verify.into_iter().collect::<Vec<_>>();
+            self.ensure_models_exist(&model_ids, "refusal fallback model")
                 .await?;
         }
-        self.store.set_refusal_fallback(input).await
+        self.store.replace_refusal_fallbacks(&normalized).await
     }
 
     /// Rejects ids that are neither an API-key model hash nor a configured provider model.

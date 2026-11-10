@@ -14,7 +14,7 @@ pub struct ProviderManifest {
     pub api_version: u32,
     pub id: String,
     pub name: String,
-    /// The provider's own version; used as the cache key when preinstalling built-in providers.
+    /// The provider's own version, shown to users.
     pub version: String,
     #[serde(default)]
     pub author: Option<String>,

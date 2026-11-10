@@ -1,8 +1,8 @@
 //! Implements refusal fallback configuration endpoints.
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::State, Json};
 
 use crate::{
-    model::{RefusalFallback, RefusalFallbackInput},
+    model::{RefusalFallback, RefusalFallbacksInput},
     Result,
 };
 
@@ -14,8 +14,7 @@ pub async fn list(State(service): State<ControlService>) -> Result<Json<Vec<Refu
 
 pub async fn set(
     State(service): State<ControlService>,
-    Json(input): Json<RefusalFallbackInput>,
-) -> Result<StatusCode> {
-    service.set_refusal_fallback(&input).await?;
-    Ok(StatusCode::NO_CONTENT)
+    Json(input): Json<RefusalFallbacksInput>,
+) -> Result<Json<Vec<RefusalFallback>>> {
+    Ok(Json(service.set_refusal_fallbacks(&input.fallbacks).await?))
 }

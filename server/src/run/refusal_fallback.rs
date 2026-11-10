@@ -1,30 +1,47 @@
-//! Sends a refused call to the refusing model's refusal model for the rest of one run.
+//! Sends a refused model call to the refusing model's refusal model.
+//!
+//! The refusal model answers only the call that was refused. The next model
+//! call of the run goes back to the run's own model, and falls back again if
+//! that model refuses again.
 use std::collections::HashMap;
 
 use crate::{model::ModelSpec, store::Store};
 
 use super::{FailureKind, ModelCycleFailure, RunFailure};
 
-/// Refusal models configured when the run started, and the one answering now.
-///
-/// Each run starts without a refusal model, so the next request goes back to
-/// the model the user picked.
+/// Refusal models configured when the run started.
 #[derive(Debug, Default)]
-pub(super) struct RefusalRun {
+pub(super) struct RefusalFallbacks {
     fallbacks: HashMap<String, String>,
-    active: Option<String>,
 }
 
-impl RefusalRun {
-    pub(super) async fn start(store: &Store) -> Result<Self, RunFailure> {
+impl RefusalFallbacks {
+    pub(super) async fn load(store: &Store) -> Result<Self, RunFailure> {
         Ok(Self {
             fallbacks: store.refusal_fallback_map().await?,
-            active: None,
         })
     }
 
+    /// Refusal state for one model call; starts on the run's own model.
+    pub(super) fn call(&self) -> RefusalCall<'_> {
+        RefusalCall {
+            fallbacks: &self.fallbacks,
+            active: None,
+        }
+    }
+}
+
+/// The refusal model answering the current model call, if any.
+#[derive(Debug)]
+pub(super) struct RefusalCall<'a> {
+    fallbacks: &'a HashMap<String, String>,
+    active: Option<String>,
+}
+
+impl RefusalCall<'_> {
     /// Switches to the refusal model of `refused_model` when `failure` is a
-    /// refusal and no refusal model is answering yet. Returns the refusal model.
+    /// refusal and no refusal model is answering this call yet. Returns the
+    /// refusal model.
     pub(super) fn switch(
         &mut self,
         refused_model: &str,
@@ -37,18 +54,18 @@ impl RefusalRun {
         tracing::warn!(
             from = %refused_model,
             to = %fallback,
-            "model refused; switching to its refusal model for this run"
+            "model refused; switching to its refusal model for this call"
         );
         self.active = Some(fallback.clone());
         Some(fallback)
     }
 
-    /// The refusal model failed as well; the run's own model choice answers again.
+    /// The refusal model failed as well; the run's own model choice answers.
     pub(super) fn release(&mut self) {
         self.active = None;
     }
 
-    /// `model` with the answering refusal model in its place, if any.
+    /// `model`, or the refusal model answering in its place.
     pub(super) fn apply(&self, mut model: ModelSpec) -> ModelSpec {
         if let Some(active) = &self.active {
             model.model_id = active.clone();
@@ -61,13 +78,12 @@ impl RefusalRun {
 mod tests {
     use super::*;
 
-    fn run(fallbacks: &[(&str, &str)]) -> RefusalRun {
-        RefusalRun {
-            fallbacks: fallbacks
+    fn fallbacks(pairs: &[(&str, &str)]) -> RefusalFallbacks {
+        RefusalFallbacks {
+            fallbacks: pairs
                 .iter()
                 .map(|(from, to)| ((*from).into(), (*to).into()))
                 .collect(),
-            active: None,
         }
     }
 
@@ -83,24 +99,40 @@ mod tests {
 
     #[test]
     fn only_refusals_of_configured_models_switch() {
-        let mut refusal = run(&[("a", "r")]);
-        assert_eq!(refusal.switch("a", &failure(FailureKind::Rejected)), None);
-        assert_eq!(refusal.switch("b", &failure(FailureKind::Refusal)), None);
-        assert_eq!(refusal.apply(ModelSpec::new("a")).model_id, "a");
-
+        let fallbacks = fallbacks(&[("a", "r")]);
+        let mut call = fallbacks.call();
+        assert_eq!(call.switch("a", &failure(FailureKind::Rejected)), None);
+        assert_eq!(call.switch("b", &failure(FailureKind::Refusal)), None);
+        assert_eq!(call.apply(ModelSpec::new("a")).model_id, "a");
         assert_eq!(
-            refusal.switch("a", &failure(FailureKind::Refusal)),
+            call.switch("a", &failure(FailureKind::Refusal)),
             Some("r".into())
         );
-        assert_eq!(refusal.apply(ModelSpec::new("a")).model_id, "r");
+        assert_eq!(call.apply(ModelSpec::new("a")).model_id, "r");
     }
 
     #[test]
     fn a_refusing_refusal_model_hands_back_to_the_run() {
-        let mut refusal = run(&[("a", "r"), ("r", "s")]);
-        refusal.switch("a", &failure(FailureKind::Refusal));
-        assert_eq!(refusal.switch("r", &failure(FailureKind::Refusal)), None);
-        refusal.release();
-        assert_eq!(refusal.apply(ModelSpec::new("a")).model_id, "a");
+        let fallbacks = fallbacks(&[("a", "r"), ("r", "s")]);
+        let mut call = fallbacks.call();
+        call.switch("a", &failure(FailureKind::Refusal));
+        assert_eq!(call.switch("r", &failure(FailureKind::Refusal)), None);
+        call.release();
+        assert_eq!(call.apply(ModelSpec::new("a")).model_id, "a");
+    }
+
+    #[test]
+    fn the_next_call_goes_back_to_the_refused_model() {
+        let fallbacks = fallbacks(&[("a", "r")]);
+        let mut refused = fallbacks.call();
+        refused.switch("a", &failure(FailureKind::Refusal));
+        assert_eq!(refused.apply(ModelSpec::new("a")).model_id, "r");
+
+        let mut next = fallbacks.call();
+        assert_eq!(next.apply(ModelSpec::new("a")).model_id, "a");
+        assert_eq!(
+            next.switch("a", &failure(FailureKind::Refusal)),
+            Some("r".into())
+        );
     }
 }

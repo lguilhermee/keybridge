@@ -583,6 +583,23 @@
         }
       ]
     },
+    "10421935232f54e0": {
+      "source": "Search models",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 211,
+          "column": 24
+        },
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 212,
+          "column": 23
+        }
+      ]
+    },
     "10780280bdb0d78a": {
       "source": "Software updates",
       "kind": "text",
@@ -590,7 +607,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 173,
+          "line": 181,
           "column": 14
         },
         {
@@ -840,8 +857,8 @@
         },
         {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 93,
-          "column": 119
+          "line": 346,
+          "column": 46
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
@@ -850,8 +867,8 @@
         },
         {
           "file": "shared/ui/Modal.tsx",
-          "line": 42,
-          "column": 227
+          "line": 43,
+          "column": 246
         }
       ]
     },
@@ -965,7 +982,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 586,
+          "line": 580,
           "column": 21
         }
       ]
@@ -1059,8 +1076,8 @@
         },
         {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 92,
-          "column": 81
+          "line": 347,
+          "column": 19
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
@@ -1079,8 +1096,8 @@
         },
         {
           "file": "shared/ui/Modal.tsx",
-          "line": 42,
-          "column": 200
+          "line": 43,
+          "column": 219
         }
       ]
     },
@@ -1158,6 +1175,18 @@
           "file": "features/overview/charts/DailyTokenUsageChart.tsx",
           "line": 146,
           "column": 15
+        }
+      ]
+    },
+    "1b2c194fa29fa24e": {
+      "source": "Clear shown",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 473,
+          "column": 18
         }
       ]
     },
@@ -1298,8 +1327,8 @@
         },
         {
           "file": "shared/ui/ModelSelect.tsx",
-          "line": 232,
-          "column": 102
+          "line": 286,
+          "column": 11
         }
       ]
     },
@@ -1336,6 +1365,18 @@
           "file": "features/overview/metrics/OverviewMetrics.tsx",
           "line": 104,
           "column": 5
+        }
+      ]
+    },
+    "20e56db7dfc7e08d": {
+      "source": "All providers",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 422,
+          "column": 24
         }
       ]
     },
@@ -1435,6 +1476,18 @@
         }
       ]
     },
+    "23434d4da25e6002": {
+      "source": "Configure at least two models to set a refusal fallback.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 287,
+          "column": 23
+        }
+      ]
+    },
     "2397660de92a5bd3": {
       "source": "Try initializing again",
       "kind": "text",
@@ -1517,12 +1570,12 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 100,
+          "line": 107,
           "column": 28
         },
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 101,
+          "line": 108,
           "column": 27
         }
       ]
@@ -1685,7 +1738,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 157,
+          "line": 165,
           "column": 14
         },
         {
@@ -2094,6 +2147,18 @@
         }
       ]
     },
+    "370792e4fd772b50": {
+      "source": "Set refusal model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 543,
+          "column": 24
+        }
+      ]
+    },
     "3729f9c348dff8b9": {
       "source": "Call type",
       "kind": "text",
@@ -2154,6 +2219,23 @@
           "file": "shared/ui/DataTable.tsx",
           "line": 15,
           "column": 77
+        }
+      ]
+    },
+    "3b7ea51793e9d906": {
+      "source": "Clear search",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 389,
+          "column": 31
+        },
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 225,
+          "column": 23
         }
       ]
     },
@@ -2451,7 +2533,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 149,
+          "line": 157,
           "column": 14
         },
         {
@@ -2574,11 +2656,6 @@
           "column": 8
         },
         {
-          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 96,
-          "column": 113
-        },
-        {
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 202,
           "column": 73
@@ -2631,11 +2708,6 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 207,
           "column": 141
-        },
-        {
-          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 132,
-          "column": 45
         }
       ]
     },
@@ -2890,9 +2962,19 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/settings/sections.ts",
+          "line": 124,
+          "column": 14
+        },
+        {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 101,
-          "column": 30
+          "line": 262,
+          "column": 14
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 339,
+          "column": 14
         }
       ]
     },
@@ -3059,7 +3141,7 @@
       "refs": [
         {
           "file": "shared/ui/ModelSelect.tsx",
-          "line": 120,
+          "line": 135,
           "column": 45
         }
       ]
@@ -3192,7 +3274,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 141,
+          "line": 149,
           "column": 14
         },
         {
@@ -3295,20 +3377,6 @@
           "file": "features/providers/ModelEditor.tsx",
           "line": 160,
           "column": 199
-        }
-      ]
-    },
-    "5917f01a8c736567": {
-      "source": "On refusal: {model}",
-      "kind": "template",
-      "placeholders": [
-        "model"
-      ],
-      "refs": [
-        {
-          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 137,
-          "column": 47
         }
       ]
     },
@@ -3716,6 +3784,18 @@
         }
       ]
     },
+    "638e249f4a15ebb8": {
+      "source": "Filter",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 396,
+          "column": 80
+        }
+      ]
+    },
     "63a0958b1626d3ce": {
       "source": "Non-cached input: {tokens}",
       "kind": "template",
@@ -3773,7 +3853,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 158,
+          "line": 166,
           "column": 20
         },
         {
@@ -4067,6 +4147,11 @@
           "file": "features/providers/AccountProviderDetail.tsx",
           "line": 267,
           "column": 115
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 360,
+          "column": 16
         }
       ]
     },
@@ -4117,6 +4202,18 @@
           "file": "features/providers/modelEditing.ts",
           "line": 30,
           "column": 89
+        }
+      ]
+    },
+    "6defafa2caa65304": {
+      "source": "Configure",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 273,
+          "column": 8
         }
       ]
     },
@@ -4199,18 +4296,6 @@
         }
       ]
     },
-    "6feeb4ff278771cd": {
-      "source": "When a checked model refuses a request, that request and the rest of its run go to the chosen refusal model. The next request starts with the original model again.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 104,
-          "column": 17
-        }
-      ]
-    },
     "702da8ecd2ab75b4": {
       "source": "Current app version.",
       "kind": "text",
@@ -4218,7 +4303,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 167,
+          "line": 175,
           "column": 20
         }
       ]
@@ -4261,6 +4346,20 @@
         }
       ]
     },
+    "71c4fa604d5366be": {
+      "source": "Configured ({count})",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 409,
+          "column": 18
+        }
+      ]
+    },
     "7214453386b1c9e8": {
       "source": "Check for updates and install the latest version.",
       "kind": "text",
@@ -4268,7 +4367,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 174,
+          "line": 182,
           "column": 20
         }
       ]
@@ -4297,12 +4396,12 @@
       "refs": [
         {
           "file": "shared/store/appStore.ts",
-          "line": 259,
+          "line": 267,
           "column": 23
         },
         {
           "file": "shared/store/appStore.ts",
-          "line": 266,
+          "line": 274,
           "column": 25
         }
       ]
@@ -4328,12 +4427,12 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 95,
+          "line": 102,
           "column": 54
         },
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 148,
+          "line": 155,
           "column": 30
         },
         {
@@ -4543,7 +4642,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 125,
+          "line": 133,
           "column": 20
         },
         {
@@ -4615,7 +4714,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 652,
+          "line": 646,
           "column": 43
         }
       ]
@@ -4800,6 +4899,18 @@
         }
       ]
     },
+    "83b12c2216efb4fd": {
+      "source": "Clear",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 506,
+          "column": 24
+        }
+      ]
+    },
     "83f950575fd520aa": {
       "source": "Off for every model",
       "kind": "text",
@@ -4807,8 +4918,8 @@
       "refs": [
         {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 134,
-          "column": 52
+          "line": 285,
+          "column": 22
         }
       ]
     },
@@ -4911,7 +5022,7 @@
       "refs": [
         {
           "file": "shared/ui/ModelSelect.tsx",
-          "line": 168,
+          "line": 185,
           "column": 21
         }
       ]
@@ -5049,7 +5160,7 @@
       "refs": [
         {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 82,
+          "line": 221,
           "column": 15
         }
       ]
@@ -5669,8 +5780,8 @@
       "refs": [
         {
           "file": "shared/ui/ModelSelect.tsx",
-          "line": 233,
-          "column": 67
+          "line": 290,
+          "column": 11
         }
       ]
     },
@@ -5798,6 +5909,11 @@
           "column": 56
         },
         {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 415,
+          "column": 81
+        },
+        {
           "file": "shell/CommandPalette.tsx",
           "line": 78,
           "column": 55
@@ -5840,6 +5956,23 @@
           "file": "features/settings/sections/CursorSection.tsx",
           "line": 105,
           "column": 41
+        }
+      ]
+    },
+    "9a3aaff82e5adb10": {
+      "source": "When a checked model refuses a request, only that request goes to the chosen refusal model. The next request tries the original model again.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections.ts",
+          "line": 125,
+          "column": 20
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 281,
+          "column": 19
         }
       ]
     },
@@ -6169,9 +6302,19 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 486,
+          "column": 60
+        },
+        {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 121,
+          "line": 128,
           "column": 55
+        },
+        {
+          "file": "shared/ui/ModelSelect.tsx",
+          "line": 245,
+          "column": 49
         },
         {
           "file": "shell/CommandPalette.tsx",
@@ -6228,7 +6371,7 @@
       "refs": [
         {
           "file": "shared/ui/ModelSelect.tsx",
-          "line": 120,
+          "line": 135,
           "column": 34
         }
       ]
@@ -6246,6 +6389,20 @@
         {
           "file": "features/cursor/CursorPage.tsx",
           "line": 170,
+          "column": 18
+        }
+      ]
+    },
+    "a58a77340ecb2e91": {
+      "source": "All ({count})",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 402,
           "column": 18
         }
       ]
@@ -6445,7 +6602,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 134,
+          "line": 142,
           "column": 20
         },
         {
@@ -6755,6 +6912,18 @@
         }
       ]
     },
+    "b55560839d41fd43": {
+      "source": "Apply to shown",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 466,
+          "column": 18
+        }
+      ]
+    },
     "b697d4f9d76a4183": {
       "source": "Download and install",
       "kind": "text",
@@ -6963,6 +7132,23 @@
         }
       ]
     },
+    "bb7655f7d18a0e00": {
+      "source": "Search by model or provider",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 373,
+          "column": 30
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 374,
+          "column": 29
+        }
+      ]
+    },
     "beab29d1bba2df02": {
       "source": "{count} overrides",
       "kind": "template",
@@ -7012,6 +7198,25 @@
           "file": "features/overview/metrics/OverviewMetrics.tsx",
           "line": 142,
           "column": 174
+        }
+      ]
+    },
+    "bef0da45a50dee34": {
+      "source": "{count} configured",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 265,
+          "column": 12
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 351,
+          "column": 14
         }
       ]
     },
@@ -7083,7 +7288,7 @@
       "refs": [
         {
           "file": "shared/ui/ModelSelect.tsx",
-          "line": 156,
+          "line": 173,
           "column": 21
         }
       ]
@@ -7116,6 +7321,16 @@
           "file": "features/providers/ComboDetail.tsx",
           "line": 121,
           "column": 108
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 321,
+          "column": 37
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 322,
+          "column": 32
         }
       ]
     },
@@ -7425,8 +7640,13 @@
       "refs": [
         {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 125,
-          "column": 24
+          "line": 457,
+          "column": 26
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 533,
+          "column": 30
         }
       ]
     },
@@ -7478,7 +7698,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 150,
+          "line": 158,
           "column": 20
         }
       ]
@@ -7628,7 +7848,7 @@
       "refs": [
         {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 70,
+          "line": 214,
           "column": 15
         }
       ]
@@ -7710,7 +7930,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 133,
+          "line": 141,
           "column": 14
         },
         {
@@ -7734,6 +7954,20 @@
           "file": "features/providers/ModelEditor.tsx",
           "line": 171,
           "column": 363
+        }
+      ]
+    },
+    "d4e2995201dc59a4": {
+      "source": "Bulk set refusal model ({count} shown)",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 448,
+          "column": 16
         }
       ]
     },
@@ -7785,18 +8019,6 @@
         }
       ]
     },
-    "d7a8974566f771f1": {
-      "source": "No options",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "shared/ui/ModelSelect.tsx",
-          "line": 194,
-          "column": 49
-        }
-      ]
-    },
     "d8d36f868e2d1790": {
       "source": "Open a terminal from the desktop app to install the CA",
       "kind": "text",
@@ -7804,7 +8026,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 647,
+          "line": 641,
           "column": 43
         }
       ]
@@ -7844,7 +8066,7 @@
       "refs": [
         {
           "file": "App.tsx",
-          "line": 66,
+          "line": 64,
           "column": 21
         }
       ]
@@ -7915,8 +8137,8 @@
         },
         {
           "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 93,
-          "column": 102
+          "line": 346,
+          "column": 29
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
@@ -7944,7 +8166,7 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 166,
+          "line": 174,
           "column": 14
         },
         {
@@ -8812,7 +9034,7 @@
         },
         {
           "file": "shared/ui/Modal.tsx",
-          "line": 100,
+          "line": 104,
           "column": 153
         }
       ]
@@ -8916,13 +9138,25 @@
       "refs": [
         {
           "file": "features/settings/sections.ts",
-          "line": 142,
+          "line": 150,
           "column": 20
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 208,
           "column": 17
+        }
+      ]
+    },
+    "f97e9da0e3b879f0": {
+      "source": "Other",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 244,
+          "column": 48
         }
       ]
     },
@@ -8983,18 +9217,6 @@
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 29,
           "column": 30
-        }
-      ]
-    },
-    "fcc73322c29ba7a6": {
-      "source": "Switch on refusal",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
-          "line": 113,
-          "column": 24
         }
       ]
     },

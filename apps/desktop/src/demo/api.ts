@@ -10,6 +10,7 @@ import {
   type OverviewModelUsage,
   type OverviewTokenUsageBucket,
   type ProxySettings,
+  type RefusalFallback,
   type StatisticsStorage,
   type TabSettings,
   type TokenPricingSettings,
@@ -125,6 +126,7 @@ let pricingSettings: TokenPricingSettings = {
   model_prices: {},
 };
 let storage: StatisticsStorage = { call_count: calls.length, trace_count: calls.length };
+let refusalFallbacks: RefusalFallback[] = [];
 
 export function installDemoApi() {
   const nativeFetch = window.fetch.bind(window);
@@ -139,6 +141,11 @@ export function installDemoApi() {
     const body = await readBody(input, init);
 
     if (path === "/models" && method === "GET") return json(models);
+    if (path === "/refusal-fallbacks" && method === "GET") return json(refusalFallbacks);
+    if (path === "/refusal-fallbacks" && method === "PUT") {
+      refusalFallbacks = ((body as { fallbacks?: RefusalFallback[] } | null)?.fallbacks ?? []).map((entry) => ({ ...entry }));
+      return json(refusalFallbacks);
+    }
     if (path === "/models" && method === "POST") return json(models);
     if (path === "/models/order") return json(models);
     if (path === "/models/discover") return json({ models: models.map((model) => model.model_id) });

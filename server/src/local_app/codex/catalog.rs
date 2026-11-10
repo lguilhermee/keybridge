@@ -20,10 +20,16 @@ pub(super) fn render(models: &[PublicModel]) -> Value {
         .iter()
         .enumerate()
         .map(|(index, model)| {
+            let provider = model.provider_name.trim();
+            let description = if provider.is_empty() {
+                "Keybridge".to_owned()
+            } else {
+                format!("Keybridge · {provider}")
+            };
             json!({
                 "slug": model.public_id,
-                "display_name": model.display_name,
-                "description": "Keybridge",
+                "display_name": model.labeled_display_name(),
+                "description": description,
                 "supported_reasoning_levels": [],
                 "shell_type": "unified_exec",
                 "visibility": "list",
@@ -54,11 +60,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn every_model_is_listed_in_order_with_instructions() {
+    fn every_model_is_listed_in_order_with_provider_prefix_and_instructions() {
         let models = [
             PublicModel {
                 public_id: "work/model-a".into(),
                 internal_id: "hash-a".into(),
+                provider_name: "Work".into(),
                 display_name: "Model A".into(),
                 context_window: Some(1_000_000),
                 images: false,
@@ -66,6 +73,7 @@ mod tests {
             PublicModel {
                 public_id: "provider:x:y/model-b".into(),
                 internal_id: "provider:x/y/model-b".into(),
+                provider_name: "Codex".into(),
                 display_name: "Model B".into(),
                 context_window: None,
                 images: true,
@@ -75,10 +83,14 @@ mod tests {
         let entries = catalog["models"].as_array().unwrap();
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0]["slug"], "work/model-a");
+        assert_eq!(entries[0]["display_name"], "[Work] Model A");
+        assert_eq!(entries[0]["description"], "Keybridge · Work");
         assert_eq!(entries[0]["priority"], 0);
         assert_eq!(entries[0]["context_window"], 1_000_000);
         assert_eq!(entries[0]["input_modalities"], json!(["text"]));
         assert_eq!(entries[1]["slug"], "provider:x:y/model-b");
+        assert_eq!(entries[1]["display_name"], "[Codex] Model B");
+        assert_eq!(entries[1]["description"], "Keybridge · Codex");
         assert_eq!(entries[1]["priority"], 1);
         assert_eq!(entries[1]["context_window"], DEFAULT_CONTEXT_WINDOW);
         assert_eq!(entries[1]["input_modalities"], json!(["text", "image"]));

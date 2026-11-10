@@ -2,7 +2,7 @@ import { autoUpdate, computePosition, flip, offset, shift, size } from "@floatin
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon, type IconProps } from "./Icon";
-import { checkIcon, chevronDownIcon, windowCloseIcon } from "./icons";
+import { checkIcon, chevronDownIcon, searchIcon, windowCloseIcon } from "./icons";
 import { VirtualList } from "../virtual/VirtualList";
 import styles from "./ModelSelect.module.scss";
 
@@ -40,6 +40,15 @@ function groupedItems(options: ModelSelectOption[]): MenuItem[] {
   ]);
 }
 
+function filterModelOptions(options: ModelSelectOption[], query: string): ModelSelectOption[] {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return options;
+  return options.filter((option) => {
+    const haystack = `${option.label} ${option.group} ${option.value}`.toLowerCase();
+    return terms.every((term) => haystack.includes(term));
+  });
+}
+
 function GroupCheckbox({ label, options, selected, onChange }: {
   label: string;
   options: ModelSelectOption[];
@@ -75,11 +84,15 @@ export function ModelSelect(props: ModelSelectProps) {
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
   const firstOption = useRef<HTMLLabelElement>(null);
   const menuId = useId();
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ left: 0, top: 0, width: 220, maxHeight: 280 });
-  const items = useMemo(() => groupedItems(options), [options]);
+  const [query, setQuery] = useState("");
+  const [position, setPosition] = useState({ left: 0, top: 0, width: 280, maxHeight: 320 });
+  const showSearch = options.length > 6;
+  const filteredOptions = useMemo(() => filterModelOptions(options, query), [options, query]);
+  const items = useMemo(() => groupedItems(filteredOptions), [filteredOptions]);
   const selected = useMemo(
     () => new Set(mode === "multiple" ? props.value : [props.value]),
     [mode, props.value],
@@ -93,8 +106,8 @@ export function ModelSelect(props: ModelSelectProps) {
         padding: 10,
         apply: ({ rects, availableHeight }) => setPosition((current) => ({
           ...current,
-          width: rects.reference.width,
-          maxHeight: Math.max(120, availableHeight),
+          width: Math.max(rects.reference.width, 280),
+          maxHeight: Math.max(160, Math.min(420, availableHeight)),
         })),
       })],
     }).then(({ x, y }) => setPosition((current) => ({ ...current, left: x, top: y }))));
@@ -102,19 +115,21 @@ export function ModelSelect(props: ModelSelectProps) {
 
   const close = () => {
     setOpen(false);
+    setQuery("");
     trigger.current?.focus();
   };
 
   useEffect(() => {
     if (!open) return;
-    firstOption.current?.focus();
+    if (showSearch) searchInput.current?.focus();
+    else firstOption.current?.focus();
     const closeOutside = (event: PointerEvent) => {
       const target = event.target as Node;
       if (!root.current?.contains(target) && !menu.current?.contains(target)) close();
     };
     document.addEventListener("pointerdown", closeOutside);
     return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [open]);
+  }, [open, showSearch]);
 
   const summary = mode === "multiple"
     ? props.value.length === 0 ? t("All") : t("{count} selected", { count: props.value.length })
@@ -142,9 +157,11 @@ export function ModelSelect(props: ModelSelectProps) {
   const openMenu = () => {
     if (disabled) return;
     const width = root.current?.getBoundingClientRect().width;
-    if (width) setPosition((current) => ({ ...current, width }));
+    if (width) setPosition((current) => ({ ...current, width: Math.max(width, 280) }));
     setOpen(true);
   };
+
+  const chromeHeight = (showSearch ? 36 : 0) + (mode === "multiple" && options.length > 0 ? 37 : 0) + 10;
 
   return <>
     <div ref={root} className={styles.target} data-open={open || undefined} data-disabled={disabled || undefined}>
@@ -172,18 +189,52 @@ export function ModelSelect(props: ModelSelectProps) {
     {open && createPortal(<div
       id={menuId}
       ref={menu}
+      data-floating-menu=""
       className={styles.menu}
       aria-label={label}
       style={position}
       onPointerDown={(event) => event.stopPropagation()}
-      onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); close(); } }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          if (query) setQuery("");
+          else close();
+        }
+      }}
     >
+      {showSearch && <div className={styles.searchBox}>
+        <Icon icon={searchIcon} size="1em" />
+        <input
+          ref={searchInput}
+          value={query}
+          placeholder={t("Search models")}
+          aria-label={t("Search models")}
+          spellCheck={false}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && mode === "single" && filteredOptions[0]) {
+              event.preventDefault();
+              choose(filteredOptions[0]);
+            }
+          }}
+        />
+        {query && <button
+          type="button"
+          className={styles.searchClear}
+          aria-label={t("Clear search")}
+          onClick={() => {
+            setQuery("");
+            searchInput.current?.focus();
+          }}
+        ><Icon icon={windowCloseIcon} size="0.95em" /></button>}
+      </div>}
       <div
         className={styles.listFrame}
         role="listbox"
         aria-label={label}
         aria-multiselectable={mode === "multiple" ? "true" : undefined}
-        style={{ height: Math.min(items.length * 32, Math.max(32, position.maxHeight - (mode === "multiple" ? 45 : 0))) }}
+        style={{ height: Math.min(Math.max(1, items.length) * 32, Math.max(32, position.maxHeight - chromeHeight)) }}
       ><VirtualList
           items={items}
           itemKey="key"
@@ -191,7 +242,7 @@ export function ModelSelect(props: ModelSelectProps) {
           style={{ height: "100%" }}
           estimatedItemHeight={32}
           overscan={4}
-          empty={<div className={styles.empty}>{t("No options")}</div>}
+          empty={<div className={styles.empty}>{t("No results")}</div>}
         >{(item, index) => item.kind === "group"
           ? mode === "multiple"
             ? <GroupCheckbox
@@ -229,8 +280,14 @@ export function ModelSelect(props: ModelSelectProps) {
               </span>
             </label>}</VirtualList></div>
       {mode === "multiple" && options.length > 0 && <div className={styles.footer}>
-        <button type="button" onClick={() => props.onChange(options.map((option) => option.value))}>{t("Select all")}</button>
-        <button type="button" onClick={() => props.onChange([])}>{t("Deselect all")}</button>
+        <button
+          type="button"
+          onClick={() => toggleGroup(filteredOptions, true)}
+        >{t("Select all")}</button>
+        <button
+          type="button"
+          onClick={() => query ? toggleGroup(filteredOptions, false) : props.onChange([])}
+        >{t("Deselect all")}</button>
       </div>}
     </div>, document.body)}
   </>;

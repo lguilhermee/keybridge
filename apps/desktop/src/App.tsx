@@ -12,7 +12,6 @@ import { CursorPage } from "./features/cursor/CursorPage";
 import { OverviewPage } from "./features/overview/OverviewPage";
 import { ProvidersPage } from "./features/providers/ProvidersPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
-import { defaultSettingsSection } from "./features/settings/sections";
 import { useAppStore } from "./shared/store/appStore";
 import { updateStore } from "./shared/store/updateStore";
 
@@ -31,8 +30,7 @@ export function App() {
               <Route path="providers" element={<ProvidersPage />} />
               <Route path="cursor" element={<CursorPage />} />
               <Route path="codex" element={<CodexPage />} />
-              <Route path="settings" element={<Navigate to={`/settings/${defaultSettingsSection}`} replace />} />
-              <Route path="settings/:section" element={<SettingsPage />} />
+              <Route path="settings/:section?" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

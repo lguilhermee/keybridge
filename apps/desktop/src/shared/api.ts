@@ -75,12 +75,6 @@ export interface RefusalFallback {
   fallback_model_id: string;
 }
 
-export interface RefusalFallbackInput {
-  model_id: string;
-  /** `null` turns the fallback off. */
-  fallback_model_id: string | null;
-}
-
 export interface ComboInput {
   display_name: string;
   strategy: ComboStrategy;
@@ -611,7 +605,7 @@ export const api = {
   deleteModels: (modelHashes: string[]) => request<void>("/models", { method: "DELETE", body: JSON.stringify({ model_hashes: modelHashes }) }),
   combos: () => request<Combo[]>("/combos"),
   refusalFallbacks: () => request<RefusalFallback[]>("/refusal-fallbacks"),
-  setRefusalFallback: (input: RefusalFallbackInput) => request<void>("/refusal-fallbacks", { method: "PUT", body: JSON.stringify(input) }),
+  setRefusalFallbacks: (fallbacks: RefusalFallback[]) => request<RefusalFallback[]>("/refusal-fallbacks", { method: "PUT", body: JSON.stringify({ fallbacks }) }),
   createCombo: (combo: ComboInput) => request<Combo>("/combos", { method: "POST", body: JSON.stringify(combo) }),
   updateCombo: (comboId: string, combo: ComboInput) => request<Combo>(`/combos/${encodeURIComponent(comboId)}`, { method: "PUT", body: JSON.stringify(combo) }),
   deleteCombo: (comboId: string) => request<void>(`/combos/${encodeURIComponent(comboId)}`, { method: "DELETE" }),

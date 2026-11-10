@@ -14,6 +14,7 @@ type ModalProps = {
   wide?: boolean;
   compact?: boolean;
   fullHeight?: boolean;
+  scrollable?: boolean;
   role?: "dialog" | "alertdialog";
   ariaDescribedBy?: string;
   initialFocus?: "first" | "submit";
@@ -39,7 +40,7 @@ function focusableElements(root: HTMLElement) {
     .filter((element) => element.getClientRects().length > 0);
 }
 
-export function Modal({ id, open, title, children, banner, busy, wide, compact, fullHeight, role = "dialog", ariaDescribedBy, initialFocus = "first", onClose, onSubmit, secondaryAction, closeLabel = t("Cancel"), submitLabel = t("Save"), submitDisabled = false }: ModalProps) {
+export function Modal({ id, open, title, children, banner, busy, wide, compact, fullHeight, scrollable = true, role = "dialog", ariaDescribedBy, initialFocus = "first", onClose, onSubmit, secondaryAction, closeLabel = t("Cancel"), submitLabel = t("Save"), submitDisabled = false }: ModalProps) {
   const dialog = useRef<HTMLDivElement>(null);
   const submitButton = useRef<HTMLButtonElement>(null);
   const closeRef = useRef(onClose);
@@ -51,12 +52,13 @@ export function Modal({ id, open, title, children, banner, busy, wide, compact, 
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !busyRef.current) {
+      if (event.key === "Escape" && !event.defaultPrevented && !busyRef.current) {
         event.preventDefault();
         closeRef.current();
         return;
       }
       if (event.key !== "Tab" || event.defaultPrevented || !dialog.current) return;
+      if ((document.activeElement as HTMLElement | null)?.closest("[data-floating-menu]")) return;
       const focusable = focusableElements(dialog.current);
       if (!focusable.length) {
         event.preventDefault();
@@ -93,9 +95,11 @@ export function Modal({ id, open, title, children, banner, busy, wide, compact, 
     <div id={id} ref={dialog} className={[styles.dialog, wide && styles.wide, compact && styles.compact, fullHeight && styles.fullHeight].filter(Boolean).join(" ")} role={role} aria-modal="true" aria-labelledby={titleId} aria-describedby={ariaDescribedBy} tabIndex={-1}>
       <header id={titleId}>{title}</header>
       {banner && <div className={styles.banner}>{banner}</div>}
-      <ScrollableContent alwaysShowVertical className={styles.body} contentClassName={styles.bodyContent}>{children}</ScrollableContent>
+      {scrollable
+        ? <ScrollableContent alwaysShowVertical className={styles.body} contentClassName={styles.bodyContent}>{children}</ScrollableContent>
+        : <div className={styles.fixedBody}>{children}</div>}
       <footer>
-        <button type="button" className={controls.primary} disabled={busy} onClick={onClose}>{closeLabel}</button>
+        <button type="button" className={onSubmit ? controls.secondary : controls.primary} disabled={busy} onClick={onClose}>{closeLabel}</button>
         {secondaryAction}
         {onSubmit && <button ref={submitButton} type="button" className={controls.primary} disabled={busy || submitDisabled} onClick={onSubmit}>{busy ? t("Processing...") : submitLabel}</button>}
       </footer>

@@ -100,6 +100,8 @@ async fn connecting_points_codex_at_keybridge_and_every_exit_restores_the_user_c
     )
     .unwrap();
     assert_eq!(catalog["models"][0]["slug"], "work/qwen/model");
+    assert_eq!(catalog["models"][0]["display_name"], "[work] Example");
+    assert_eq!(catalog["models"][0]["description"], "Keybridge · work");
     assert_eq!(catalog["models"][0]["context_window"], 128_000);
 
     // Stopping the server hands Codex back; the connection itself stays on.

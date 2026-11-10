@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use sqlx::{Sqlite, Transaction};
 
 use crate::{
-    model::{normalize_refusal_fallback_input, RefusalFallback, RefusalFallbackInput},
+    model::{normalize_refusal_fallbacks, RefusalFallback},
     Result,
 };
 
@@ -35,23 +35,29 @@ impl Store {
             .collect())
     }
 
-    /// Sets or clears (`fallback_model_id: None`) the refusal model of one model.
-    pub async fn set_refusal_fallback(&self, input: &RefusalFallbackInput) -> Result<()> {
-        let input = normalize_refusal_fallback_input(input)?;
+    /// Atomically replaces the persisted refusal fallback mappings.
+    pub async fn replace_refusal_fallbacks(
+        &self,
+        fallbacks: &[RefusalFallback],
+    ) -> Result<Vec<RefusalFallback>> {
+        let normalized = normalize_refusal_fallbacks(fallbacks)?;
         let _write = self.writes.lock().await;
-        match &input.fallback_model_id {
-            Some(fallback_model_id) => sqlx::query(
-                "INSERT INTO model_refusal_fallbacks(model_id, fallback_model_id) VALUES (?, ?)
-                 ON CONFLICT(model_id) DO UPDATE SET fallback_model_id = excluded.fallback_model_id",
+        let mut transaction = self.pool.begin().await?;
+        sqlx::query("DELETE FROM model_refusal_fallbacks")
+            .execute(&mut *transaction)
+            .await?;
+        for entry in &normalized {
+            sqlx::query(
+                "INSERT INTO model_refusal_fallbacks(model_id, fallback_model_id) VALUES (?, ?)",
             )
-            .bind(&input.model_id)
-            .bind(fallback_model_id),
-            None => sqlx::query("DELETE FROM model_refusal_fallbacks WHERE model_id = ?")
-                .bind(&input.model_id),
+            .bind(&entry.model_id)
+            .bind(&entry.fallback_model_id)
+            .execute(&mut *transaction)
+            .await?;
         }
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        transaction.commit().await?;
+        drop(_write);
+        self.refusal_fallbacks().await
     }
 }
 
@@ -118,41 +124,40 @@ mod tests {
         }
     }
 
-    fn set(model_id: &str, fallback: Option<&str>) -> RefusalFallbackInput {
-        RefusalFallbackInput {
+    fn pair(model_id: &str, fallback: &str) -> RefusalFallback {
+        RefusalFallback {
             model_id: model_id.into(),
-            fallback_model_id: fallback.map(String::from),
+            fallback_model_id: fallback.into(),
         }
     }
 
     #[tokio::test]
-    async fn fallbacks_round_trip_and_follow_model_edits_and_deletes() {
+    async fn fallbacks_round_trip_persist_across_restart_and_follow_model_edits_and_deletes() {
         let directory = tempfile::tempdir().unwrap();
-        let store = Store::connect(&format!(
-            "sqlite://{}",
-            directory.path().join("test.db").display()
-        ))
-        .await
-        .unwrap();
+        let db_url = format!("sqlite://{}", directory.path().join("test.db").display());
+        let store = Store::connect(&db_url).await.unwrap();
         let first = store.create_model(&model("first")).await.unwrap();
         let second = store.create_model(&model("second")).await.unwrap();
 
         store
-            .set_refusal_fallback(&set(&first.model_hash, Some(&second.model_hash)))
+            .replace_refusal_fallbacks(&[
+                pair(&first.model_hash, &second.model_hash),
+                pair("provider:x/a", &first.model_hash),
+                pair("provider:x/b", "provider:x/a"),
+            ])
             .await
             .unwrap();
         store
-            .set_refusal_fallback(&set("provider:x/a", Some(&first.model_hash)))
+            .replace_refusal_fallbacks(&[
+                pair(&first.model_hash, &second.model_hash),
+                pair("provider:x/a", &first.model_hash),
+            ])
             .await
             .unwrap();
-        store
-            .set_refusal_fallback(&set("provider:x/b", Some("provider:x/a")))
-            .await
-            .unwrap();
-        store
-            .set_refusal_fallback(&set("provider:x/b", None))
-            .await
-            .unwrap();
+        drop(store);
+
+        let store = Store::connect(&db_url).await.unwrap();
+        assert_eq!(store.refusal_fallbacks().await.unwrap().len(), 2);
 
         let mut renamed = model("first");
         renamed.api_key = "rotated-key".into();

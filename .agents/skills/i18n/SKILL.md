@@ -22,10 +22,10 @@ apps/desktop/
 
 ## Author messages
 
-- Use the global `t()` function with a static Simplified Chinese string literal: `t("保存")`.
+- Use the global `t()` function with a static ASCII-only English string literal: `t("Save")`.
 - Do not import or locally declare `t`.
 - Keep calls inside render paths when the result must update after a language change. Do not translate module-level UI constants.
-- Use named placeholders with a static object: `t("第 {page} 页", { page })`.
+- Use named placeholders with a static object: `t("Page {page}", { page })`.
 - Preserve every placeholder name exactly in all translations.
 - Wrap all user-visible labels, descriptions, tooltips, empty states, validation messages, and accessibility labels. Do not wrap protocol tokens, model IDs, URLs, or product names that should remain unchanged.
 
@@ -41,8 +41,8 @@ apps/desktop/
 From `apps/desktop`:
 
 1. Run `npm run i18n:scan` after adding or changing `t()` sources.
-2. Translate every empty entry in `src/i18n/locales/en-US.json`.
-3. Never edit `src/i18n/generated/catalog.json` or `zh-CN.json` manually; scanning owns them.
+2. Translate every empty entry in each non-English file under `src/i18n/locales/` (`zh-CN.json`, `pt-BR.json`).
+3. Never edit `src/i18n/generated/catalog.json` or `en-US.json` manually; scanning owns them.
 4. Run `npm run check`. A normal build must fail on a missing translation or mismatched placeholder.
 
 When adding another locale, add it to the plugin's supported locales, runtime locale type and messages, locale resolver, settings options, and provide a complete locale JSON file.

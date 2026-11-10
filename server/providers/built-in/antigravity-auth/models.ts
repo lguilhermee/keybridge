@@ -22,6 +22,30 @@ export const ANTIGRAVITY_CLIENT_HEADERS: Record<string, string> = {};
 
 const ANTIGRAVITY_DENYLIST = new Set(["chat_20706", "chat_23310"]);
 
+/** Gemini 4 families whose thinking tier is a wire-ID suffix rather than a request field. */
+const GEMINI_4_TIERED = /^(gemini-4-(?:carbon|argon))(?:-(?:low|medium|high))?$/;
+
+/** Returns the Gemini 4 family (`gemini-4-carbon` / `gemini-4-argon`) for a base or tiered ID. */
+export function gemini4Family(id: string): string | null {
+  return GEMINI_4_TIERED.exec(id.trim().toLowerCase())?.[1] ?? null;
+}
+
+/** Maps Cursor's Effort (low…max) onto the three Gemini 4 wire tiers. */
+export function gemini4Tier(effort: string | null): "low" | "medium" | "high" {
+  switch (effort?.toLowerCase()) {
+    case "none":
+    case "minimal":
+    case "low":
+      return "low";
+    case "high":
+    case "xhigh":
+    case "max":
+      return "high";
+    default:
+      return "medium";
+  }
+}
+
 /**
  * Context windows by model family as documented by each upstream vendor
  * (Gemini 1M, Claude 200K, GPT-4o 128K, gpt-oss-120b 128K). Unknown families
@@ -36,48 +60,20 @@ function contextWindowFor(id: string): number | undefined {
 }
 
 const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
-  // Gemini 4 Series (thinking tier is part of the wire ID)
+  // Gemini 4 Series: Cursor's Effort selects the -low/-medium/-high wire tier.
   {
-    id: "gemini-4-carbon-high",
-    displayName: "Gemini 4 Carbon (High)",
+    id: "gemini-4-carbon",
+    displayName: "Gemini 4 Carbon",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
+    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
-    id: "gemini-4-carbon-medium",
-    displayName: "Gemini 4 Carbon (Medium)",
+    id: "gemini-4-argon",
+    displayName: "Gemini 4 Argon",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
-  },
-  {
-    id: "gemini-4-carbon-low",
-    displayName: "Gemini 4 Carbon (Low)",
-    capabilities: { images: true },
-    maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
-  },
-  {
-    id: "gemini-4-argon-high",
-    displayName: "Gemini 4 Argon (High)",
-    capabilities: { images: true },
-    maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
-  },
-  {
-    id: "gemini-4-argon-medium",
-    displayName: "Gemini 4 Argon (Medium)",
-    capabilities: { images: true },
-    maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
-  },
-  {
-    id: "gemini-4-argon-low",
-    displayName: "Gemini 4 Argon (Low)",
-    capabilities: { images: true },
-    maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
+    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
 
   // Gemini 3.8 Series
@@ -359,6 +355,8 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
 
   for (const [modelId, raw] of Object.entries(rawModels)) {
     if (ANTIGRAVITY_DENYLIST.has(modelId)) continue;
+    // Tiered Gemini 4 IDs collapse into one static model per family; Effort picks the tier.
+    if (gemini4Family(modelId) !== null) continue;
     const model = object(raw);
     if (!model) continue;
 

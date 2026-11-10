@@ -6,7 +6,8 @@ import type {
 } from "cursor-byok:provider";
 import type { LlmRequest, ModelEvent } from "cursor-byok:channel";
 import type { ResourceSnapshot } from "cursor-byok:resource";
-import { antigravityChannel, isQuotaError } from "./channel.ts";
+import { antigravityChannel, antigravitySessionId, isQuotaError } from "./channel.ts";
+import { parseAntigravityModels } from "./models.ts";
 import { RESOURCE_TYPE } from "./resources.ts";
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
@@ -114,8 +115,16 @@ Deno.test("provider parses usage metadata including cachedContentTokenCount as c
   const body = JSON.parse(requestBody) as Record<string, unknown>;
   assertEquals(body.project, "test-project-123");
   assertEquals(body.model, "gemini-3.7-flash-medium");
-  assert(!("sessionId" in body), "unsupported sessionId field was sent");
+  assert(!("sessionId" in body), "sessionId must live inside request, not at the top level");
   assert(!("conversationId" in body), "unsupported conversationId field was sent");
+  const inner = body.request as Record<string, unknown>;
+  assertEquals(inner.sessionId, await antigravitySessionId("conv-1"));
+  assert(/^\d+$/.test(String(inner.sessionId)), "sessionId is not a decimal string");
+  assert(!("serviceTier" in inner), "standard latency requested a service tier");
+  assert(
+    !("X-Vertex-AI-LLM-Shared-Request-Type" in requestHeaders),
+    "standard latency sent the priority header",
+  );
 
   assertEquals(events, [
     { type: "thinking-start" },
@@ -176,6 +185,94 @@ Deno.test("Gemini 4 Argon resolves to the medium tier and omits toolConfig", asy
   assertEquals(body.model, "gemini-4-argon-medium");
   assert(Array.isArray(body.request.tools), "tools were not sent");
   assert(!("toolConfig" in body.request), "toolConfig was sent for Argon");
+});
+
+type CapturedCall = {
+  body: { model: string; request: Record<string, unknown> };
+  headers: Record<string, string>;
+};
+
+async function captureCall(modelId: string, overrides: Partial<LlmRequest>): Promise<CapturedCall> {
+  let requestBody = "";
+  let headers: Record<string, string> = {};
+  await antigravityChannel.invoke(
+    {
+      model: { id: modelId, displayName: modelId, privateData: {} },
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: { ...request(), ...overrides },
+    },
+    { emit: () => {} },
+    context({
+      stream: (_url, init) => {
+        requestBody = init?.body ?? "";
+        headers = init?.headers ?? {};
+        return {
+          status: 200,
+          headers: {},
+          lines: sse([
+            'data: {"response":{"candidates":[{"content":{"parts":[{"text":"ok"}]},"finishReason":"STOP"}]}}',
+          ]),
+        };
+      },
+    }),
+  );
+  return { body: JSON.parse(requestBody), headers };
+}
+
+Deno.test("Cursor Effort selects the Gemini 4 wire tier", async () => {
+  const cases: Array<[string, string | null, string]> = [
+    ["gemini-4-carbon", "low", "gemini-4-carbon-low"],
+    ["gemini-4-carbon", "medium", "gemini-4-carbon-medium"],
+    ["gemini-4-carbon", "high", "gemini-4-carbon-high"],
+    ["gemini-4-carbon", "max", "gemini-4-carbon-high"],
+    ["gemini-4-argon", "xhigh", "gemini-4-argon-high"],
+    ["gemini-4-argon", null, "gemini-4-argon-medium"],
+  ];
+  for (const [model, effort, wire] of cases) {
+    const { body } = await captureCall(model, {
+      reasoning: { enabled: effort !== null, effort },
+    });
+    assertEquals(body.model, wire);
+  }
+});
+
+Deno.test("Fast latency requests priority inference only on Gemini 4", async () => {
+  const fast = await captureCall("gemini-4-argon", { latency: "fast" });
+  assertEquals(fast.body.request.serviceTier, "SERVICE_TIER_PRIORITY");
+  assertEquals(fast.headers["X-Vertex-AI-LLM-Shared-Request-Type"], "priority");
+
+  const other = await captureCall("gemini-3.7-flash-medium", { latency: "fast" });
+  assert(!("serviceTier" in other.body.request), "priority was requested on an unverified model");
+  assert(!("X-Vertex-AI-LLM-Shared-Request-Type" in other.headers));
+});
+
+Deno.test("sessionId is stable per cacheKey and omitted without one", async () => {
+  assertEquals(await antigravitySessionId("conv-1"), await antigravitySessionId("conv-1"));
+  assert((await antigravitySessionId("conv-1")) !== (await antigravitySessionId("conv-2")));
+  const { body } = await captureCall("gemini-4-carbon", { cacheKey: null });
+  assert(!("sessionId" in body.request), "sessionId was sent without a cacheKey");
+});
+
+Deno.test("tiered Gemini 4 upstream IDs collapse into one model per family", () => {
+  const models = parseAntigravityModels({
+    models: {
+      "gemini-4-carbon-high": { displayName: "Gemini 4 Carbon (High)" },
+      "gemini-4-carbon-low": { displayName: "Gemini 4 Carbon (Low)" },
+      "gemini-4-argon-medium": { displayName: "Gemini 4 Argon (Medium)" },
+      "gemini-3.8-flash-high": { displayName: "Gemini 3.8 Flash (High)", supportsThinking: true },
+    },
+  });
+  const ids = models.map((model) => model.id);
+  assert(!ids.some((id) => /^gemini-4-(carbon|argon)-/.test(id)), `tiered IDs leaked: ${ids}`);
+  const carbon = models.find((model) => model.id === "gemini-4-carbon");
+  assertEquals(carbon?.privateData, { reasoningEfforts: ["low", "medium", "high"] });
+  assert(ids.includes("gemini-4-argon"));
+  assert(ids.includes("gemini-3.8-flash-high"));
 });
 
 Deno.test("isQuotaError identifies rate limits and quota exhaustion", () => {

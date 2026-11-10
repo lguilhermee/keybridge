@@ -194,10 +194,10 @@ async fn disabled_and_unauthorized_requests_cannot_list_models() {
     );
     let (status, body) = send(router, "GET", "/byok/v1/models", Some("secret"), json!({})).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(
-        serde_json::from_str::<Value>(&body).unwrap()["data"][0]["id"],
-        "work/qwen/model"
-    );
+    let listed = serde_json::from_str::<Value>(&body).unwrap();
+    assert_eq!(listed["data"][0]["id"], "work/qwen/model");
+    assert_eq!(listed["data"][0]["owned_by"], "work");
+    assert_eq!(listed["data"][0]["name"], "[work] Example");
 }
 
 #[tokio::test]

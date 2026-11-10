@@ -17,7 +17,7 @@ use super::{
     combo::{run_model, ComboRun},
     consume_model_cycle,
     model_retry::{should_retry, MODEL_RETRY_DELAY},
-    refusal_fallback::RefusalRun,
+    refusal_fallback::RefusalFallbacks,
     CommitBarrier, CommitCause, MessagesCommitted, RunCommand, RunEvent, RunFailure, RunOutcome,
     RunPort,
 };
@@ -187,8 +187,8 @@ impl RunEngine {
             Ok(combo) => combo,
             Err(failure) => return (RunOutcome::Failed(failure), usage),
         };
-        let mut refusal = match RefusalRun::start(&self.store).await {
-            Ok(refusal) => refusal,
+        let refusal_fallbacks = match RefusalFallbacks::load(&self.store).await {
+            Ok(refusal_fallbacks) => refusal_fallbacks,
             Err(failure) => return (RunOutcome::Failed(failure), usage),
         };
         'model: loop {
@@ -221,7 +221,7 @@ impl RunEngine {
                 match self
                     .auto_compact(
                         prepared,
-                        refusal.apply(run_model(prepared, combo.as_ref())),
+                        run_model(prepared, combo.as_ref()),
                         checkpoint,
                         &messages,
                         client,
@@ -265,9 +265,12 @@ impl RunEngine {
             } else {
                 super::history::user_terminated(history, CONTINUE_MESSAGE_ID, CONTINUE_INSTRUCTION)
             };
+            // Every model call starts on the run's own model; a refusal model
+            // only answers the call its model refused.
+            let mut refusal = refusal_fallbacks.call();
             let mut request = crate::model::ModelRequest {
                 prompt: prepared.prompt.clone(),
-                model: refusal.apply(run_model(prepared, combo.as_ref())),
+                model: run_model(prepared, combo.as_ref()),
                 history,
             };
             let mut retries = 0_u32;

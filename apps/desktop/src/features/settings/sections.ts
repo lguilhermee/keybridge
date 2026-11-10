@@ -118,6 +118,14 @@ export function settingsSearchEntries(): SettingsSearchEntry[] {
       keywords: "prompt commit message",
     },
     {
+      id: "refusal-fallback",
+      section: "cursor",
+      group: "refusal",
+      label: t("Refusal fallback"),
+      description: t("When a checked model refuses a request, only that request goes to the chosen refusal model. The next request tries the original model again."),
+      keywords: "refusal fallback uncensored switch policy",
+    },
+    {
       id: "headroom",
       section: "cursor",
       group: "headroom",

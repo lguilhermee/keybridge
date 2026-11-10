@@ -42,7 +42,7 @@ impl ProviderCatalog {
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(&installed, fs::Permissions::from_mode(0o700))?;
         }
-        // Built-in providers are preinstalled into installed by version; no writes when the version matches.
+        // Built-in providers are synced from the embedded bundle; unchanged files are not rewritten.
         super::builtin::install(&installed)?;
         // Scan order is priority: in debug the source directory comes first so built-in provider edits take effect hot;
         // release builds only have the installed root.
