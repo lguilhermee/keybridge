@@ -51,4 +51,5 @@ fn main() {
     // compiling that entire package would generate invalid Rust. `cursor/proto.rs` defines only
     // the validated Bidi and ErrorDetails wire subsets; agent_v1.proto remains fully generated.
     println!("cargo:rerun-if-changed={}", aiserver_proto.display());
+    println!("cargo:rerun-if-changed=migrations");
 }
