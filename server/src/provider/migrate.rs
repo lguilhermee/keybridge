@@ -20,9 +20,11 @@ const RENAMED_IDS: [(&str, &str); 3] = [
     ),
 ];
 
-/// Runs before any provider directory is created: renames `<managed>/plugins`
-/// to `<managed>/providers` when the new tree is absent, then fixes up stale
-/// manifest file names, renamed ids, and `data/<id>` directories.
+/// Runs before any provider directory is created: moves every entry of the
+/// pre-rename `<managed>/plugins` tree into `<managed>/providers` — which may
+/// already exist as a stub created by tooling — then fixes up stale manifest
+/// file names, renamed ids, and `data/<id>` directories. The legacy tree is the
+/// source of truth, so a conflicting entry under `providers/` is replaced.
 pub(crate) fn migrate_legacy_plugin_dir() -> Result<()> {
     migrate_legacy_plugin_dir_in(&config::managed_data_dir()?)
 }
@@ -30,8 +32,19 @@ pub(crate) fn migrate_legacy_plugin_dir() -> Result<()> {
 fn migrate_legacy_plugin_dir_in(managed: &Path) -> Result<()> {
     let legacy = managed.join("plugins");
     let providers = managed.join("providers");
-    if !providers.exists() && legacy.is_dir() {
-        std::fs::rename(&legacy, &providers)?;
+    if legacy.is_dir() {
+        std::fs::create_dir_all(&providers)?;
+        for entry in std::fs::read_dir(&legacy)?.flatten() {
+            let from = entry.path();
+            let to = providers.join(entry.file_name());
+            if to.is_dir() {
+                std::fs::remove_dir_all(&to)?;
+            } else if to.exists() {
+                std::fs::remove_file(&to)?;
+            }
+            std::fs::rename(&from, &to)?;
+        }
+        let _ = std::fs::remove_dir(&legacy);
         tracing::info!(path = %providers.display(), "migrated plugins data directory to providers");
     }
     if !providers.is_dir() {
@@ -164,14 +177,44 @@ mod tests {
     }
 
     #[test]
-    fn no_op_when_providers_tree_already_exists() {
+    fn merges_when_providers_tree_already_exists() {
         let root = tempfile::tempdir().unwrap();
         let managed = root.path();
-        std::fs::create_dir_all(managed.join("providers/installed")).unwrap();
-        std::fs::create_dir_all(managed.join("plugins/data")).unwrap();
+
+        // A newer-format stub created before the real move ran.
+        let stub = managed.join("providers/installed/claude-auth");
+        std::fs::create_dir_all(&stub).unwrap();
+        std::fs::write(stub.join("provider.json"), r#"{"id":"stub"}"#).unwrap();
+        std::fs::create_dir_all(managed.join("providers/runtime/sdk")).unwrap();
+
+        // The real legacy tree with account data and the deno runtime.
+        let legacy_data = managed.join("plugins/data/dev.cursorbyok.examples.codex-auth");
+        std::fs::create_dir_all(&legacy_data).unwrap();
+        std::fs::write(legacy_data.join("state.json"), "{}").unwrap();
+        std::fs::create_dir_all(managed.join("plugins/runtime/deno")).unwrap();
+        let legacy_installed = managed.join("plugins/installed/claude-auth");
+        std::fs::create_dir_all(&legacy_installed).unwrap();
+        std::fs::write(
+            legacy_installed.join("plugin.json"),
+            r#"{"apiVersion":1,"id":"dev.cursorbyok.providers.claude","name":"Claude","version":"0.1.5","icon":"i","entry":"main.ts"}"#,
+        )
+        .unwrap();
 
         migrate_legacy_plugin_dir_in(managed).unwrap();
 
-        assert!(managed.join("plugins/data").is_dir());
+        let providers = managed.join("providers");
+        assert!(providers
+            .join("data/dev.cursorbyok.providers.codex-auth/state.json")
+            .is_file());
+        assert!(providers.join("runtime/deno").is_dir());
+        // The stub entry was replaced by the legacy one, then its manifest
+        // renamed to the new file name.
+        let claude: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(providers.join("installed/claude-auth/provider.json"))
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(claude["id"], "dev.cursorbyok.providers.claude");
+        assert!(!managed.join("plugins").exists());
     }
 }
