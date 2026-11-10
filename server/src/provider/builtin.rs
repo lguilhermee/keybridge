@@ -252,6 +252,10 @@ const OPENCODE_AUTH: &[(&str, &str)] = &[
         include_str!("../../providers/built-in/opencode-auth/main.ts"),
     ),
     (
+        "free.ts",
+        include_str!("../../providers/built-in/opencode-auth/free.ts"),
+    ),
+    (
         "resources.ts",
         include_str!("../../providers/built-in/opencode-auth/resources.ts"),
     ),
