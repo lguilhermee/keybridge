@@ -13,6 +13,7 @@ const COMMIT_SETTINGS_KEY: &str = "commit_settings";
 const CURSOR_TAKEOVER_ENABLED_KEY: &str = "cursor_takeover_enabled";
 const PRICING_SETTINGS_KEY: &str = "token_pricing";
 const EXTERNAL_API_SETTINGS_KEY: &str = "external_api";
+const CODEX_TAKEOVER_KEY: &str = "codex_takeover";
 const HEADROOM_SETTINGS_KEY: &str = "headroom";
 
 /// Embedded default system prompts for commit message generation.
@@ -31,6 +32,23 @@ pub struct PortSettings {
 pub struct ExternalApiSettings {
     pub enabled: bool,
     pub api_key: String,
+}
+
+/// The top-level model keys of the Codex `config.toml`.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
+pub struct CodexSelection {
+    pub model: Option<String>,
+    pub model_provider: Option<String>,
+    pub model_catalog_json: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
+pub struct CodexTakeover {
+    pub enabled: bool,
+    /// The user's own selection, present while Keybridge is written into the Codex
+    /// config and restored when Keybridge is removed from it.
+    #[serde(default)]
+    pub previous: Option<CodexSelection>,
 }
 
 /// Optional per-model price overrides keyed by the upstream `model_id` seen on
@@ -307,6 +325,32 @@ impl Store {
             .execute(&self.pool)
             .await?;
         Ok(settings)
+    }
+
+    pub(crate) async fn codex_takeover(&self) -> Result<CodexTakeover> {
+        let value = sqlx::query_scalar::<_, String>(
+            "SELECT value_json FROM service_settings WHERE setting_key = ?",
+        )
+        .bind(CODEX_TAKEOVER_KEY)
+        .fetch_optional(&self.pool)
+        .await?;
+        value
+            .map(|value| serde_json::from_str(&value).map_err(Into::into))
+            .unwrap_or_else(|| Ok(CodexTakeover::default()))
+    }
+
+    pub(crate) async fn set_codex_takeover(&self, takeover: &CodexTakeover) -> Result<()> {
+        let value_json = serde_json::to_string(takeover)?;
+        let _write = self.writes.lock().await;
+        sqlx::query(
+            "INSERT INTO service_settings(setting_key, value_json, updated_at_ms) VALUES (?, ?, ?) ON CONFLICT(setting_key) DO UPDATE SET value_json = excluded.value_json, updated_at_ms = excluded.updated_at_ms",
+        )
+        .bind(CODEX_TAKEOVER_KEY)
+        .bind(value_json)
+        .bind(now_ms())
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 
     pub(crate) async fn cursor_takeover_enabled(&self) -> Result<bool> {

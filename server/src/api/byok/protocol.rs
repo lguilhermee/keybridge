@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use base64::Engine;
 use serde_json::Value;
 
@@ -26,10 +28,14 @@ impl ApiProtocol {
     }
 }
 
+/// Flat tool name offered to the model -> the Responses `(namespace, name)` it stands for.
+pub(super) type NamespacedTools = HashMap<String, (String, String)>;
+
 pub(super) struct ParsedRequest {
     pub public_model_id: String,
     pub request: ModelRequest,
     pub stream: bool,
+    pub namespaced_tools: NamespacedTools,
 }
 
 pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest> {
@@ -41,6 +47,7 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
     };
     let mut history = Vec::new();
     let mut model = ModelSpec::new(&public_model_id);
+    let mut namespaced_tools = NamespacedTools::new();
     match protocol {
         ApiProtocol::Chat => {
             parse_chat_messages(body.get("messages"), &mut prompt, &mut history)?;
@@ -58,10 +65,10 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
                 .to_owned();
             match body.get("input") {
                 Some(Value::String(text)) => history.push(text_message(0, Role::User, text)),
-                Some(input) => parse_responses_input(input, &mut history)?,
+                Some(input) => parse_responses_input(input, &mut prompt, &mut history)?,
                 None => return Err(Error::Protocol("input is required".into())),
             }
-            parse_tools(body.get("tools"), protocol, &mut prompt)?;
+            parse_responses_tools(body.get("tools"), &mut prompt, &mut namespaced_tools)?;
             model.max_output_tokens = body.get("max_output_tokens").and_then(Value::as_u64);
         }
         ApiProtocol::Messages => {
@@ -84,6 +91,7 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
             history,
         },
         stream,
+        namespaced_tools,
     })
 }
 
@@ -271,53 +279,124 @@ fn parse_chat_messages(
     Ok(())
 }
 
-fn parse_responses_input(value: &Value, history: &mut Vec<ProjectedMessage>) -> Result<()> {
+fn parse_responses_input(
+    value: &Value,
+    prompt: &mut PromptSpec,
+    history: &mut Vec<ProjectedMessage>,
+) -> Result<()> {
     let items = value
         .as_array()
         .ok_or_else(|| Error::Protocol("input must be text or an array".into()))?;
     for (index, item) in items.iter().enumerate() {
-        match item.get("type").and_then(Value::as_str) {
-            Some("function_call_output") => history.push(ProjectedMessage {
-                message_id: format!("external:{index}"),
-                role: Role::Tool,
-                content: ProjectedContent::ToolResult(ToolResultContent {
-                    call_id: required_string(item, "call_id")?.into(),
-                    name: tool_name(history, required_string(item, "call_id")?)
-                        .unwrap_or_else(|| "tool".into()),
-                    content: text_content(item.get("output")).unwrap_or_default(),
-                    is_error: false,
-                    image: None,
-                    provider_parts: Vec::new(),
-                }),
-            }),
-            Some("function_call") => history.push(ProjectedMessage {
-                message_id: format!("external:{index}"),
-                role: Role::Assistant,
-                content: ProjectedContent::Assistant {
-                    text: String::new(),
-                    thinking: String::new(),
-                    replay_state: None,
-                    calls: vec![ToolCallContent {
-                        index: 0,
-                        call_id: required_string(item, "call_id")?.into(),
-                        name: required_string(item, "name")?.into(),
-                        arguments: serde_json::from_str(required_string(item, "arguments")?)?,
-                    }],
-                },
-            }),
-            _ => {
-                let role = item.get("role").and_then(Value::as_str).unwrap_or("user");
-                let role = match role {
-                    "user" => Role::User,
-                    "assistant" => Role::Assistant,
-                    _ => return Err(Error::Protocol(format!("unsupported role: {role}"))),
-                };
+        match item
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or("message")
+        {
+            "function_call_output" => {
+                let call_id = required_string(item, "call_id")?;
+                let output = item.get("output");
+                // An array output can carry images, such as a screenshot the tool returned.
+                let provider_parts = parse_parts(output)
+                    .ok()
+                    .filter(|parts| {
+                        parts
+                            .iter()
+                            .any(|part| matches!(part, ContentPart::Image { .. }))
+                    })
+                    .unwrap_or_default();
                 history.push(ProjectedMessage {
                     message_id: format!("external:{index}"),
-                    role,
-                    content: ProjectedContent::Parts(parse_parts(item.get("content"))?),
+                    role: Role::Tool,
+                    content: ProjectedContent::ToolResult(ToolResultContent {
+                        call_id: call_id.into(),
+                        name: tool_name(history, call_id).unwrap_or_else(|| "tool".into()),
+                        content: text_content(output).unwrap_or_default(),
+                        is_error: false,
+                        image: None,
+                        provider_parts,
+                    }),
                 });
             }
+            "function_call" => {
+                let name = required_string(item, "name")?;
+                let name = match item.get("namespace").and_then(Value::as_str) {
+                    Some(namespace) if !namespace.is_empty() => flat_tool_name(namespace, name),
+                    _ => name.to_owned(),
+                };
+                let arguments = item
+                    .get("arguments")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let arguments = if arguments.trim().is_empty() {
+                    Value::Object(Default::default())
+                } else {
+                    serde_json::from_str(arguments)?
+                };
+                let call_id = required_string(item, "call_id")?.to_owned();
+                // One model turn is one assistant message: its text, then every call it made.
+                if let Some(ProjectedMessage {
+                    content: ProjectedContent::Assistant { calls, .. },
+                    ..
+                }) = history.last_mut()
+                {
+                    calls.push(ToolCallContent {
+                        index: calls.len(),
+                        call_id,
+                        name,
+                        arguments,
+                    });
+                } else {
+                    history.push(ProjectedMessage {
+                        message_id: format!("external:{index}"),
+                        role: Role::Assistant,
+                        content: ProjectedContent::Assistant {
+                            text: String::new(),
+                            thinking: String::new(),
+                            replay_state: None,
+                            calls: vec![ToolCallContent {
+                                index: 0,
+                                call_id,
+                                name,
+                                arguments,
+                            }],
+                        },
+                    });
+                }
+            }
+            "message" => {
+                let role = item.get("role").and_then(Value::as_str).unwrap_or("user");
+                match role {
+                    // Leading system and developer messages are the caller's instructions.
+                    "system" | "developer" if history.is_empty() => {
+                        let text = text_content(item.get("content"))
+                            .ok_or_else(|| Error::Protocol("system content must be text".into()))?;
+                        if !prompt.instructions.is_empty() {
+                            prompt.instructions.push_str("\n\n");
+                        }
+                        prompt.instructions.push_str(&text);
+                    }
+                    "user" | "system" | "developer" => history.push(ProjectedMessage {
+                        message_id: format!("external:{index}"),
+                        role: Role::User,
+                        content: ProjectedContent::Parts(parse_parts(item.get("content"))?),
+                    }),
+                    "assistant" => history.push(ProjectedMessage {
+                        message_id: format!("external:{index}"),
+                        role: Role::Assistant,
+                        content: ProjectedContent::Assistant {
+                            text: text_content(item.get("content")).unwrap_or_default(),
+                            thinking: String::new(),
+                            replay_state: None,
+                            calls: Vec::new(),
+                        },
+                    }),
+                    _ => return Err(Error::Protocol(format!("unsupported role: {role}"))),
+                }
+            }
+            // Reasoning, hosted tool calls, and compaction items are private to the model
+            // that produced them; another model cannot replay them.
+            _ => {}
         }
     }
     Ok(())
@@ -444,21 +523,77 @@ fn parse_tools(
         } else {
             tool
         };
-        prompt.tools.push(ToolDefinition {
-            name: required_string(function, "name")?.into(),
-            description: function
-                .get("description")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .into(),
-            parameters: function
-                .get("parameters")
-                .or_else(|| function.get("input_schema"))
-                .cloned()
-                .unwrap_or(serde_json::json!({"type":"object","properties":{}})),
-        });
+        let name = required_string(function, "name")?.to_owned();
+        prompt.tools.push(tool_definition(function, name));
     }
     Ok(())
+}
+
+fn parse_responses_tools(
+    value: Option<&Value>,
+    prompt: &mut PromptSpec,
+    namespaced_tools: &mut NamespacedTools,
+) -> Result<()> {
+    let Some(value) = value else {
+        return Ok(());
+    };
+    let tools = value
+        .as_array()
+        .ok_or_else(|| Error::Protocol("tools must be an array".into()))?;
+    for tool in tools {
+        match tool
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or("function")
+        {
+            "function" => {
+                let name = required_string(tool, "name")?.to_owned();
+                prompt.tools.push(tool_definition(tool, name));
+            }
+            "namespace" => {
+                let namespace = required_string(tool, "name")?;
+                let nested = tool.get("tools").and_then(Value::as_array);
+                for function in nested.into_iter().flatten() {
+                    if function.get("type").and_then(Value::as_str) != Some("function") {
+                        continue;
+                    }
+                    let name = required_string(function, "name")?;
+                    let flat = flat_tool_name(namespace, name);
+                    namespaced_tools.insert(flat.clone(), (namespace.to_owned(), name.to_owned()));
+                    prompt.tools.push(tool_definition(function, flat));
+                }
+            }
+            // Hosted and freeform tools (web_search, custom, ...) have no function
+            // schema that another model could call.
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+fn tool_definition(function: &Value, name: String) -> ToolDefinition {
+    ToolDefinition {
+        name,
+        description: function
+            .get("description")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .into(),
+        parameters: function
+            .get("parameters")
+            .or_else(|| function.get("input_schema"))
+            .cloned()
+            .unwrap_or(serde_json::json!({"type":"object","properties":{}})),
+    }
+}
+
+/// Models only see flat function names, so a Responses namespace is folded into the name.
+fn flat_tool_name(namespace: &str, name: &str) -> String {
+    if namespace.ends_with('_') {
+        format!("{namespace}{name}")
+    } else {
+        format!("{namespace}__{name}")
+    }
 }
 
 fn tool_name(history: &[ProjectedMessage], call_id: &str) -> Option<String> {

@@ -21,7 +21,7 @@ export function RemoteSshHelp({ onClose }: { onClose: () => void }) {
 
   return <Modal open title={t("Remote SSH setup guide")} onClose={onClose} closeLabel={t("Close")}>
     <div className={`${styles.editor} ${helpStyles.content}`}>
-      <p>{t("Requires Cursor 3.21.16 or newer. Keep cursor-byok running on your local machine and complete local CA and model setup first.")}</p>
+      <p>{t("Requires Cursor 3.21.16 or newer. Keep Keybridge running on your local machine and complete local CA and model setup first.")}</p>
       <ol className={styles.editor}>
         <li>{t("Connect to your SSH host. In Cursor Settings, select Remote [SSH: host] and open that host's remote settings JSON. Configure each SSH host separately.")}</li>
         <li>
@@ -40,7 +40,7 @@ export function RemoteSshHelp({ onClose }: { onClose: () => void }) {
           {copyState === "failed" && t("Copy failed. Select and copy the JSON above manually, or retry in the desktop app.")}
         </p>
       </div>
-      <p>{t("This routes remote inference through the Cursor client to local cursor-byok. No SSH tunnel or local CA installation on the remote host is needed. Tools still run in the SSH workspace.")}</p>
+      <p>{t("This routes remote inference through the Cursor client to local Keybridge. No SSH tunnel or local CA installation on the remote host is needed. Tools still run in the SSH workspace.")}</p>
       <p>{t("Local integration status describes only the local proxy configuration, not SSH readiness. Test Agent, tool calls, MCP, Skills, Tab, and commit generation separately.")}</p>
       <p>{t("If a connection to 127.0.0.1 fails, localhost in a remote process refers to the remote host, not your desktop. Check that the remote setting took effect. Diagnose certificate errors separately using the failing process and destination; keep TLS verification enabled and never copy CA private keys.")}</p>
     </div>

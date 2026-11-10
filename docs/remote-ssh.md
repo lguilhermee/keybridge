@@ -1,17 +1,17 @@
 # Remote SSH verification checklist
 
-This is a test checklist, not a record of successful tests. Record the Cursor version (3.21.16 or newer), cursor-byok revision, desktop OS, remote OS, provider/protocol, and the actual result for each check. Use only disposable files and approved commands. Redact hostnames, paths, provider credentials, and private content before sharing evidence.
+This is a test checklist, not a record of successful tests. Record the Cursor version (3.21.16 or newer), Keybridge revision, desktop OS, remote OS, provider/protocol, and the actual result for each check. Use only disposable files and approved commands. Redact hostnames, paths, provider credentials, and private content before sharing evidence.
 
 ## Setup and status boundaries
 
-- [ ] Confirm local Cursor requests work with cursor-byok running and local CA/proxy integration configured.
-- [ ] Open **Cursor -> Remote SSH guide** in cursor-byok, including when local integration is off or CA setup is incomplete.
+- [ ] Confirm local Cursor requests work with Keybridge running and local CA/proxy integration configured.
+- [ ] Open **Cursor -> Remote SSH guide** in Keybridge, including when local integration is off or CA setup is incomplete.
 - [ ] Confirm the navigation and page labels describe **local** integration only; neither claims SSH readiness.
 - [ ] In the desktop app, copy the settings. Confirm success appears only after the clipboard operation succeeds. When clipboard access fails, confirm the guide offers manual copying and never reports success.
 - [ ] Confirm the help dialog supports keyboard navigation, Escape, focus return, scrolling, and light/dark themes.
 - [ ] Connect to the SSH host. Merge `"cursorAgentHost.remoteInferenceRoute": "always"` into that host's **Remote [SSH: host]** settings, preserving other settings.
 - [ ] Run **Developer: Reload Window**, start a new chat, and explicitly choose a BYOK model rather than Auto.
-- [ ] Confirm requests arrive at the local cursor-byok without an SSH tunnel, remote CA installation, public listener, or disabled TLS verification.
+- [ ] Confirm requests arrive at the local Keybridge without an SSH tunnel, remote CA installation, public listener, or disabled TLS verification.
 
 ## Test each feature independently
 
@@ -47,4 +47,4 @@ Record only measured facts. Do not treat this section as a substitute for the ch
 - Disposable Ubuntu 24.04 LTS SSH host is reachable for fixture setup. Hostnames, addresses, and credentials are not recorded here.
 - A disposable remote worktree with uncommitted and untracked markers was created for later live acceptance. It does not by itself prove Agent routing or tool execution.
 - Automated coverage added/kept green for local proxy settings, inference route preservation, WebFetch conversation-private paging, and Semble Cursor-host absolute-path snapshots (`cargo test -p cursor-server --lib local_app::`, `search::cache`, `host_snapshot`, `search_provider`, and `tool_round` / `interrupt` / `connect_wire`).
-- Live Remote SSH Agent chat with `cursorAgentHost.remoteInferenceRoute: "always"`, remote tool execution, Tab, and commit generation remain **unchecked** until completed in a real SSH window against cursor-byok.
+- Live Remote SSH Agent chat with `cursorAgentHost.remoteInferenceRoute: "always"`, remote tool execution, Tab, and commit generation remain **unchecked** until completed in a real SSH window against Keybridge.

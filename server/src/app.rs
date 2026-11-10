@@ -12,7 +12,7 @@ use crate::{
         prompting::{PromptAssets, PromptCompiler},
         transport::TransportRegistry,
     },
-    local_app::CursorHarness,
+    local_app::{CodexHarness, CursorHarness},
     protocol::ProtocolRouter,
     provider::{ProviderRegistry, ProviderRuntime},
     search::WebCache,
@@ -25,6 +25,7 @@ pub struct App {
     router: axum::Router,
     registry: TransportRegistry,
     harness: CursorHarness,
+    codex: CodexHarness,
     headroom: crate::headroom::HeadroomRuntime,
     store: Store,
 }
@@ -87,6 +88,7 @@ impl App {
             headroom.clone(),
         )?;
         let harness = control.cursor_harness().clone();
+        let codex = control.codex_harness().clone();
         let mut router = api::router(registry.clone(), clients)?.merge(byok);
         router = match &config.console {
             Some(ConsoleSource::Directory(directory)) => {
@@ -101,6 +103,7 @@ impl App {
             router,
             registry,
             harness,
+            codex,
             headroom,
             store,
             config,
@@ -150,9 +153,13 @@ impl App {
     pub async fn serve_on(self, listener: TcpListener, shutdown: CancellationToken) -> Result<()> {
         let address = listener.local_addr()?;
         self.harness.set_backend_addr(address);
+        self.codex.set_backend_addr(address);
         tracing::info!(%address, "cursor server listening");
+        // The service port can differ between runs, so Codex is pointed at this one.
+        self.codex.refresh().await;
         let registry = self.registry;
         let harness = self.harness;
+        let codex = self.codex;
         let graceful = shutdown.clone();
         let server = axum::serve(listener, self.router)
             .with_graceful_shutdown(async move {
@@ -168,12 +175,18 @@ impl App {
                 if let Err(error) = harness.disable().await {
                     tracing::warn!(%error, "failed to disable Cursor harness after server stop");
                 }
+                if let Err(error) = codex.release().await {
+                    tracing::warn!(%error, "failed to release the Codex config after server stop");
+                }
                 result?
             },
             () = shutdown.cancelled() => {
                 headroom.shutdown().await;
                 if let Err(error) = harness.disable().await {
                     tracing::warn!(%error, "failed to disable Cursor harness during shutdown");
+                }
+                if let Err(error) = codex.release().await {
+                    tracing::warn!(%error, "failed to release the Codex config during shutdown");
                 }
                 registry.shutdown().await;
                 match tokio::time::timeout(Duration::from_secs(10), &mut server).await {

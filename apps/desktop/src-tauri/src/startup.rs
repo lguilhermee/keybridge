@@ -68,7 +68,7 @@ impl StartupDiagnostics {
 
 pub(crate) fn report_logging_failure(error: &(dyn Error + 'static)) {
     let details = error_chain(error);
-    eprintln!("Cursor BYOK failed to initialize logging: {details}");
+    eprintln!("Keybridge failed to initialize logging: {details}");
     show_fatal_dialog(&details, None);
 }
 
@@ -78,16 +78,13 @@ fn show_fatal_dialog(details: &str, log_directory: Option<&std::path::Path>) {
             "Log directory:\n{}\n\nPlease send the latest log file to the developer.",
             directory.display()
         ),
-        None => "Logging also failed to initialize, so no log file was created."
-            .to_owned(),
+        None => "Logging also failed to initialize, so no log file was created.".to_owned(),
     };
-    let description = format!(
-        "Cursor BYOK failed to start.\n\nError:\n{details}\n\n{log_guidance}"
-    );
+    let description = format!("Keybridge failed to start.\n\nError:\n{details}\n\n{log_guidance}");
 
     let _ = MessageDialog::new()
         .set_level(MessageLevel::Error)
-        .set_title("Cursor BYOK - Startup Error")
+        .set_title("Keybridge - Startup Error")
         .set_description(description)
         .set_buttons(MessageButtons::Ok)
         .show();

@@ -1072,7 +1072,7 @@ mod tests {
             .await
             .unwrap();
         recorder.response_chunk(b"data: [DONE]\n\n").await.unwrap();
-        recorder.completed(FinishReason::Stop).await.unwrap();
+        recorder.completed(&FinishReason::Stop).await.unwrap();
 
         let request = store
             .llm_call_request("detailed-provider")
@@ -1117,7 +1117,7 @@ mod tests {
         assert!(observed.is_some());
         recorder.response_headers(204).await.unwrap();
         recorder.response_chunk(response).await.unwrap();
-        recorder.completed(FinishReason::Stop).await.unwrap();
+        recorder.completed(&FinishReason::Stop).await.unwrap();
 
         assert!(store
             .llm_call_request("standard-provider")

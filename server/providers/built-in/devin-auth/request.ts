@@ -397,6 +397,7 @@ export class ResponseDecoder {
   private stop: string | number | undefined;
   private finalAnswer = false;
   private hasContent = false;
+  private refused = false;
   private replay: Record<string, JsonValue>;
   private usage: Record<string, number> = {};
 
@@ -506,9 +507,7 @@ export class ResponseDecoder {
     ) this.stop = frame.stopReason;
     if (frame.phase === "final_answer") this.finalAnswer = true;
     if (frame.usage) {
-      if (frame.usage.providerRefusal) {
-        throw new Error("Devin model provider refused the request");
-      }
+      if (frame.usage.providerRefusal) this.refused = true;
       for (
         const key of [
           "inputTokens",
@@ -525,15 +524,27 @@ export class ResponseDecoder {
   }
 
   finish(): void {
+    // A refusal outranks everything seen earlier in the stream: open blocks are
+    // closed and half-requested tools are never validated or executed.
+    if (
+      this.refused || this.stop === "STOP_REASON_CONTENT_FILTER" || this.stop === 11
+    ) {
+      this.closeThinking();
+      if (this.textOpen) this.emit({ type: "text-end" });
+      for (const tool of this.tools) {
+        if (tool.started) this.emit({ type: "tool-call-end", index: tool.index });
+      }
+      this.emitUsage();
+      this.emit({ type: "done", reason: "refusal", category: null, explanation: null });
+      return;
+    }
     if (!this.hasContent) throw new Error("Devin returned an empty response");
     if (
       [
         "STOP_REASON_ERROR",
-        "STOP_REASON_CONTENT_FILTER",
         "STOP_REASON_INCOMPLETE",
         "STOP_REASON_PARTIAL",
         13,
-        11,
         1,
         9,
       ].includes(this.stop!)
@@ -567,6 +578,16 @@ export class ResponseDecoder {
         value: this.replay,
       });
     }
+    this.emitUsage();
+    const length = ["STOP_REASON_MAX_TOKENS", "STOP_REASON_MAX_NEWLINES", 3, 5]
+      .includes(this.stop!);
+    this.emit({
+      type: "done",
+      reason: length ? "length" : this.tools.length ? "tool-use" : "stop",
+    });
+  }
+
+  private emitUsage(): void {
     const usage = this.usage;
     if (Object.keys(usage).length) {
       this.emit({
@@ -584,12 +605,6 @@ export class ResponseDecoder {
         },
       });
     }
-    const length = ["STOP_REASON_MAX_TOKENS", "STOP_REASON_MAX_NEWLINES", 3, 5]
-      .includes(this.stop!);
-    this.emit({
-      type: "done",
-      reason: length ? "length" : this.tools.length ? "tool-use" : "stop",
-    });
   }
 
   private closeThinking(): void {

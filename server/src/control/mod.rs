@@ -234,6 +234,14 @@ pub fn api_router(service: ControlService) -> Router {
             "/__byok-api__/api/harness/cursor/enabled",
             put(harness::set_enabled),
         )
+        .route(
+            "/__byok-api__/api/harness/codex/status",
+            get(harness::codex_status),
+        )
+        .route(
+            "/__byok-api__/api/harness/codex/enabled",
+            put(harness::set_codex_enabled),
+        )
         .with_state(service)
         .layer(desktop_cors())
 }

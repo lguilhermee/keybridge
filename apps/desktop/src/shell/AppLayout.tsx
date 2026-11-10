@@ -8,7 +8,7 @@ import { PageFrame } from "./PageFrame";
 import { PageActionsTarget } from "./PageActions";
 import styles from "./AppLayout.module.scss";
 
-const keptAlivePages = ["/", "/calls", "/providers", "/cursor", "/settings"];
+const keptAlivePages = ["/", "/calls", "/providers", "/cursor", "/codex", "/settings"];
 
 export function AppLayout() {
   const location = useLocation();

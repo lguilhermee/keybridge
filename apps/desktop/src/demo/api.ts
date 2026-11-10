@@ -1,6 +1,7 @@
 import {
   pricingForModel,
   type CallDetail,
+  type CodexHarnessStatus,
   type CursorHarnessStatus,
   type ExternalApiSettings,
   type LlmCall,
@@ -97,6 +98,14 @@ let harnessStatus: CursorHarnessStatus = {
   ca_install_command: null,
 };
 
+let codexStatus: CodexHarnessStatus = {
+  integration: "disabled",
+  installed: true,
+  config_path: "~/.codex/config.toml",
+  configured_models: models.length,
+  model: null,
+};
+
 let detailed = true;
 let portSettings = { proxy_port: 0, service_port: 0 };
 let externalApiSettings: ExternalApiSettings = { enabled: false, api_key: "" };
@@ -158,6 +167,16 @@ export function installDemoApi() {
       };
       return json(harnessStatus);
     }
+  if (path === "/harness/codex/status") return json(codexStatus);
+  if (path === "/harness/codex/enabled") {
+    const enabled = Boolean((body as { enabled?: unknown } | null)?.enabled);
+    codexStatus = {
+      ...codexStatus,
+      integration: enabled ? "enabled" : "disabled",
+      model: enabled ? models[0]?.model_id ?? null : null,
+    };
+    return json(codexStatus);
+  }
     if (path === "/settings/observability" && method === "GET") return json({ detailed });
     if (path === "/settings/observability") {
       detailed = Boolean((body as { detailed?: unknown } | null)?.detailed);

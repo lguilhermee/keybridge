@@ -301,7 +301,7 @@ export const opencodeFreeChannel: ChannelSupport = {
   id: "opencode-free",
   displayName: "OpenCode Free",
   description:
-    "Anonymous free models on OpenCode's inference lane - no API key required. Requests run inside Cursor BYOK and carry the official client's session fingerprint.",
+    "Anonymous free models on OpenCode's inference lane - no API key required. Requests run inside Keybridge and carry the official client's session fingerprint.",
   brand: "opencode",
   models: {
     list: (input, context) => freeModels.list(input, context),

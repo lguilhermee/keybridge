@@ -1,6 +1,6 @@
 ---
 name: release
-description: Prepare, authorize, publish, troubleshoot, and verify Cursor BYOK desktop GitHub Releases. Use for version bumps, release tags, GitHub Actions release runs, updater manifests, signing, or release-readiness checks.
+description: Prepare, authorize, publish, troubleshoot, and verify Keybridge desktop GitHub Releases. Use for version bumps, release tags, GitHub Actions release runs, updater manifests, signing, or release-readiness checks.
 ---
 
 # Desktop release

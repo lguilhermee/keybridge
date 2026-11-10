@@ -95,7 +95,12 @@ export type ModelEvent =
   | { type: "tool-call-end"; index: number }
   | { type: "replay-state"; protocolKind: string; value: JsonValue }
   | { type: "usage"; usage: ModelUsage }
-  | { type: "done"; reason: "stop" | "length" | "tool-use" };
+  | { type: "done"; reason: "stop" | "length" | "tool-use" }
+  /**
+   * The model's explicit signal that it declines to answer on policy grounds. Emit it instead of
+   * failing the call or ending it as a normal answer; `category` is the upstream's policy label.
+   */
+  | { type: "done"; reason: "refusal"; category: string | null; explanation: string | null };
 
 export type ChannelOutput = {
   emit(event: ModelEvent): void;

@@ -21,7 +21,7 @@ export const devinChannel: ChannelSupport = {
   id: "devin",
   displayName: "Devin",
   description:
-    "Connect directly to Devin with an imported account. Model discovery and streaming run inside Cursor BYOK.",
+    "Connect directly to Devin with an imported account. Model discovery and streaming run inside Keybridge.",
   brand: "devin",
   resourceType: RESOURCE_TYPE,
   models: devinModels,

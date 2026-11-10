@@ -1,9 +1,9 @@
 ---
 name: database-schema
-description: Implement and review Cursor BYOK SQLite schema changes. Use when adding or changing tables, columns, indexes, constraints, foreign keys, SQLx migrations, persistence mappings, or database fixtures under server.
+description: Implement and review Keybridge SQLite schema changes. Use when adding or changing tables, columns, indexes, constraints, foreign keys, SQLx migrations, persistence mappings, or database fixtures under server.
 ---
 
-# Cursor BYOK Database Schema
+# Keybridge Database Schema
 
 Treat a schema change as an end-to-end persistence change, not as an isolated SQL edit. Keep the database, Rust store, API contracts, fixtures, and tests aligned.
 

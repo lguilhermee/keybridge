@@ -6,7 +6,7 @@ use crate::{
         ContentPart, ModelInvocation, ModelLatency, ProjectedContent, ProjectedMessage,
         ProtocolReplayState, Role, Usage,
     },
-    protocol::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent, Refusal},
     Error, Result,
 };
 
@@ -168,6 +168,10 @@ pub fn model_event(value: &serde_json::Value) -> Result<ModelEvent> {
             "stop" => FinishReason::Stop,
             "length" => FinishReason::Length,
             "tool-use" => FinishReason::ToolUse,
+            "refusal" => {
+                let detail = |key: &str| value.get(key).and_then(serde_json::Value::as_str);
+                FinishReason::Refusal(Refusal::new(detail("category"), detail("explanation")))
+            }
             reason => {
                 return Err(Error::Protocol(format!(
                     "unknown provider finish reason: {reason}"
@@ -283,6 +287,16 @@ mod tests {
         assert_eq!(
             model_event(&serde_json::json!({"type":"done","reason":"tool-use"})).unwrap(),
             ModelEvent::Done(FinishReason::ToolUse)
+        );
+        assert_eq!(
+            model_event(&serde_json::json!({
+                "type":"done","reason":"refusal","category":"cyber","explanation":null
+            }))
+            .unwrap(),
+            ModelEvent::Done(FinishReason::Refusal(Refusal {
+                category: Some("cyber".into()),
+                explanation: None,
+            }))
         );
         let usage = model_event(&serde_json::json!({
             "type":"usage",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "../../i18n/store";
 import { Icon } from "../../shared/ui/Icon";
 import { searchIcon } from "../../shared/ui/icons";
@@ -37,11 +37,16 @@ type NavItem =
   | { kind: "result"; id: string; entry: SettingsSearchEntry };
 
 export function SettingsPage() {
-  const params = useParams();
+  // Every settings section shares one kept-alive page, and the cached route
+  // element keeps the params of the section that mounted it. The location is
+  // the only route state that stays current, so the section is read from it.
+  const { pathname } = useLocation();
   const navigate = useNavigate();
-  const sectionParam = params.section;
+  const sectionParam = matchPath("/settings/:section", pathname)?.params.section;
   const valid = isSettingsSectionId(sectionParam);
-  const active: SettingsSectionId = valid ? sectionParam : defaultSettingsSection;
+  // While another page is shown there is no section in the location; keep the last one.
+  const [active, setActive] = useState<SettingsSectionId>(valid ? sectionParam : defaultSettingsSection);
+  if (valid && sectionParam !== active) setActive(sectionParam);
   const [query, setQuery] = useState("");
   const [focus, setFocus] = useState<{ key: string; nonce: number } | null>(null);
   const listApi = useRef<VirtualListApi | null>(null);
@@ -73,7 +78,7 @@ export function SettingsPage() {
     };
   }, [focus, groups]);
 
-  if (!valid) return <Navigate to={`/settings/${defaultSettingsSection}`} replace />;
+  if (sectionParam !== undefined && !valid) return <Navigate to={`/settings/${defaultSettingsSection}`} replace />;
 
   const jumpTo = (entry: SettingsSearchEntry) => {
     setFocus({ key: entry.group, nonce: Date.now() });

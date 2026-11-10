@@ -94,7 +94,7 @@ export const opencodeChannel: ChannelSupport = {
   id: "opencode-go",
   displayName: "OpenCode Go",
   description:
-    "Connect to OpenCode Go with a subscription API key from opencode.ai/auth. Model calls run inside Cursor BYOK.",
+    "Connect to OpenCode Go with a subscription API key from opencode.ai/auth. Model calls run inside Keybridge.",
   brand: "opencode",
   resourceType: RESOURCE_TYPE,
   models: opencodeModels,

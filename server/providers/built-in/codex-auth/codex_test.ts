@@ -626,6 +626,62 @@ Deno.test("invoke streams incremental tool calls and replays reasoning items", a
   ]);
 });
 
+Deno.test("invoke reports a refusal from the Responses API instead of a normal or cut-off answer", async () => {
+  const draft = await credentialDraft({
+    accessToken: jwt({ "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } }),
+    refreshToken: null,
+    displayName: null,
+  });
+  const run = async (lines: string[]) => {
+    const events: ModelEvent[] = [];
+    const result = await codexChannel.invoke(
+      {
+        model: { id: "gpt-test", displayName: "GPT Test" },
+        resource: snapshot(draft.privateData),
+        request: request(),
+      },
+      { emit: (event) => events.push(event) },
+      context({ stream: () => ({ status: 200, headers: {}, lines: sse(lines) }) }),
+    );
+    assertEquals(result, { status: "completed" });
+    return events;
+  };
+  assertEquals(
+    await run([
+      'data: {"type":"response.refusal.delta","delta":"I cannot "}',
+      'data: {"type":"response.refusal.done","refusal":"I cannot help with that."}',
+      'data: {"type":"response.completed","response":{}}',
+    ]),
+    [{ type: "done", reason: "refusal", category: null, explanation: "I cannot help with that." }],
+  );
+  assertEquals(
+    await run([
+      'data: {"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","call_id":"call-1","name":"read_file"}}',
+      'data: {"type":"response.output_item.done","output_index":0,"item":{"type":"function_call","call_id":"call-1","name":"read_file","arguments":"{}"}}',
+      'data: {"type":"response.output_item.done","output_index":1,"item":{"type":"message","content":[{"type":"refusal","refusal":"No."}]}}',
+      'data: {"type":"response.completed","response":{}}',
+    ]).then((events) => events.at(-1)),
+    { type: "done", reason: "refusal", category: null, explanation: "No." },
+  );
+  assertEquals(
+    await run([
+      'data: {"type":"response.output_text.delta","delta":"Par"}',
+      'data: {"type":"response.incomplete","response":{"incomplete_details":{"reason":"content_filter"}}}',
+    ]),
+    [
+      { type: "text-start" },
+      { type: "text-delta", text: "Par" },
+      { type: "text-end" },
+      { type: "done", reason: "refusal", category: null, explanation: null },
+    ],
+  );
+  assertEquals(
+    await run([
+      'data: {"type":"response.incomplete","response":{"incomplete_details":{"reason":"max_output_tokens"}}}',
+    ]),
+    [{ type: "done", reason: "length" }],
+  );
+});
 Deno.test("invoke maps quota failures to a cooling resource error", async () => {
   assert(!isQuotaError("429 rate_limit_reached"));
   assert(isQuotaError("429 usage_limit_reached: 5-hour limit"));

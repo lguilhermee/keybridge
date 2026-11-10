@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Keybridge">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#232a33"/>
+      <stop offset="1" stop-color="#0f1318"/>
+    </linearGradient>
+    <linearGradient id="emerald" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00f584"/>
+      <stop offset="1" stop-color="#00c864"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Tile -->
+  <rect x="40" y="40" width="944" height="944" rx="212" fill="url(#tile)"/>
+  <rect x="46" y="46" width="932" height="932" rx="206" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="12"/>
+
+  <!-- A key whose bit is a bridge: the shaft is the deck, carried by two piers over one arch -->
+  <g transform="translate(512 512) scale(1.15) translate(-513 -491)">
+    <path fill="#ffffff" d="M 400 438 H 778 A 22 22 0 0 1 800 460 V 608 A 18 18 0 0 1 782 626 H 758 A 18 18 0 0 1 740 608 V 562 A 60 60 0 0 0 620 562 V 608 A 18 18 0 0 1 602 626 H 578 A 18 18 0 0 1 560 608 V 502 H 400 Z"/>
+    <circle cx="340" cy="470" r="84" fill="none" stroke="url(#emerald)" stroke-width="60"/>
+  </g>
+</svg>

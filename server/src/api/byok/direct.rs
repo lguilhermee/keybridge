@@ -16,7 +16,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use crate::{
     model::{ModelConfig, NewLlmCall, Usage},
     network::NetworkClients,
-    protocol::{custom_headers, CallRecorder, FinishReason},
+    protocol::{custom_headers, CallRecorder, FinishReason, Refusal},
     store::Store,
     Error, Result,
 };
@@ -188,11 +188,11 @@ impl NativeForwarder {
                         recorder.failed(&Error::Provider(message)).await?;
                     } else {
                         recorder
-                            .completed(summary.finish.unwrap_or(FinishReason::Stop))
+                            .completed(&summary.finish.unwrap_or(FinishReason::Stop))
                             .await?;
                     }
                 } else {
-                    recorder.completed(FinishReason::Stop).await?;
+                    recorder.completed(&FinishReason::Stop).await?;
                 }
             } else {
                 recorder
@@ -243,10 +243,10 @@ impl NativeForwarder {
                 if let Some(message) = summary.failure {
                     recorder.failed(&Error::Provider(message)).await?;
                 } else {
-                    recorder.completed(summary.finish.unwrap_or(FinishReason::Stop)).await?;
+                    recorder.completed(&summary.finish.unwrap_or(FinishReason::Stop)).await?;
                 }
             } else {
-                recorder.completed(FinishReason::Stop).await?;
+                recorder.completed(&FinishReason::Stop).await?;
             }
         };
         let output = output.map(|result: Result<Bytes>| result);
@@ -343,8 +343,9 @@ impl NativeSummary {
         self.finish = match reason {
             Some("tool_calls" | "tool_use") => Some(FinishReason::ToolUse),
             Some("length" | "max_tokens" | "max_output_tokens") => Some(FinishReason::Length),
+            Some("content_filter" | "refusal") => Some(FinishReason::Refusal(Refusal::default())),
             Some(_) => Some(FinishReason::Stop),
-            None => self.finish,
+            None => self.finish.take(),
         };
         if matches!(protocol, ApiProtocol::Responses)
             && (value.pointer("/item/type").and_then(Value::as_str) == Some("function_call")

@@ -52,7 +52,7 @@ export function settingsSearchEntries(): SettingsSearchEntry[] {
       section: "general",
       group: "startup",
       label: t("Launch at login"),
-      description: t("Start Cursor BYOK automatically after signing in."),
+      description: t("Start Keybridge automatically after signing in."),
     },
     {
       id: "silent-start",

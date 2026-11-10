@@ -18,7 +18,7 @@ use super::{
     attempt::{send_once, Attempt},
     map_sse_error, merge_extra_params, protocol_event_error,
     recorder::recorded_headers,
-    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream,
+    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream, Refusal,
 };
 
 #[derive(Default)]
@@ -122,6 +122,7 @@ impl Protocol for OpenAiResponsesProtocol {
             let mut reasoning_items = Vec::new();
             let mut saw_tool = false;
             let mut saw_completed_item = false;
+            let mut refusal = None::<String>;
             let mut terminal = false;
             loop {
                 let event = tokio::select! {
@@ -151,6 +152,16 @@ impl Protocol for OpenAiResponsesProtocol {
                         }
                         if text_open { text_open = false; yield ModelEvent::TextEnd; }
                     }
+                    "response.refusal.delta" => {
+                        if let Some(delta) = value.get("delta").and_then(Value::as_str) {
+                            refusal.get_or_insert_default().push_str(delta);
+                        }
+                    }
+                    "response.refusal.done" => {
+                        if let Some(final_refusal) = value.get("refusal").and_then(Value::as_str) {
+                            refusal = Some(final_refusal.into());
+                        }
+                    }
                     "response.reasoning_summary_text.delta" | "response.reasoning_text.delta" => {
                         if !thinking_open { thinking_open = true; yield ModelEvent::ThinkingStart; }
                         if let Some(delta) = value.get("delta").and_then(Value::as_str) { yield ModelEvent::ThinkingDelta(delta.into()); }
@@ -174,6 +185,9 @@ impl Protocol for OpenAiResponsesProtocol {
                             }
                             Some("message") => {
                                 saw_completed_item = true;
+                                if let Some(item_refusal) = response_item_refusal(item) {
+                                    refusal = Some(item_refusal);
+                                }
                                 if let Some(final_text) = response_item_text(item) {
                                     for event in reconcile_response_text(&mut text_open, &mut text, &final_text) { yield event; }
                                 }
@@ -240,7 +254,7 @@ impl Protocol for OpenAiResponsesProtocol {
                                 },
                             );
                         }
-                        yield ModelEvent::Done(if saw_tool { FinishReason::ToolUse } else { FinishReason::Stop });
+                        yield ModelEvent::Done(response_finish(refusal.take(), saw_tool));
                     }
                     "response.incomplete" => {
                         if thinking_open { thinking_open = false; yield ModelEvent::ThinkingEnd; }
@@ -250,7 +264,13 @@ impl Protocol for OpenAiResponsesProtocol {
                             yield ModelEvent::ToolCallEnd { index: *index };
                         }
                         terminal = true;
-                        yield ModelEvent::Done(FinishReason::Length);
+                        // A filtered response is declined on policy grounds, not cut off by a token limit.
+                        let filtered = value.pointer("/response/incomplete_details/reason").and_then(Value::as_str) == Some("content_filter");
+                        yield ModelEvent::Done(if filtered || refusal.is_some() {
+                            FinishReason::Refusal(Refusal::new(None, refusal.take().as_deref()))
+                        } else {
+                            FinishReason::Length
+                        });
                     }
                     _ => {}
                 }
@@ -268,13 +288,39 @@ impl Protocol for OpenAiResponsesProtocol {
                         value: json!({"items": std::mem::take(&mut reasoning_items)}),
                     });
                 }
-                yield ModelEvent::Done(if saw_tool { FinishReason::ToolUse } else { FinishReason::Stop });
+                yield ModelEvent::Done(response_finish(refusal.take(), saw_tool));
             }
             if !terminal {
                 Err(Error::Provider("OpenAI Responses stream ended without response.completed or response.incomplete".into()))?;
             }
         })
     }
+}
+
+/// A refusal outranks tool calls seen earlier in the stream, so half-requested
+/// tools are never executed.
+fn response_finish(refusal: Option<String>, saw_tool: bool) -> FinishReason {
+    match refusal {
+        Some(explanation) => FinishReason::Refusal(Refusal::new(None, Some(&explanation))),
+        None if saw_tool => FinishReason::ToolUse,
+        None => FinishReason::Stop,
+    }
+}
+
+/// The Responses API states a refusal as its own content part instead of answer text.
+fn response_item_refusal(item: &Value) -> Option<String> {
+    let refusal = item
+        .get("content")?
+        .as_array()?
+        .iter()
+        .filter(|part| part.get("type").and_then(Value::as_str) == Some("refusal"))
+        .map(|part| {
+            part.get("refusal")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        })
+        .collect::<Vec<_>>();
+    (!refusal.is_empty()).then(|| refusal.concat())
 }
 
 fn response_item_text(item: &Value) -> Option<String> {

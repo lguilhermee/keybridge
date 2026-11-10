@@ -227,7 +227,7 @@ fn render_page(
             "Return to the app and try again.".to_owned()
         }
     });
-    let close = "You can now close this page and return to Cursor BYOK.";
+    let close = "You can now close this page and return to Keybridge.";
     format!(
         r#"<!doctype html>
 <html lang="{locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

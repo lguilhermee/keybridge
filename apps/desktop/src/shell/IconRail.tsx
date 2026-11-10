@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import cursorIconUrl from "../shared/assets/icons/cursor.svg";
 import { Icon } from "../shared/ui/Icon";
 import { TooltipTrigger } from "../shared/ui/TooltipTrigger";
-import { activityIcon, homeIcon, providerIcon, searchIcon, settingsIcon } from "../shared/ui/icons";
+import { activityIcon, homeIcon, openAiIcon, providerIcon, searchIcon, settingsIcon } from "../shared/ui/icons";
 import { useAppStore } from "../shared/store/appStore";
 import { useUpdateStore } from "../shared/store/updateStore";
 import styles from "./IconRail.module.scss";
@@ -13,13 +13,14 @@ type RailItem = {
   path: string;
   label: string;
   icon: IconifyIcon | string;
-  badge?: "cursor" | "update";
+  badge?: "cursor" | "codex" | "update";
 };
 
 export function IconRail({ onOpenPalette }: { onOpenPalette: () => void }) {
-  const { cursorHarness } = useAppStore();
+  const { cursorHarness, codexHarness } = useAppStore();
   const { availableVersion } = useUpdateStore();
   const cursorLocal = cursorHarness?.settings_applied ?? false;
+  const codexConnected = codexHarness?.integration === "enabled";
   const items: RailItem[] = [
     { path: "/", label: t("Overview"), icon: homeIcon },
     { path: "/calls", label: t("Calls"), icon: activityIcon },
@@ -29,6 +30,12 @@ export function IconRail({ onOpenPalette }: { onOpenPalette: () => void }) {
       label: cursorHarness ? `Cursor · ${cursorLocal ? t("Local: on") : t("Local: off")}` : "Cursor",
       icon: cursorIconUrl,
       badge: "cursor",
+    },
+    {
+      path: "/codex",
+      label: codexHarness ? `Codex · ${codexConnected ? t("Connected") : t("Not connected")}` : "Codex",
+      icon: openAiIcon,
+      badge: "codex",
     },
   ];
   const settingsLabel = availableVersion ? `${t("Settings")} · ${t("Update available")}` : t("Settings");
@@ -46,6 +53,7 @@ export function IconRail({ onOpenPalette }: { onOpenPalette: () => void }) {
           data-on={cursorLocal || undefined}
           title={t("Local proxy configuration only; Remote SSH is not verified.")}
         />}
+        {item.badge === "codex" && codexHarness && <span className={styles.badge} data-on={codexConnected || undefined} aria-hidden="true" />}
       </RailLink>)}
     </div>
     <div className={styles.bottom}>

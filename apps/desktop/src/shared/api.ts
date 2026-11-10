@@ -107,6 +107,14 @@ export interface CursorHarnessStatus {
   ca_install_command: string | null;
 }
 
+export interface CodexHarnessStatus {
+  integration: IntegrationState;
+  installed: boolean;
+  config_path: string;
+  configured_models: number;
+  model: string | null;
+}
+
 export interface PortSettings {
   proxy_port: number;
   service_port: number;
@@ -608,6 +616,8 @@ export const api = {
     await writeText(text);
   },
   setCursorEnabled: (enabled: boolean) => request<CursorHarnessStatus>("/harness/cursor/enabled", { method: "PUT", body: JSON.stringify({ enabled }) }),
+  codexHarness: () => request<CodexHarnessStatus>("/harness/codex/status"),
+  setCodexEnabled: (enabled: boolean) => request<CodexHarnessStatus>("/harness/codex/enabled", { method: "PUT", body: JSON.stringify({ enabled }) }),
   calls: (query: CallQuery = {}) => {
     const params = new URLSearchParams();
     if (query.status) params.set("status", query.status);

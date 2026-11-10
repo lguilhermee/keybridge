@@ -15,6 +15,8 @@ pub enum Error {
     Protocol(String),
     #[error("provider error: {0}")]
     Provider(String),
+    #[error("the model {0}")]
+    Refusal(String),
     #[error("store error: {0}")]
     Store(String),
     #[error("run was cancelled")]
@@ -26,7 +28,7 @@ pub enum Error {
     #[error("database migration error: {0}")]
     Migration(#[from] sqlx::migrate::MigrateError),
     #[error(
-        "database migration stage '{stage}' timed out after {timeout_seconds} seconds; close other Cursor BYOK processes and try again"
+        "database migration stage '{stage}' timed out after {timeout_seconds} seconds; close other Keybridge processes and try again"
     )]
     MigrationTimeout { stage: String, timeout_seconds: u64 },
     #[error("http error: {0}")]
@@ -44,9 +46,11 @@ pub enum Error {
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         let status = match self {
-            Self::Config(_) | Self::Protocol(_) | Self::Decode(_) | Self::Json(_) => {
-                StatusCode::BAD_REQUEST
-            }
+            Self::Config(_)
+            | Self::Protocol(_)
+            | Self::Refusal(_)
+            | Self::Decode(_)
+            | Self::Json(_) => StatusCode::BAD_REQUEST,
             Self::RunNotFound(_) => StatusCode::NOT_FOUND,
             Self::Provider(_) | Self::Http(_) => StatusCode::BAD_GATEWAY,
             Self::Cancelled => StatusCode::CONFLICT,

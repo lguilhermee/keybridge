@@ -114,6 +114,23 @@
         }
       ]
     },
+    "0303e18246708180": {
+      "source": "Not connected",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 17,
+          "column": 51
+        },
+        {
+          "file": "shell/IconRail.tsx",
+          "line": 36,
+          "column": 74
+        }
+      ]
+    },
     "0347f794d69ca5c4": {
       "source": "Command palette",
       "kind": "text",
@@ -121,22 +138,22 @@
       "refs": [
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 169,
+          "line": 170,
           "column": 21
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 184,
+          "line": 185,
           "column": 25
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 37,
+          "line": 44,
           "column": 31
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 38,
+          "line": 45,
           "column": 65
         }
       ]
@@ -226,6 +243,18 @@
           "file": "features/calls/CallSidePanel.tsx",
           "line": 30,
           "column": 53
+        }
+      ]
+    },
+    "06aff31f18f260c2": {
+      "source": "While connected, Codex reaches Keybridge models through the External API, which is turned on automatically.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 48,
+          "column": 12
         }
       ]
     },
@@ -598,18 +627,6 @@
         }
       ]
     },
-    "127c21b3e151496c": {
-      "source": "Requires Cursor 3.21.16 or newer. Keep cursor-byok running on your local machine and complete local CA and model setup first.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/cursor/RemoteSshHelp.tsx",
-          "line": 24,
-          "column": 11
-        }
-      ]
-    },
     "128269f39edfd1a7": {
       "source": "Total requests",
       "kind": "text",
@@ -885,7 +902,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 546,
+          "line": 554,
           "column": 21
         }
       ]
@@ -1095,6 +1112,18 @@
         }
       ]
     },
+    "1d599571381d8367": {
+      "source": "Disconnect Codex",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 14,
+          "column": 28
+        }
+      ]
+    },
     "1daf2a32f2477c87": {
       "source": "The standard endpoint path is appended automatically for the selected protocol.",
       "kind": "text",
@@ -1273,6 +1302,23 @@
         }
       ]
     },
+    "22965568d22a14ee": {
+      "source": "Connected",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 16,
+          "column": 7
+        },
+        {
+          "file": "shell/IconRail.tsx",
+          "line": 36,
+          "column": 57
+        }
+      ]
+    },
     "22a970d2e5b1cc23": {
       "source": "Completed",
       "kind": "text",
@@ -1311,6 +1357,18 @@
         }
       ]
     },
+    "23b0cc6389eb4e82": {
+      "source": "Model selected in Codex",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 35,
+          "column": 18
+        }
+      ]
+    },
     "2402e8848260a3b6": {
       "source": "Cost (USD)",
       "kind": "text",
@@ -1345,7 +1403,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 29,
+          "line": 30,
           "column": 73
         }
       ]
@@ -1369,12 +1427,12 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 95,
+          "line": 100,
           "column": 28
         },
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 96,
+          "line": 101,
           "column": 27
         }
       ]
@@ -2261,7 +2319,7 @@
       "refs": [
         {
           "file": "shell/IconRail.tsx",
-          "line": 36,
+          "line": 43,
           "column": 51
         }
       ]
@@ -2538,23 +2596,6 @@
           "file": "features/settings/sections/CursorSection.tsx",
           "line": 130,
           "column": 20
-        }
-      ]
-    },
-    "4c8982fbd71080ae": {
-      "source": "Start Cursor BYOK automatically after signing in.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/settings/sections.ts",
-          "line": 55,
-          "column": 20
-        },
-        {
-          "file": "features/settings/sections/GeneralSection.tsx",
-          "line": 146,
-          "column": 17
         }
       ]
     },
@@ -2923,6 +2964,18 @@
         }
       ]
     },
+    "575e3141522ae2c1": {
+      "source": "Models offered to Codex",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 31,
+          "column": 18
+        }
+      ]
+    },
     "57c82546ee40ed6b": {
       "source": "This operating system or CPU architecture is not currently supported",
       "kind": "text",
@@ -2947,7 +3000,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 29,
+          "line": 30,
           "column": 56
         }
       ]
@@ -3348,6 +3401,18 @@
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 385,
           "column": 21
+        }
+      ]
+    },
+    "62fe9fefc2b5794c": {
+      "source": "Reasoning effort follows each model's settings in Keybridge. Codex's built-in web search is not available with these models.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 50,
+          "column": 12
         }
       ]
     },
@@ -3779,6 +3844,18 @@
         }
       ]
     },
+    "6e293a8c009e0011": {
+      "source": "Waiting",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 17,
+          "column": 36
+        }
+      ]
+    },
     "6e4461e5aeef54ff": {
       "source": "Test failed: {error}",
       "kind": "template",
@@ -3920,12 +3997,12 @@
       "refs": [
         {
           "file": "shared/store/appStore.ts",
-          "line": 218,
+          "line": 229,
           "column": 23
         },
         {
           "file": "shared/store/appStore.ts",
-          "line": 225,
+          "line": 236,
           "column": 25
         }
       ]
@@ -3951,32 +4028,32 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 90,
+          "line": 95,
           "column": 54
         },
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 143,
+          "line": 148,
           "column": 30
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 80,
+          "line": 81,
           "column": 54
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 83,
+          "line": 84,
           "column": 14
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 34,
+          "line": 41,
           "column": 47
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 34,
+          "line": 41,
           "column": 92
         }
       ]
@@ -4169,7 +4246,7 @@
       "refs": [
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 183,
+          "line": 184,
           "column": 26
         }
       ]
@@ -4224,7 +4301,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 606,
+          "line": 614,
           "column": 43
         }
       ]
@@ -4273,7 +4350,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 47,
+          "line": 54,
           "column": 18
         }
       ]
@@ -4394,20 +4471,6 @@
           "file": "features/settings/sections/GeneralSection.tsx",
           "line": 121,
           "column": 53
-        }
-      ]
-    },
-    "83669f49b4abc45c": {
-      "source": "Cursor Assistant v{version}",
-      "kind": "template",
-      "placeholders": [
-        "version"
-      ],
-      "refs": [
-        {
-          "file": "shell/AppHeader.tsx",
-          "line": 34,
-          "column": 18
         }
       ]
     },
@@ -4539,6 +4602,23 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 112,
           "column": 54
+        }
+      ]
+    },
+    "86bc159366893db3": {
+      "source": "Start Keybridge automatically after signing in.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections.ts",
+          "line": 55,
+          "column": 20
+        },
+        {
+          "file": "features/settings/sections/GeneralSection.tsx",
+          "line": 146,
+          "column": 17
         }
       ]
     },
@@ -4889,6 +4969,18 @@
         }
       ]
     },
+    "8e301f7d31d86216": {
+      "source": "No Codex folder was found on this computer. It is created when you connect.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 43,
+          "column": 40
+        }
+      ]
+    },
     "8e405d610599b96c": {
       "source": "Server address or complete request URL, API Key, model name, display name, and note are required",
       "kind": "text",
@@ -4953,6 +5045,11 @@
         {
           "file": "shell/CommandPalette.tsx",
           "line": 80,
+          "column": 32
+        },
+        {
+          "file": "shell/CommandPalette.tsx",
+          "line": 81,
           "column": 35
         }
       ]
@@ -5005,6 +5102,18 @@
         }
       ]
     },
+    "918723fb714a1c08": {
+      "source": "Codex is using its own settings until the External API is enabled again under Settings, Network.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 27,
+          "column": 13
+        }
+      ]
+    },
     "920e413c7d411b61": {
       "source": "Status",
       "kind": "text",
@@ -5029,6 +5138,11 @@
           "file": "features/calls/CallsPage.tsx",
           "line": 297,
           "column": 57
+        },
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 22,
+          "column": 18
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
@@ -5150,6 +5264,18 @@
         }
       ]
     },
+    "96f21828376389ee": {
+      "source": "Requires Cursor 3.21.16 or newer. Keep Keybridge running on your local machine and complete local CA and model setup first.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/cursor/RemoteSshHelp.tsx",
+          "line": 24,
+          "column": 11
+        }
+      ]
+    },
     "96fbbba8616f54e1": {
       "source": "Total requests: {tokens}",
       "kind": "template",
@@ -5256,12 +5382,12 @@
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 91,
+          "line": 92,
           "column": 14
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 26,
+          "line": 27,
           "column": 34
         }
       ]
@@ -5390,6 +5516,18 @@
           "file": "features/providers/ProvidersPage.tsx",
           "line": 273,
           "column": 20
+        }
+      ]
+    },
+    "9d5e90048417095d": {
+      "source": "Restart Codex after connecting or disconnecting so it loads the new model list.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 47,
+          "column": 12
         }
       ]
     },
@@ -5552,6 +5690,18 @@
         }
       ]
     },
+    "a30bcf44bfe4888a": {
+      "source": "Your own Codex model settings are put back when you disconnect and whenever Keybridge is not running.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 49,
+          "column": 12
+        }
+      ]
+    },
     "a394d2c9753144e7": {
       "source": "Cache hit rate",
       "kind": "text",
@@ -5583,12 +5733,12 @@
       "refs": [
         {
           "file": "features/settings/SettingsPage.tsx",
-          "line": 116,
+          "line": 121,
           "column": 55
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 195,
+          "line": 196,
           "column": 49
         }
       ]
@@ -6113,6 +6263,18 @@
         }
       ]
     },
+    "b3fbe09a0103f714": {
+      "source": "This routes remote inference through the Cursor client to local Keybridge. No SSH tunnel or local CA installation on the remote host is needed. Tools still run in the SSH workspace.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/cursor/RemoteSshHelp.tsx",
+          "line": 43,
+          "column": 11
+        }
+      ]
+    },
     "b697d4f9d76a4183": {
       "source": "Download and install",
       "kind": "text",
@@ -6196,7 +6358,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 25,
+          "line": 26,
           "column": 30
         }
       ]
@@ -6820,12 +6982,12 @@
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 98,
+          "line": 99,
           "column": 14
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 106,
+          "line": 107,
           "column": 14
         }
       ]
@@ -6979,7 +7141,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 24,
+          "line": 25,
           "column": 25
         }
       ]
@@ -7085,7 +7247,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 601,
+          "line": 609,
           "column": 43
         }
       ]
@@ -7125,7 +7287,7 @@
       "refs": [
         {
           "file": "App.tsx",
-          "line": 64,
+          "line": 66,
           "column": 21
         }
       ]
@@ -7198,6 +7360,18 @@
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 198,
           "column": 19
+        }
+      ]
+    },
+    "dcec95b21584480e": {
+      "source": "Connect Codex",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 14,
+          "column": 52
         }
       ]
     },
@@ -8011,6 +8185,18 @@
         }
       ]
     },
+    "f3d674280ec5d678": {
+      "source": "Codex is using its own settings until a model is added on the Providers page.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 28,
+          "column": 13
+        }
+      ]
+    },
     "f40a853e58a18759": {
       "source": "Processing...",
       "kind": "text",
@@ -8045,6 +8231,18 @@
         }
       ]
     },
+    "f422724d054a6c8c": {
+      "source": "Codex connection",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 20,
+          "column": 36
+        }
+      ]
+    },
     "f4ccae29e1bb0c20": {
       "source": "Running",
       "kind": "text",
@@ -8059,18 +8257,6 @@
           "file": "features/settings/sections/CursorSection.tsx",
           "line": 353,
           "column": 28
-        }
-      ]
-    },
-    "f4f8e0c15de222f9": {
-      "source": "This routes remote inference through the Cursor client to local cursor-byok. No SSH tunnel or local CA installation on the remote host is needed. Tools still run in the SSH workspace.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/cursor/RemoteSshHelp.tsx",
-          "line": 43,
-          "column": 11
         }
       ]
     },
@@ -8134,6 +8320,18 @@
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 208,
           "column": 17
+        }
+      ]
+    },
+    "f99323917d38a60e": {
+      "source": "Codex configuration file",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/codex/CodexPage.tsx",
+          "line": 39,
+          "column": 18
         }
       ]
     },
@@ -8221,7 +8419,7 @@
       "refs": [
         {
           "file": "shell/IconRail.tsx",
-          "line": 34,
+          "line": 41,
           "column": 66
         }
       ]

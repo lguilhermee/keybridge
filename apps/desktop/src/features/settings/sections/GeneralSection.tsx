@@ -143,7 +143,7 @@ function StartupTrayGroup() {
     <div className={styles.stackRow}>
       <div>
         <strong>{t("Launch at login")}</strong>
-        <small>{t("Start Cursor BYOK automatically after signing in.")}</small>
+        <small>{t("Start Keybridge automatically after signing in.")}</small>
       </div>
       <Switch
         checked={autostart}

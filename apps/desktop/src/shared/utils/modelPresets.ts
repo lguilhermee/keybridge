@@ -1,8 +1,12 @@
 import type { ModelType } from "../api";
+import abliterationIcon from "../assets/provider-icons/abliteration.svg";
 import deepseekIcon from "../assets/provider-icons/deepseek.svg";
 import huoshanIcon from "../assets/provider-icons/huoshan.png";
 import kimiIcon from "../assets/provider-icons/kimi.svg";
 import minimaxIcon from "../assets/provider-icons/minimax.svg";
+import orcarouterIcon from "../assets/provider-icons/orcarouter.png";
+import refuselessIcon from "../assets/provider-icons/refuseless.png";
+import uncensoredllmIcon from "../assets/provider-icons/uncensoredllm.svg";
 import zhipuIcon from "../assets/provider-icons/zhipu.svg";
 import { defaultCustomHeaders } from "./modelDefaults";
 
@@ -29,7 +33,7 @@ export interface ModelPreset {
   name: string;
   icon: string;
   keyHint: string;
-  /** All five providers offer both Anthropic- and OpenAI-compatible protocols. */
+  /** Every preset provider offers both Anthropic- and OpenAI-compatible protocols. */
   endpoints: { anthropic: ModelPresetEndpoint; openai: ModelPresetEndpoint };
   models: ModelPresetEntry[];
 }
@@ -49,6 +53,8 @@ const entry = (
 const claudeHeaders = { ...defaultCustomHeaders };
 /** anthropic protocol: enter the Base URL, /v1/messages is appended automatically. */
 const anthropic = (baseUrl: string): ModelPresetEndpoint => ({ baseUrl, useFullUrl: false, openaiEndpoint: "", customHeaders: claudeHeaders });
+/** anthropic protocol on a general API gateway: same path rule, no claude-cli impersonation headers. */
+const anthropicPlain = (baseUrl: string): ModelPresetEndpoint => ({ baseUrl, useFullUrl: false, openaiEndpoint: "", customHeaders: null });
 /** openai protocol: enter the Base URL, /v1/chat/completions is appended automatically. */
 const openaiChat = (baseUrl: string): ModelPresetEndpoint => ({ baseUrl, useFullUrl: false, openaiEndpoint: "/v1/chat/completions", customHeaders: null });
 /** openai protocol: irregular path, provide the full request URL directly. */
@@ -121,6 +127,72 @@ export const modelPresets: ModelPreset[] = [
     models: [
       entry("MiniMax-M3", "MiniMax M3", 1000000, 65536),
       entry("MiniMax-M2.7", "MiniMax M2.7", 205000, 32768),
+    ],
+  },
+  {
+    key: "abliteration",
+    name: "Abliteration",
+    icon: abliterationIcon,
+    keyHint: "abliteration.ai/console -> API Keys (keys start with ak_)",
+    endpoints: {
+      anthropic: anthropicPlain("https://api.abliteration.ai"),
+      openai: openaiChat("https://api.abliteration.ai"),
+    },
+    // Context is a combined input + output budget, so the output cap stays on the provider default.
+    models: [
+      entry("abliterated-model-large-v2", "Abliterated Large v2", 1000000, null),
+      entry("abliterated-model-large-flash", "Abliterated Large Flash", 1048576, null),
+      entry("abliterated-model", "Abliterated Model", 262144, null),
+    ],
+  },
+  {
+    key: "refuseless",
+    name: "Refuseless",
+    icon: refuselessIcon,
+    keyHint: "refuseless.com -> Console -> API Keys (keys start with abl_)",
+    endpoints: {
+      anthropic: anthropicPlain("https://api.refuseless.com"),
+      openai: openaiChat("https://api.refuseless.com"),
+    },
+    // The docs publish different output caps per client, so the output cap stays on the provider default.
+    models: [
+      entry("glm-5.3-abliterated", "GLM 5.3 Abliterated", 1048576, null),
+      entry("glm-5.3-flash-abliterated", "GLM 5.3 Flash Abliterated", 1048576, null),
+      entry("deepseek-v4.1-flash-abliterated", "DeepSeek V4.1 Flash Abliterated", 1048576, null),
+    ],
+  },
+  {
+    key: "uncensoredllm",
+    name: "UncensoredLLM",
+    icon: uncensoredllmIcon,
+    keyHint: "app.uncensoredllm.ai/console -> API Keys (keys start with sk-ullm-live-); Fetch models lists the full catalog",
+    endpoints: {
+      anthropic: anthropicPlain("https://api.uncensoredllm.ai"),
+      openai: openaiChat("https://api.uncensoredllm.ai"),
+    },
+    // Limits come from /v1/catalog; null where the catalog publishes none.
+    models: [
+      entry("uncensored-coding-agent", "Uncensored Coding Agent", 1048576, 32768),
+      entry("glm-5.3-uncensored", "GLM 5.3 Uncensored", null, null),
+      entry("deepseek-v4.1-flash-1017-uncensored", "DeepSeek V4.1 Flash 1017 Uncensored", 1048576, null),
+      entry("mimo-v2.6-pro-uncensored", "MiMo V2.6 Pro Uncensored", 1048576, 131072),
+    ],
+  },
+  {
+    key: "orcarouter",
+    name: "OrcaRouter",
+    icon: orcarouterIcon,
+    keyHint: "orcarouter.ai/console -> API Keys (keys start with sk-orca-); Fetch models lists the full provider-prefixed catalog",
+    endpoints: {
+      anthropic: anthropicPlain("https://api.orcarouter.ai"),
+      openai: openaiChat("https://api.orcarouter.ai"),
+    },
+    // Only ids served on both /v1/messages and /v1/chat/completions, so the default works under either model type.
+    models: [
+      entry("anthropic/claude-fable-5.2", "Claude Fable 5.2", 1000000, 128000),
+      entry("anthropic/claude-opus-5.5", "Claude Opus 5.5", 1000000, 128000),
+      entry("anthropic/claude-sonnet-5.5", "Claude Sonnet 5.5", 1000000, 128000),
+      entry("orcarouter/auto", "OrcaRouter Auto", null, null),
     ],
   },
 ];

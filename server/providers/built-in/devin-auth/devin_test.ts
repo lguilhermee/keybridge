@@ -461,7 +461,7 @@ Deno.test("Response decoder preserves signed reasoning, tool deltas, aliases, an
   equal(events.filter((event) => event.type === "thinking-start").length, 1);
 });
 
-Deno.test("Response decoder fails closed for malformed tools, refusal and incomplete answers", async () => {
+Deno.test("Response decoder fails closed for malformed tools and incomplete answers", async () => {
   await rejects(() => {
     const decoder = new ResponseDecoder("m", new Map(), () => {});
     decoder.push({ deltaToolCalls: [{ name: "tool", argumentsJson: "{" }] });
@@ -472,10 +472,36 @@ Deno.test("Response decoder fails closed for malformed tools, refusal and incomp
     decoder.push({ deltaText: "Partial" });
     decoder.finish();
   }, "confirm completion");
-  await rejects(() => {
-    const decoder = new ResponseDecoder("m", new Map(), () => {});
-    decoder.push({ usage: { providerRefusal: true } });
-  }, "refused");
+});
+
+Deno.test("Response decoder reports a refusal and keeps the text already sent", () => {
+  const refusal = { type: "done", reason: "refusal", category: null, explanation: null };
+  for (
+    const frame of [
+      { usage: { providerRefusal: true } },
+      { stopReason: "STOP_REASON_CONTENT_FILTER" },
+      { stopReason: 11 },
+    ]
+  ) {
+    const events: ModelEvent[] = [];
+    const decoder = new ResponseDecoder("m", new Map(), (event) => events.push(event));
+    decoder.push({ deltaText: "Partial" });
+    decoder.push({ deltaToolCalls: [{ id: "call", name: "tool", argumentsJson: "{" }] });
+    decoder.push(frame);
+    decoder.finish();
+    equal(events.slice(0, 3), [
+      { type: "text-start" },
+      { type: "text-delta", text: "Partial" },
+      { type: "text-end" },
+    ]);
+    equal(events.at(-1), refusal);
+  }
+
+  const events: ModelEvent[] = [];
+  const decoder = new ResponseDecoder("m", new Map(), (event) => events.push(event));
+  decoder.push({ usage: { providerRefusal: true } });
+  decoder.finish();
+  equal(events.at(-1), refusal);
 });
 
 Deno.test("Provider renews authentication only before any output, and never replays a lost response", async () => {

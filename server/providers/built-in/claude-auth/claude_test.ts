@@ -581,28 +581,7 @@ const REFUSAL_SSE = [
   "",
 ];
 
-const ANSWER_SSE = [
-  'event: message_start',
-  'data: {"type":"message_start","message":{"usage":{"input_tokens":10}}}',
-  "",
-  'event: content_block_start',
-  'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}',
-  "",
-  'event: content_block_delta',
-  'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Here you go"}}',
-  "",
-  'event: content_block_stop',
-  'data: {"type":"content_block_stop","index":0}',
-  "",
-  'event: message_delta',
-  'data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":5}}',
-  "",
-  'event: message_stop',
-  'data: {"type":"message_stop"}',
-  "",
-];
-
-Deno.test("Provider resends the request when a refusal precedes any content", async () => {
+async function invokeWith(lines: string[]) {
   let streams = 0;
   const events: ModelEvent[] = [];
   const result = await claudeChannel.invoke(
@@ -615,51 +594,27 @@ Deno.test("Provider resends the request when a refusal precedes any content", as
     context({
       stream: async () => {
         streams++;
-        return {
-          status: 200,
-          headers: {},
-          lines: lineStream(streams === 1 ? REFUSAL_SSE : ANSWER_SSE),
-        };
+        return { status: 200, headers: {}, lines: lineStream(lines) };
       },
     }),
   );
+  return { result, events, streams };
+}
+
+Deno.test("Provider reports a refusal instead of failing or resending the request", async () => {
+  const { result, events, streams } = await invokeWith(REFUSAL_SSE);
   equal(result.status, "completed");
-  equal(streams, 2);
-  const text = events.find((event) => event.type === "text-delta") as {
-    text: string;
-  };
-  equal(text?.text, "Here you go");
+  equal(streams, 1);
+  equal(events.at(-1), {
+    type: "done",
+    reason: "refusal",
+    category: null,
+    explanation: null,
+  });
 });
 
-Deno.test("Provider surfaces an uncategorized refusal after the retries", async () => {
-  let streams = 0;
-  const events: ModelEvent[] = [];
-  const result = await claudeChannel.invoke(
-    {
-      model: { id: "claude-opus-5-5", displayName: "Opus" },
-      resource: resource(),
-      request: request(),
-    },
-    { emit: (event) => events.push(event) },
-    context({
-      stream: async () => {
-        streams++;
-        return { status: 200, headers: {}, lines: lineStream(REFUSAL_SSE) };
-      },
-    }),
-  );
-  equal(result.status, "request-error");
-  equal(streams, 3);
-  assert(
-    result.status === "request-error" &&
-      result.message === "Claude refused the request",
-    "persistent refusal must surface the refusal message",
-  );
-});
-
-Deno.test("Provider surfaces a categorized refusal without retrying", async () => {
-  let streams = 0;
-  const policyRefusal = [
+Deno.test("Provider reports the category and explanation of a refusal", async () => {
+  const { result, events, streams } = await invokeWith([
     'event: message_start',
     'data: {"type":"message_start","message":{"usage":{"input_tokens":4,"cache_creation_input_tokens":467158}}}',
     "",
@@ -669,35 +624,19 @@ Deno.test("Provider surfaces a categorized refusal without retrying", async () =
     'event: message_stop',
     'data: {"type":"message_stop"}',
     "",
-  ];
-  const result = await claudeChannel.invoke(
-    {
-      model: { id: "claude-opus-5-5", displayName: "Opus" },
-      resource: resource(),
-      request: request(),
-    },
-    { emit: () => {} },
-    context({
-      stream: async () => {
-        streams++;
-        return { status: 200, headers: {}, lines: lineStream(policyRefusal) };
-      },
-    }),
-  );
-  equal(result.status, "request-error");
+  ]);
+  equal(result.status, "completed");
   equal(streams, 1);
-  assert(
-    result.status === "request-error" &&
-      result.message ===
-        "Claude refused the request (cyber): Cyber safeguards flagged this message.",
-    "categorized refusal must surface the stop_details explanation",
-  );
+  equal(events.at(-1), {
+    type: "done",
+    reason: "refusal",
+    category: "cyber",
+    explanation: "Cyber safeguards flagged this message.",
+  });
 });
 
-Deno.test("Provider does not retry a refusal after content was emitted", async () => {
-  let streams = 0;
-  const events: ModelEvent[] = [];
-  const refusalAfterText = [
+Deno.test("Provider reports a refusal after text and keeps the text already sent", async () => {
+  const { result, events, streams } = await invokeWith([
     'event: message_start',
     'data: {"type":"message_start","message":{"usage":{"input_tokens":10}}}',
     "",
@@ -716,27 +655,46 @@ Deno.test("Provider does not retry a refusal after content was emitted", async (
     'event: message_stop',
     'data: {"type":"message_stop"}',
     "",
-  ];
-  const result = await claudeChannel.invoke(
-    {
-      model: { id: "claude-opus-5-5", displayName: "Opus" },
-      resource: resource(),
-      request: request(),
-    },
-    { emit: (event) => events.push(event) },
-    context({
-      stream: async () => {
-        streams++;
-        return { status: 200, headers: {}, lines: lineStream(refusalAfterText) };
-      },
-    }),
-  );
+  ]);
   equal(result.status, "completed");
   equal(streams, 1);
   const text = events.find((event) => event.type === "text-delta") as {
     text: string;
   };
   equal(text?.text, "I cannot help with that.");
+  equal(events.at(-1), {
+    type: "done",
+    reason: "refusal",
+    category: null,
+    explanation: null,
+  });
+});
+
+Deno.test("Provider reports a refusal even when a tool call was already requested", async () => {
+  const { result, events } = await invokeWith([
+    'event: message_start',
+    'data: {"type":"message_start","message":{"usage":{"input_tokens":10}}}',
+    "",
+    'event: content_block_start',
+    'data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"Read","input":{}}}',
+    "",
+    'event: content_block_stop',
+    'data: {"type":"content_block_stop","index":0}',
+    "",
+    'event: message_delta',
+    'data: {"type":"message_delta","delta":{"stop_reason":"refusal"},"usage":{"output_tokens":8}}',
+    "",
+    'event: message_stop',
+    'data: {"type":"message_stop"}',
+    "",
+  ]);
+  equal(result.status, "completed");
+  equal(events.at(-1), {
+    type: "done",
+    reason: "refusal",
+    category: null,
+    explanation: null,
+  });
 });
 
 Deno.test("Usage merge takes the max of each token counter", () => {

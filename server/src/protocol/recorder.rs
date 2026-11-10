@@ -263,7 +263,7 @@ impl CallRecorder {
                 }
             }
             ModelEvent::Usage(usage) => self.usage(*usage).await?,
-            ModelEvent::Done(reason) => self.completed(*reason).await?,
+            ModelEvent::Done(reason) => self.completed(reason).await?,
             _ => {}
         }
         Ok(())
@@ -277,7 +277,7 @@ impl CallRecorder {
             .await
     }
 
-    pub async fn completed(&self, reason: FinishReason) -> Result<()> {
+    pub async fn completed(&self, reason: &FinishReason) -> Result<()> {
         self.finish("completed", Some(finish_reason(reason)), None, None)
             .await
     }
@@ -371,11 +371,12 @@ fn elapsed_ms(started: Instant) -> i64 {
     started.elapsed().as_millis().min(i64::MAX as u128) as i64
 }
 
-fn finish_reason(reason: FinishReason) -> &'static str {
+fn finish_reason(reason: &FinishReason) -> &'static str {
     match reason {
         FinishReason::Stop => "stop",
         FinishReason::Length => "length",
         FinishReason::ToolUse => "tool_use",
+        FinishReason::Refusal(_) => "refusal",
     }
 }
 

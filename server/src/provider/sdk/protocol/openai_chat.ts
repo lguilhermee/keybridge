@@ -178,10 +178,14 @@ function usageEvent(value: unknown): ModelEvent {
   };
 }
 
-function mapFinish(reason: string, hasTools: boolean): "stop" | "length" | "tool-use" {
+type Finish = "stop" | "length" | "tool-use" | "refusal";
+
+function mapFinish(reason: string, hasTools: boolean): Finish {
   if (reason === "tool_calls" || reason === "function_call") return "tool-use";
   if (reason === "length") return "length";
-  if (reason === "stop" || reason === "content_filter") return "stop";
+  if (reason === "stop") return "stop";
+  // A filtered answer is declined on policy grounds; it is not an ordinary stop.
+  if (reason === "content_filter") return "refusal";
   return hasTools ? "tool-use" : "stop";
 }
 
@@ -219,7 +223,7 @@ export async function streamOpenAiChat(
   let reasoning = "";
   const tools = new Map<number, ToolState>();
   let finalUsage: ModelEvent | null = null;
-  let finish: "stop" | "length" | "tool-use" | null = null;
+  let finish: Finish | null = null;
   let sawDoneMarker = false;
 
   for await (const line of response.lines) {
@@ -316,5 +320,9 @@ export async function streamOpenAiChat(
   if (reason === null) {
     throw new Error("OpenAI Chat stream ended without finish_reason");
   }
-  output.emit({ type: "done", reason });
+  output.emit(
+    reason === "refusal"
+      ? { type: "done", reason, category: null, explanation: null }
+      : { type: "done", reason },
+  );
 }

@@ -1,6 +1,6 @@
 ---
 name: cursor-prefix-stability
-description: Implement and review Cursor BYOK conversation projection with append-only provider history and prefix-cache stability. Use when changing runtime prompts, request context, canonical messages, checkpoint hydration, compaction, message identity, or provider history serialization under server.
+description: Implement and review Keybridge conversation projection with append-only provider history and prefix-cache stability. Use when changing runtime prompts, request context, canonical messages, checkpoint hydration, compaction, message identity, or provider history serialization under server.
 ---
 
 # Cursor prefix stability

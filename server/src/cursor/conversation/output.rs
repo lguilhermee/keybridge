@@ -1009,6 +1009,7 @@ fn cursor_error(failure: RunFailure) -> Error {
     match failure {
         RunFailure::Protocol(message) => Error::Protocol(message),
         RunFailure::Provider(message) => Error::Provider(message),
+        RunFailure::Refusal(message) => Error::Refusal(message),
         RunFailure::Store(message) => Error::Store(message),
         RunFailure::Client(message) => Error::Protocol(message),
     }
@@ -1064,15 +1065,19 @@ fn failure_stream_error(error: &Error) -> crate::cursor::protocol::connect::Conn
         details: Vec::new(),
     };
     match error {
-        Error::Provider(_) | Error::Http(_) => {
-            let retryable = match error {
-                Error::Provider(message) => !crate::run::is_rejected_request(message),
-                _ => true,
+        Error::Provider(_) | Error::Http(_) | Error::Refusal(_) => {
+            // A refusal answers the same request the same way, so Cursor must not resend it.
+            let (title, retryable) = match error {
+                Error::Refusal(_) => ("Model Refusal", false),
+                Error::Provider(message) => {
+                    ("Provider Error", !crate::run::is_rejected_request(message))
+                }
+                _ => ("Provider Error", true),
             };
             let detail = ai::ErrorDetails {
                 error: ai::error_details::Error::ProviderError as i32,
                 details: Some(ai::CustomErrorDetails {
-                    title: "Provider Error".into(),
+                    title: title.into(),
                     detail: error.to_string(),
                     allow_command_links_potentially_unsafe_please_only_use_for_handwritten_trusted_markdown: Some(true),
                     is_retryable: Some(retryable),
@@ -1163,6 +1168,27 @@ mod tests {
             .unwrap();
         assert_eq!(detail.is_retryable, Some(true));
         assert_eq!(detail.should_show_immediate_error, Some(false));
+    }
+
+    #[test]
+    fn refusals_are_immediate_and_non_retryable_in_cursor() {
+        use crate::cursor::protocol::{connect::ConnectCode, proto::aiserver::v1 as ai};
+        use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
+        use prost::Message;
+
+        let error = super::failure_stream_error(&super::cursor_error(super::RunFailure::Refusal(
+            "refused the request (cyber)".into(),
+        )));
+        assert_eq!(error.code, ConnectCode::InvalidArgument);
+        assert_eq!(error.message, "the model refused the request (cyber)");
+        let bytes = STANDARD_NO_PAD.decode(&error.details[0].value).unwrap();
+        let detail = ai::ErrorDetails::decode(bytes.as_slice())
+            .unwrap()
+            .details
+            .unwrap();
+        assert_eq!(detail.title, "Model Refusal");
+        assert_eq!(detail.is_retryable, Some(false));
+        assert_eq!(detail.should_show_immediate_error, Some(true));
     }
 
     #[test]

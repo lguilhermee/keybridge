@@ -4,14 +4,17 @@ use serde_json::{json, Value};
 
 use crate::{provider::ProviderRegistry, store::Store, Result};
 
+/// A configured model as callers of the external API address it.
 #[derive(Clone)]
-pub(super) struct ListedModel {
+pub(crate) struct ListedModel {
     pub public_id: String,
     pub internal_id: String,
     pub display_name: String,
+    pub context_window: Option<u64>,
+    pub images: bool,
 }
 
-pub(super) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<Vec<ListedModel>> {
+pub(crate) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<Vec<ListedModel>> {
     let mut models = Vec::new();
     let mut ids = HashSet::new();
     let mut configured = store.models().await?;
@@ -39,6 +42,9 @@ pub(super) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
                 public_id,
                 internal_id: model.model_hash,
                 display_name: model.display_name,
+                context_window: model.context_window_tokens,
+                // A manually configured model does not declare its modalities.
+                images: true,
             });
         }
     }
@@ -52,6 +58,8 @@ pub(super) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
                 public_id,
                 internal_id: model.id,
                 display_name: model.display_name,
+                context_window: model.context_window,
+                images: model.images,
             });
         }
     }

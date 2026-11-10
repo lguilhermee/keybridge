@@ -1,9 +1,12 @@
 //! Exposes the local desktop application integration.
 mod account;
 mod ca;
+mod codex;
 mod process;
 mod proxy;
 mod settings;
+
+pub use codex::{CodexHarness, CodexHarnessStatus};
 
 use std::{net::SocketAddr, sync::Arc};
 

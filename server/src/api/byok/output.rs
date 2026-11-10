@@ -20,7 +20,7 @@ use crate::{
     Error, Result,
 };
 
-use super::protocol::ApiProtocol;
+use super::protocol::{ApiProtocol, NamespacedTools};
 
 #[derive(Default)]
 struct ToolOutput {
@@ -36,9 +36,33 @@ struct Output {
     tools: BTreeMap<usize, ToolOutput>,
     usage: Option<Usage>,
     finish: Option<FinishReason>,
+    namespaced_tools: NamespacedTools,
 }
 
 impl Output {
+    fn new(namespaced_tools: NamespacedTools) -> Self {
+        Self {
+            namespaced_tools,
+            ..Self::default()
+        }
+    }
+
+    /// The Responses `function_call` item for one tool call, with a flat tool name
+    /// split back into the namespace the caller declared it under.
+    fn function_call(&self, index: usize, status: &str) -> Value {
+        let tool = self.tools.get(&index);
+        let call_id = tool.map(|tool| tool.id.as_str()).unwrap_or_default();
+        let name = tool.map(|tool| tool.name.as_str()).unwrap_or("tool");
+        let arguments = tool.map(|tool| tool.arguments.as_str()).unwrap_or_default();
+        let mut item = json!({"type":"function_call","id":format!("fc_{call_id}"),
+            "call_id":call_id,"name":name,"arguments":arguments,"status":status});
+        if let Some((namespace, name)) = self.namespaced_tools.get(name) {
+            item["namespace"] = json!(namespace);
+            item["name"] = json!(name);
+        }
+        item
+    }
+
     fn update(&mut self, event: &ModelEvent) {
         match event {
             ModelEvent::TextDelta(delta) => self.text.push_str(delta),
@@ -63,17 +87,18 @@ impl Output {
                 }
             }
             ModelEvent::Usage(usage) => self.usage = Some(*usage),
-            ModelEvent::Done(reason) => self.finish = Some(*reason),
+            ModelEvent::Done(reason) => self.finish = Some(reason.clone()),
             _ => {}
         }
     }
 
     fn json(&self, protocol: ApiProtocol, id: &str, model: &str) -> Value {
         let usage = self.usage_json(protocol);
-        let finish = match self.finish.unwrap_or(FinishReason::Stop) {
+        let finish = match self.finish.as_ref().unwrap_or(&FinishReason::Stop) {
             FinishReason::Stop => "stop",
             FinishReason::Length => "length",
             FinishReason::ToolUse => "tool_calls",
+            FinishReason::Refusal(_) => "content_filter",
         };
         match protocol {
             ApiProtocol::Chat => {
@@ -89,8 +114,11 @@ impl Output {
                     items.push(json!({"id":format!("msg_{id}"),"type":"message","status":"completed",
                     "role":"assistant","content":[{"type":"output_text","text":self.text,"annotations":[]}]}));
                 }
-                items.extend(self.tools.values().map(|tool| json!({"type":"function_call","id":format!("fc_{}",tool.id),
-                    "call_id":tool.id,"name":tool.name,"arguments":tool.arguments,"status":"completed"})));
+                items.extend(
+                    self.tools
+                        .keys()
+                        .map(|index| self.function_call(*index, "completed")),
+                );
                 json!({"id":id,"object":"response","created_at":0,"status":"completed","model":model,
                     "output":items,"output_text":self.text,
                     "usage":usage})
@@ -105,7 +133,7 @@ impl Output {
                     "input":serde_json::from_str::<Value>(&tool.arguments).unwrap_or(json!({}))})
                 }));
                 json!({"id":id,"type":"message","role":"assistant","model":model,"content":content,
-                    "stop_reason":if self.tools.is_empty() { match self.finish { Some(FinishReason::Length) => "max_tokens", _ => "end_turn" } } else { "tool_use" },
+                    "stop_reason":if self.tools.is_empty() { match self.finish { Some(FinishReason::Length) => "max_tokens", Some(FinishReason::Refusal(_)) => "refusal", _ => "end_turn" } } else { "tool_use" },
                     "stop_sequence":null,"usage":usage})
             }
         }
@@ -168,8 +196,9 @@ pub(super) async fn complete(
     mut stream: ProtocolStream,
     id: &str,
     model: &str,
+    namespaced_tools: NamespacedTools,
 ) -> Result<Json<Value>> {
-    let mut output = Output::default();
+    let mut output = Output::new(namespaced_tools);
     while let Some(event) = stream.next().await {
         output.update(&event?);
     }
@@ -194,10 +223,11 @@ pub(super) fn streamed(
     cancellation: CancellationToken,
     id: String,
     model: String,
+    namespaced_tools: NamespacedTools,
 ) -> Response {
     let events = async_stream::stream! {
         let _cancel = CancelOnDrop(cancellation);
-        let mut output = Output::default();
+        let mut output = Output::new(namespaced_tools);
         if matches!(protocol, ApiProtocol::Chat) {
             yield Ok::<Event, Infallible>(Event::default().data(chat_chunk(&id, &model, json!({"role":"assistant"}), Value::Null).to_string()));
         } else if matches!(protocol, ApiProtocol::Responses) {
@@ -241,6 +271,11 @@ pub(super) fn streamed(
                     }
                 }
                 Err(error) => {
+                    if matches!(protocol, ApiProtocol::Responses) {
+                        // The Responses stream reports a failed turn as a terminal `response.failed`.
+                        yield Ok(Event::default().event("response.failed").data(json!({"type":"response.failed","response":{"id":id,"object":"response","status":"failed","model":model,"error":{"code":"server_error","message":error.to_string()}}}).to_string()));
+                        return;
+                    }
                     yield Ok(Event::default().event("error").data(json!({"error":{"message":error.to_string(),"type":"upstream_error"}}).to_string()));
                     return;
                 }
@@ -301,6 +336,7 @@ fn stream_events(
                     FinishReason::Stop => "stop",
                     FinishReason::Length => "length",
                     FinishReason::ToolUse => "tool_calls",
+                    FinishReason::Refusal(_) => "content_filter",
                 };
                 let mut events = vec![("message", chat_chunk(id, model, json!({}), json!(finish)))];
                 if output.usage.is_some() {
@@ -346,30 +382,24 @@ fn stream_events(
                     json!({"type":"response.output_item.done","output_index":0,"item":{"type":"message","id":format!("msg_{id}"),"status":"completed","role":"assistant","content":[{"type":"output_text","text":output.text,"annotations":[]}]}}),
                 ),
             ],
-            ModelEvent::ToolCallStart {
-                index,
-                call_id,
-                name,
-            } => vec![(
+            ModelEvent::ToolCallStart { index, .. } => vec![(
                 "response.output_item.added",
-                json!({"type":"response.output_item.added","output_index":index + usize::from(*text_started),"item":{"type":"function_call","id":format!("fc_{call_id}"),"call_id":call_id,"name":name,"arguments":"","status":"in_progress"}}),
+                json!({"type":"response.output_item.added","output_index":index + usize::from(*text_started),"item":output.function_call(*index, "in_progress")}),
             )],
             ModelEvent::ToolCallArgumentsDelta { index, delta } => vec![(
                 "response.function_call_arguments.delta",
                 json!({"type":"response.function_call_arguments.delta","output_index":index + usize::from(*text_started),"delta":delta}),
             )],
             ModelEvent::ToolCallEnd { index } => {
-                let tool = output.tools.get(index);
-                let arguments = tool.map(|tool| tool.arguments.as_str()).unwrap_or_default();
-                let call_id = tool.map(|tool| tool.id.as_str()).unwrap_or_default();
+                let item = output.function_call(*index, "completed");
                 vec![
                     (
                         "response.function_call_arguments.done",
-                        json!({"type":"response.function_call_arguments.done","output_index":index + usize::from(*text_started),"arguments":arguments}),
+                        json!({"type":"response.function_call_arguments.done","output_index":index + usize::from(*text_started),"arguments":item["arguments"]}),
                     ),
                     (
                         "response.output_item.done",
-                        json!({"type":"response.output_item.done","output_index":index + usize::from(*text_started),"item":{"type":"function_call","id":format!("fc_{call_id}"),"call_id":call_id,"name":tool.map(|tool| tool.name.as_str()).unwrap_or("tool"),"arguments":arguments,"status":"completed"}}),
+                        json!({"type":"response.output_item.done","output_index":index + usize::from(*text_started),"item":item}),
                     ),
                 ]
             }
@@ -431,6 +461,7 @@ fn stream_events(
                     FinishReason::Stop => "end_turn",
                     FinishReason::Length => "max_tokens",
                     FinishReason::ToolUse => "tool_use",
+                    FinishReason::Refusal(_) => "refusal",
                 };
                 vec![
                     (

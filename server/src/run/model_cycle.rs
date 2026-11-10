@@ -29,7 +29,20 @@ pub struct ModelCycleFailure {
     pub partial_text: String,
     pub partial_reasoning: String,
     pub usage: Option<Usage>,
-    pub retryable: bool,
+    pub kind: FailureKind,
+}
+
+/// What a failed model call means for the next attempt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FailureKind {
+    /// The model declined on policy grounds; the same request gets the same answer.
+    Refusal,
+    /// The provider rejected the request or the account: 4xx, rate limit, or quota.
+    Rejected,
+    /// Transport or server trouble that a later attempt can clear.
+    Temporary,
+    /// Nothing another attempt can fix: store, client, or a cut-off answer.
+    Final,
 }
 
 struct OpenTool {
@@ -320,6 +333,15 @@ pub async fn consume_model_cycle(
         .into_values()
         .map(|tool| tool.call)
         .collect::<Vec<_>>();
+    // Text already sent stays on screen; the refused answer is never saved.
+    if let FinishReason::Refusal(refusal) = &finish_reason {
+        return Err(failure(
+            RunFailure::Refusal(refusal.to_string()),
+            text,
+            reasoning,
+            usage,
+        ));
+    }
     if finish_reason == FinishReason::Length {
         return Err(terminal_failure(
             RunFailure::Provider("model stopped before completing the response".into()),
@@ -389,18 +411,18 @@ fn failure(
     partial_reasoning: String,
     usage: Option<Usage>,
 ) -> Box<ModelCycleFailure> {
-    let retryable = match &failure {
-        RunFailure::Protocol(_) => true,
-        RunFailure::Provider(message) if is_rejected_request(message) => false,
-        RunFailure::Provider(_) => true,
-        RunFailure::Store(_) | RunFailure::Client(_) => false,
+    let kind = match &failure {
+        RunFailure::Refusal(_) => FailureKind::Refusal,
+        RunFailure::Provider(message) if is_rejected_request(message) => FailureKind::Rejected,
+        RunFailure::Protocol(_) | RunFailure::Provider(_) => FailureKind::Temporary,
+        RunFailure::Store(_) | RunFailure::Client(_) => FailureKind::Final,
     };
     Box::new(ModelCycleFailure {
         failure,
         partial_text,
         partial_reasoning,
         usage,
-        retryable,
+        kind,
     })
 }
 
@@ -440,7 +462,7 @@ fn terminal_failure(
         partial_text,
         partial_reasoning,
         usage,
-        retryable: false,
+        kind: FailureKind::Final,
     })
 }
 
@@ -449,7 +471,7 @@ mod tests {
     use super::*;
     use crate::{
         model::Usage,
-        protocol::{FinishReason, ModelEvent},
+        protocol::{FinishReason, ModelEvent, Refusal},
     };
     use tokio_stream::wrappers::ReceiverStream;
 
@@ -473,7 +495,7 @@ mod tests {
             .unwrap_err();
 
         assert!(matches!(failure.failure, RunFailure::Client(_)));
-        assert!(!failure.retryable);
+        assert_eq!(failure.kind, FailureKind::Final);
         assert!(receiver.try_recv().is_err());
     }
 
@@ -500,12 +522,45 @@ mod tests {
             .unwrap_err();
 
         assert!(matches!(failure.failure, RunFailure::Client(_)));
-        assert!(!failure.retryable);
+        assert_eq!(failure.kind, FailureKind::Final);
         assert!(matches!(receiver.try_recv(), Ok(RunEvent::ThinkingStart)));
         assert!(
             receiver.try_recv().is_err(),
             "reasoning continued after Stop"
         );
+    }
+
+    #[tokio::test]
+    async fn a_refusal_fails_the_call_and_keeps_the_text_already_sent() {
+        let stream = Box::pin(tokio_stream::iter(vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "refused".into(),
+            }),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta("Here is".into())),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::Done(FinishReason::Refusal(Refusal {
+                category: Some("cyber".into()),
+                explanation: Some("Cyber safeguards flagged the message.".into()),
+            }))),
+        ]));
+        let (sender, mut receiver) = mpsc::channel(8);
+
+        let failure = consume_model_cycle(stream, &sender, &CancellationToken::new())
+            .await
+            .unwrap_err();
+
+        assert_eq!(failure.kind, FailureKind::Refusal);
+        assert_eq!(
+            failure.failure,
+            RunFailure::Refusal(
+                "refused the request (cyber): Cyber safeguards flagged the message.".into()
+            )
+        );
+        assert_eq!(failure.partial_text, "Here is");
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextStart)));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextDelta(_))));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextEnd)));
     }
 
     #[tokio::test]
@@ -583,25 +638,25 @@ mod tests {
     }
 
     #[test]
-    fn other_provider_errors_are_retryable() {
+    fn other_provider_errors_are_temporary() {
         let result = failure(
             RunFailure::Provider("Anthropic 502 Bad Gateway".into()),
             String::new(),
             String::new(),
             None,
         );
-        assert!(result.retryable);
+        assert_eq!(result.kind, FailureKind::Temporary);
         let timeout = failure(
             RunFailure::Provider("Anthropic 408 Request Timeout".into()),
             String::new(),
             String::new(),
             None,
         );
-        assert!(timeout.retryable);
+        assert_eq!(timeout.kind, FailureKind::Temporary);
     }
 
     #[test]
-    fn rate_limits_are_not_retryable() {
+    fn rate_limits_are_rejections() {
         for message in [
             "Claude HTTP 429: This request would exceed your account's rate limit. Please try again later.",
             "OpenAI Chat 429 Too Many Requests: rate limit exceeded",
@@ -613,7 +668,7 @@ mod tests {
                 String::new(),
                 None,
             );
-            assert!(!result.retryable, "{message}");
+            assert_eq!(result.kind, FailureKind::Rejected, "{message}");
         }
         assert!(!is_rejected_request(
             "Anthropic 502 Bad Gateway: upstream returned 429"
@@ -621,7 +676,7 @@ mod tests {
     }
 
     #[test]
-    fn rejected_requests_are_not_retryable() {
+    fn rejected_requests_are_rejections() {
         // Verbatim from a wedged conversation: eight retries of the same
         // over-limit prompt only delayed the error by forty seconds.
         let too_long = failure(
@@ -635,14 +690,14 @@ mod tests {
             String::new(),
             None,
         );
-        assert!(!too_long.retryable);
+        assert_eq!(too_long.kind, FailureKind::Rejected);
         let unauthorized = failure(
             RunFailure::Provider("OpenAI Chat 401 Unauthorized: invalid api key".into()),
             String::new(),
             String::new(),
             None,
         );
-        assert!(!unauthorized.retryable);
+        assert_eq!(unauthorized.kind, FailureKind::Rejected);
         // A status-looking number inside the body is not a status code.
         let body_number = failure(
             RunFailure::Provider("Anthropic 502 Bad Gateway: upstream returned 400".into()),
@@ -650,7 +705,7 @@ mod tests {
             String::new(),
             None,
         );
-        assert!(body_number.retryable);
+        assert_eq!(body_number.kind, FailureKind::Temporary);
     }
 
     #[test]

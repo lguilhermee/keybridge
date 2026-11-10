@@ -354,6 +354,40 @@ Deno.test("invoke streams incremental tool calls and reasoning replay state", as
   ]);
 });
 
+Deno.test("invoke reports a content-filtered answer as a refusal and keeps the text already sent", async () => {
+  const draft = await credentialDraft({
+    accessToken: jwt({ sub: "user-1" }),
+    refreshToken: null,
+    displayName: null,
+  });
+  const events: ModelEvent[] = [];
+  const result = await grokChannel.invoke(
+    {
+      model: { id: "grok-4", displayName: "Grok 4" },
+      resource: snapshot(draft.privateData),
+      request: request(),
+    },
+    { emit: (event) => events.push(event) },
+    context({
+      stream: () => ({
+        status: 200,
+        headers: {},
+        lines: sse([
+          'data: {"choices":[{"delta":{"content":"Par"}}]}',
+          'data: {"choices":[{"delta":{},"finish_reason":"content_filter"}]}',
+          "data: [DONE]",
+        ]),
+      }),
+    }),
+  );
+  assertEquals(result, { status: "completed" });
+  assertEquals(events, [
+    { type: "text-start" },
+    { type: "text-delta", text: "Par" },
+    { type: "text-end" },
+    { type: "done", reason: "refusal", category: null, explanation: null },
+  ]);
+});
 Deno.test("invoke maps quota failures to a cooling resource error", async () => {
   assert(!isQuotaError("400 invalid request"));
   assert(isQuotaError("429 credits exhausted"));

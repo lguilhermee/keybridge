@@ -1,6 +1,6 @@
 ---
 name: i18n
-description: Implement and review Cursor BYOK desktop localization, including t() usage, locale catalogs, system-language selection, translation completeness, and language settings under apps/desktop.
+description: Implement and review Keybridge desktop localization, including t() usage, locale catalogs, system-language selection, translation completeness, and language settings under apps/desktop.
 ---
 
 # Desktop i18n

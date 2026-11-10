@@ -3,7 +3,7 @@
 }
 
 .content {
-  height: 100%;
+  height: calc(100% - var(--app-content-top));
   position: relative;
   min-width: 0;
   min-height: 0;

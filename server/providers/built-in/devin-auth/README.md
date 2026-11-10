@@ -1,13 +1,13 @@
 # Devin provider
 
-This built-in provider connects Cursor BYOK directly to Devin's Connect API at
-`https://server.codeium.com`. Cursor BYOK owns model selection, conversations,
+This built-in provider connects Keybridge directly to Devin's Connect API at
+`https://server.codeium.com`. Keybridge owns model selection, conversations,
 tool execution, cancellation, request recording, and persistent account data.
 There is no devin2api HTTP server or separately managed service.
 
 ## Connect an account
 
-1. Open Cursor BYOK's Providers page and select Devin.
+1. Open Keybridge's Providers page and select Devin.
 2. Use **Import Devin credentials** and choose the Devin CLI `credentials.toml`.
    On Windows this is normally `%APPDATA%\devin\credentials.toml`.
 3. Sync the model catalog, enable the models you want, then select one in
@@ -52,7 +52,10 @@ Credentials are never bundled in source or shown in account cards.
   "operate in a code editor" before the prompt is sent. Other "cursor"
   mentions are accepted upstream and pass through untouched.
 - Frame boundaries do not depend on HTTP chunks. Truncated streams, malformed
-  tool arguments, refusals, and missing completion markers fail explicitly.
+  tool arguments, and missing completion markers fail explicitly.
+- A refusal (`providerRefusal` or a `STOP_REASON_CONTENT_FILTER` stop) is
+  reported as the `done`/`refusal` event instead of a failure, so the host
+  keeps the text already sent and does not save the refused answer.
 - Only an authentication rejection before output may renew and retry once.
   Interrupted generation is never replayed automatically. Rate/quota errors mark
   the account cooling for one minute; authentication expiry marks it invalid.

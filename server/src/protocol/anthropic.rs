@@ -15,7 +15,7 @@ use super::{
     attempt::{send_once, Attempt},
     map_sse_error, merge_extra_params, protocol_event_error,
     recorder::recorded_headers,
-    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream,
+    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream, Refusal,
 };
 
 const DEFAULT_MAX_OUTPUT_TOKENS: u64 = 65_000;
@@ -215,8 +215,12 @@ impl Protocol for AnthropicProtocol {
                         finish = match value.pointer("/delta/stop_reason").and_then(Value::as_str) {
                             Some("tool_use") => Some(FinishReason::ToolUse),
                             Some("max_tokens" | "model_context_window_exceeded") => Some(FinishReason::Length),
-                            Some("end_turn" | "stop_sequence" | "pause_turn" | "refusal") => Some(FinishReason::Stop),
-                            None => finish,
+                            Some("end_turn" | "stop_sequence" | "pause_turn") => Some(FinishReason::Stop),
+                            Some("refusal") => Some(FinishReason::Refusal(Refusal::new(
+                                value.pointer("/delta/stop_details/category").and_then(Value::as_str),
+                                value.pointer("/delta/stop_details/explanation").and_then(Value::as_str),
+                            ))),
+                            None => finish.take(),
                             Some(_) => Some(if saw_tool { FinishReason::ToolUse } else { FinishReason::Stop }),
                         };
                     }
@@ -238,12 +242,7 @@ impl Protocol for AnthropicProtocol {
                         if let Some(usage) = final_usage {
                             yield ModelEvent::Usage(usage);
                         }
-                        let finish = match finish {
-                            Some(FinishReason::Length) => FinishReason::Length,
-                            _ if saw_tool => FinishReason::ToolUse,
-                            Some(finish) => finish,
-                            None => FinishReason::Stop,
-                        };
+                        let finish = final_finish(finish.take(), saw_tool);
                         yield ModelEvent::Done(finish);
                     }
                     _ => {}
@@ -263,18 +262,23 @@ impl Protocol for AnthropicProtocol {
                 }
                 if let Some(usage) = final_usage { yield ModelEvent::Usage(usage); }
                 terminal = true;
-                let finish = match finish {
-                    Some(FinishReason::Length) => FinishReason::Length,
-                    _ if saw_tool => FinishReason::ToolUse,
-                    Some(finish) => finish,
-                    None => FinishReason::Stop,
-                };
-                yield ModelEvent::Done(finish);
+                yield ModelEvent::Done(final_finish(finish.take(), saw_tool));
             }
             if !terminal {
                 Err(Error::Provider("Anthropic stream ended without message_stop".into()))?;
             }
         })
+    }
+}
+
+/// A refusal or a cut-off answer outranks tool calls seen earlier in the stream,
+/// so half-requested tools are never executed.
+fn final_finish(finish: Option<FinishReason>, saw_tool: bool) -> FinishReason {
+    match finish {
+        Some(finish @ (FinishReason::Length | FinishReason::Refusal(_))) => finish,
+        _ if saw_tool => FinishReason::ToolUse,
+        Some(finish) => finish,
+        None => FinishReason::Stop,
     }
 }
 

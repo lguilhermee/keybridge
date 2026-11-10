@@ -196,6 +196,16 @@ function itemText(item: Record<string, unknown>): string | null {
     .join("");
 }
 
+/** The Responses API states a refusal as its own content part instead of answer text. */
+function itemRefusal(item: Record<string, unknown>): string | null {
+  const content = item.content;
+  if (!Array.isArray(content)) return null;
+  const parts = content
+    .map((part) => record(part))
+    .filter((part) => part?.type === "refusal");
+  return parts.length > 0 ? parts.map((part) => text(part?.refusal) ?? "").join("") : null;
+}
+
 function requiredIndex(value: Record<string, unknown>): number {
   const index = count(value.output_index);
   if (index === null) throw new Error("OpenAI Responses event is missing output_index");
@@ -255,6 +265,7 @@ export async function streamOpenAiResponses(
   const reasoningItems: JsonValue[] = [];
   let sawTool = false;
   let sawCompletedItem = false;
+  let refusal: string | null = null;
   let terminal = false;
 
   const closeThinking = () => {
@@ -288,6 +299,16 @@ export async function streamOpenAiResponses(
       }
     }
   };
+  const refusalDone = (): ModelEvent => ({
+    type: "done",
+    reason: "refusal",
+    category: null,
+    explanation: refusal || null,
+  });
+  // A refusal outranks tool calls seen earlier in the stream, so half-requested
+  // tools are never executed.
+  const completedDone = (): ModelEvent =>
+    refusal !== null ? refusalDone() : { type: "done", reason: sawTool ? "tool-use" : "stop" };
   const emitReplayState = () => {
     if (reasoningItems.length > 0) {
       output.emit({ type: "replay-state", protocolKind: REPLAY_KIND, value: { items: reasoningItems.slice() } });
@@ -326,6 +347,16 @@ export async function streamOpenAiResponses(
         closeText();
         break;
       }
+      case "response.refusal.delta": {
+        const delta = text(value.delta);
+        if (delta !== null) refusal = (refusal ?? "") + delta;
+        break;
+      }
+      case "response.refusal.done": {
+        const finalRefusal = text(value.refusal);
+        if (finalRefusal !== null) refusal = finalRefusal;
+        break;
+      }
       case "response.reasoning_summary_text.delta":
       case "response.reasoning_text.delta": {
         if (!thinkingOpen) {
@@ -356,6 +387,7 @@ export async function streamOpenAiResponses(
           reasoningItems.push(item as JsonValue);
         } else if (item?.type === "message") {
           sawCompletedItem = true;
+          refusal = itemRefusal(item) ?? refusal;
           const finalText = itemText(item);
           if (finalText !== null) reconcileText(finalText);
           closeText();
@@ -402,7 +434,7 @@ export async function streamOpenAiResponses(
         }
         terminal = true;
         emitReplayState();
-        output.emit({ type: "done", reason: sawTool ? "tool-use" : "stop" });
+        output.emit(completedDone());
         break;
       }
       case "response.incomplete": {
@@ -410,7 +442,10 @@ export async function streamOpenAiResponses(
         closeText();
         endStartedTools();
         terminal = true;
-        output.emit({ type: "done", reason: "length" });
+        // A filtered response is declined on policy grounds, not cut off by a token limit.
+        const filtered =
+          record(record(value.response)?.incomplete_details)?.reason === "content_filter";
+        output.emit(filtered || refusal !== null ? refusalDone() : { type: "done", reason: "length" });
         break;
       }
       case "response.failed":
@@ -429,7 +464,7 @@ export async function streamOpenAiResponses(
     }
     terminal = true;
     emitReplayState();
-    output.emit({ type: "done", reason: sawTool ? "tool-use" : "stop" });
+    output.emit(completedDone());
   }
   if (!terminal) {
     throw new Error("OpenAI Responses stream ended without response.completed or response.incomplete");

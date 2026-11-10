@@ -77,6 +77,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     { id: "page-calls", group: t("Pages"), label: t("Calls"), icon: activityIcon, run: go("/calls") },
     { id: "page-providers", group: t("Pages"), label: t("Providers"), icon: providerIcon, run: go("/providers") },
     { id: "page-cursor", group: t("Pages"), label: "Cursor", icon: cursorIconUrl, run: go("/cursor") },
+    { id: "page-codex", group: t("Pages"), label: "Codex", icon: openAiIcon, run: go("/codex") },
     { id: "page-settings", group: t("Pages"), label: t("Settings"), icon: settingsIcon, run: go("/settings") },
     ...settingsSectionIds.map((section) => ({
       id: `section-${section}`,

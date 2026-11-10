@@ -22,6 +22,7 @@ use crate::{
 
 use self::protocol::ApiProtocol;
 pub use direct::NativeForwarder;
+pub(crate) use models::{list as public_models, ListedModel as PublicModel};
 
 #[derive(Clone)]
 struct ApiState {
@@ -190,9 +191,24 @@ async fn generate(
     let cancellation = CancellationToken::new();
     let stream = state.protocol.stream(invocation, cancellation.clone());
     if parsed.stream {
-        output::streamed(protocol, stream, cancellation, id, parsed.public_model_id)
+        output::streamed(
+            protocol,
+            stream,
+            cancellation,
+            id,
+            parsed.public_model_id,
+            parsed.namespaced_tools,
+        )
     } else {
-        match output::complete(protocol, stream, &id, &parsed.public_model_id).await {
+        match output::complete(
+            protocol,
+            stream,
+            &id,
+            &parsed.public_model_id,
+            parsed.namespaced_tools,
+        )
+        .await
+        {
             Ok(response) => response.into_response(),
             Err(Error::Protocol(message)) => api_error(StatusCode::BAD_REQUEST, message),
             Err(error) => api_error(StatusCode::BAD_GATEWAY, error),

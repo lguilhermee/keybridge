@@ -62,17 +62,12 @@ class StreamError extends Error {
   }
 }
 
-/** Model declined before emitting text/tool content; safe to resend silently. */
-class RefusalError extends Error {}
-
-const REFUSAL_MAX_ATTEMPTS = 3;
 
 /** Anthropic stream -> ModelEvent; thinking blocks (with signatures) are kept for replay on the next turn. */
 async function streamMessages(
   lines: AsyncIterable<string>,
   nameMap: Map<string, string>,
   emit: (event: ModelEvent) => void,
-  retryRefusal: boolean,
 ): Promise<void> {
   const blockTypes = new Map<number, string>();
   const thinkingText = new Map<number, string>();
@@ -80,10 +75,7 @@ async function streamMessages(
   const thinkingBlocks: JsonValue[] = [];
   let finish: "stop" | "length" | "tool-use" | null = null;
   let sawTool = false;
-  let committed = false;
-  let refused = false;
-  let refusalMessage = "Claude refused the request";
-  let refusalDefinitive = false;
+  let refusal: { category: string | null; explanation: string | null } | null = null;
   let terminal = false;
   let usage: ModelUsage = {
     inputTokens: null,
@@ -150,7 +142,6 @@ async function streamMessages(
           thinkingBlocks.push(block as JsonValue);
         } else if (blockKind === "tool_use") {
           sawTool = true;
-          committed = true;
           const name = typeof block.name === "string"
             ? decloakName(block.name, nameMap)
             : "";
@@ -179,7 +170,6 @@ async function streamMessages(
           }
         }
         if (deltaKind === "text_delta" && typeof delta.text === "string") {
-          committed = true;
           emit({ type: "text-delta", text: delta.text });
         } else if (deltaKind === "thinking_delta" && typeof delta.thinking === "string") {
           thinkingText.set(index, (thinkingText.get(index) ?? "") + delta.thinking);
@@ -212,18 +202,11 @@ async function streamMessages(
         const delta = value.delta as Record<string, unknown> | undefined;
         const reason = typeof delta?.stop_reason === "string" ? delta.stop_reason : null;
         if (reason === "refusal") {
-          refused = true;
           const details = delta?.stop_details as Record<string, unknown> | undefined;
-          const category = typeof details?.category === "string" ? details.category : null;
-          const explanation = typeof details?.explanation === "string"
-            ? details.explanation
-            : null;
-          // A categorized stop_details is a policy verdict; resending identical
-          // bytes only repeats the refusal.
-          refusalDefinitive = category !== null;
-          refusalMessage = explanation
-            ? `Claude refused the request${category ? ` (${category})` : ""}: ${explanation}`
-            : refusalMessage;
+          refusal = {
+            category: typeof details?.category === "string" ? details.category : null,
+            explanation: typeof details?.explanation === "string" ? details.explanation : null,
+          };
         }
         if (reason === "tool_use") finish = "tool-use";
         else if (reason === "max_tokens" || reason === "model_context_window_exceeded") {
@@ -252,15 +235,17 @@ async function streamMessages(
   if (!terminal && finish === null) {
     throw new StreamError(0, "Claude stream ended without message_stop", null);
   }
-  if (refused && !committed) {
-    if (retryRefusal && !refusalDefinitive) throw new RefusalError(refusalMessage);
-    throw new StreamError(0, refusalMessage, "refusal");
-  }
   emit({ type: "usage", usage });
-  emit({
-    type: "done",
-    reason: finish === "length" ? "length" : sawTool ? "tool-use" : finish ?? "stop",
-  });
+  // A refusal outranks tool calls seen earlier in the stream, so half-requested
+  // tools are never executed.
+  emit(
+    refusal
+      ? { type: "done", reason: "refusal", ...refusal }
+      : {
+        type: "done",
+        reason: finish === "length" ? "length" : sawTool ? "tool-use" : finish ?? "stop",
+      },
+  );
 }
 
 function invalidResource(message: string): {
@@ -284,7 +269,7 @@ export const claudeChannel: ChannelSupport = {
   id: "claude",
   displayName: "Claude",
   description:
-    "Connect to Claude with a Claude Code subscription account. Model calls run inside Cursor BYOK.",
+    "Connect to Claude with a Claude Code subscription account. Model calls run inside Keybridge.",
   brand: "claude",
   resourceType: RESOURCE_TYPE,
   models: claudeModels,
@@ -325,43 +310,24 @@ export const claudeChannel: ChannelSupport = {
           input.model.maxOutputTokens ?? null,
           data,
         );
-        let refusalError: RefusalError | null = null;
-        for (let retry = 0; retry < REFUSAL_MAX_ATTEMPTS; retry++) {
-          const response = await context.network.stream(MESSAGES_URL, {
-            method: "POST",
-            headers,
-            body,
-          });
-          if (response.status !== 200) {
-            let errorBody = "";
-            for await (const line of response.lines) {
-              if (errorBody.length < 256 * 1024) errorBody += `${line}\n`;
-            }
-            const error = anthropicError(response.status, errorBody);
-            throw new StreamError(error.status, error.message, error.kind);
+        const response = await context.network.stream(MESSAGES_URL, {
+          method: "POST",
+          headers,
+          body,
+        });
+        if (response.status !== 200) {
+          let errorBody = "";
+          for await (const line of response.lines) {
+            if (errorBody.length < 256 * 1024) errorBody += `${line}\n`;
           }
-          try {
-            await streamMessages(
-              response.lines,
-              nameMap,
-              emit,
-              retry + 1 < REFUSAL_MAX_ATTEMPTS,
-            );
-          } catch (error) {
-            if (!(error instanceof RefusalError)) throw error;
-            refusalError = error;
-            continue;
-          }
-          return {
-            status: "completed",
-            patch: { privateData: data },
-          };
+          const error = anthropicError(response.status, errorBody);
+          throw new StreamError(error.status, error.message, error.kind);
         }
-        throw new StreamError(
-          0,
-          refusalError?.message ?? "Claude refusal retries exhausted",
-          "refusal",
-        );
+        await streamMessages(response.lines, nameMap, emit);
+        return {
+          status: "completed",
+          patch: { privateData: data },
+        };
       } catch (error) {
         const message = redact(
           error instanceof Error ? error.message : String(error),

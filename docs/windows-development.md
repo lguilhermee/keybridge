@@ -29,8 +29,8 @@ Start the desktop app from source:
 npm --prefix 'D:\PROJETOS\cursor-byok\apps\desktop' run tauri:dev
 ```
 
-Alternatively, run **Terminal > Run Task > Cursor BYOK: desktop development**
-in Cursor. Exit the currently running Cursor BYOK app from its tray menu before
+Alternatively, run **Terminal > Run Task > Keybridge: desktop development**
+in Cursor. Exit the currently running Keybridge app from its tray menu before
 starting another development session. Closing its window leaves the tray app
 running.
 

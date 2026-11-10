@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { api, type CursorHarnessStatus, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
+import { api, type CodexHarnessStatus, type CursorHarnessStatus, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
 import { applyTheme, isThemeId, type ThemeId } from "../theme/theme";
 
 export const DEFAULT_TOKEN_PRICING: TokenPricingSettings = {
@@ -21,6 +21,8 @@ export type AppSnapshot = {
   theme: ThemeId;
   cursorHarness: CursorHarnessStatus | null;
   cursorBusy: boolean;
+  codexHarness: CodexHarnessStatus | null;
+  codexBusy: boolean;
   providerRuntime: ProviderRuntimeStatus | null;
   providers: ProviderDescriptor[];
 };
@@ -57,6 +59,8 @@ let snapshot: AppSnapshot = {
   theme: savedTheme(),
   cursorHarness: null,
   cursorBusy: false,
+  codexHarness: null,
+  codexBusy: false,
   providerRuntime: null,
   providers: [],
 };
@@ -87,17 +91,18 @@ export const appStore = {
   async refresh() {
     update({ busy: true, error: null });
     try {
-      const [models, overview, settings, ports, pricing, cursorHarness, providerRuntime, providers] = await Promise.all([
+      const [models, overview, settings, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers] = await Promise.all([
         api.models(),
         api.overview(),
         api.observability(),
         api.ports(),
         api.pricingSettings(),
         api.cursorHarness(),
+        api.codexHarness(),
         api.providerRuntime(),
         api.providers(),
       ]);
-      update({ models, overview, detailed: settings.detailed, ports, pricing, cursorHarness, providerRuntime, providers });
+      update({ models, overview, detailed: settings.detailed, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers });
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
     } finally {
@@ -177,6 +182,12 @@ export const appStore = {
     try { update({ cursorHarness: await api.setCursorEnabled(enabled) }); }
     catch (cause) { update({ error: cause instanceof Error ? cause.message : String(cause) }); }
     finally { update({ cursorBusy: false }); }
+  },
+  async setCodexEnabled(enabled: boolean) {
+    update({ codexBusy: true, error: null });
+    try { update({ codexHarness: await api.setCodexEnabled(enabled) }); }
+    catch (cause) { update({ error: cause instanceof Error ? cause.message : String(cause) }); }
+    finally { update({ codexBusy: false }); }
   },
   async createModels(models: ModelInput[]) {
     update({ cursorBusy: true, error: null });

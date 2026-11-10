@@ -1,9 +1,9 @@
 ---
 name: frontend
-description: Implement and review the Cursor BYOK React/Tauri desktop frontend. Use for changes under apps/desktop involving routing, page layout, window chrome, settings UI, scrolling, virtualization, charts, themes, or frontend component architecture.
+description: Implement and review the Keybridge React/Tauri desktop frontend. Use for changes under apps/desktop involving routing, page layout, window chrome, settings UI, scrolling, virtualization, charts, themes, or frontend component architecture.
 ---
 
-# Cursor BYOK Frontend
+# Keybridge Frontend
 
 Build on the components and theme system already present in `apps/desktop`. Preserve the Tauri HTTP boundary; frontend management features call `/__byok-api__/api` and never add IPC business APIs.
 

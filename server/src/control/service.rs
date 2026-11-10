@@ -13,7 +13,7 @@ use tokio_util::sync::CancellationToken;
 use url::Url;
 
 use crate::{
-    local_app::CursorHarness,
+    local_app::{CodexHarness, CursorHarness},
     model::{
         ContentPart, CursorRunTraceArtifact, CursorRunTraceSummary, LlmCallRequest,
         LlmCallResponseChunk, LlmCallSummary, ModelConfig, ModelConfigInput, ModelInvocation,
@@ -33,6 +33,7 @@ use crate::{
 pub struct ControlService {
     store: Store,
     cursor_harness: CursorHarness,
+    codex_harness: CodexHarness,
     protocol: Arc<dyn Protocol>,
     provider_runtime: ProviderRuntime,
     providers: ProviderRegistry,
@@ -163,6 +164,7 @@ impl ControlService {
     ) -> Result<Self> {
         Ok(Self {
             cursor_harness: CursorHarness::new(store.clone())?,
+            codex_harness: CodexHarness::managed(store.clone(), providers.clone())?,
             store,
             protocol,
             provider_runtime,
@@ -175,6 +177,19 @@ impl ControlService {
 
     pub fn cursor_harness(&self) -> &CursorHarness {
         &self.cursor_harness
+    }
+
+    pub fn codex_harness(&self) -> &CodexHarness {
+        &self.codex_harness
+    }
+
+    /// Keeps the Codex connection in step after a change to the configured models
+    /// or to the external API that Codex reaches them through.
+    async fn codex_follows<T>(&self, result: Result<T>) -> Result<T> {
+        if result.is_ok() {
+            self.codex_harness.refresh().await;
+        }
+        result
     }
 
     pub async fn headroom(&self) -> Result<crate::headroom::HeadroomStatus> {
@@ -212,7 +227,8 @@ impl ControlService {
         &self,
         session_id: &str,
     ) -> Result<crate::provider::OAuthPollResponse> {
-        self.providers.oauth_poll(session_id).await
+        self.codex_follows(self.providers.oauth_poll(session_id).await)
+            .await
     }
 
     pub async fn provider_import(
@@ -221,9 +237,12 @@ impl ControlService {
         resource_type: &str,
         files: serde_json::Value,
     ) -> Result<crate::provider::ImportResponse> {
-        self.providers
-            .import_resources(provider_id, resource_type, files)
-            .await
+        self.codex_follows(
+            self.providers
+                .import_resources(provider_id, resource_type, files)
+                .await,
+        )
+        .await
     }
 
     pub async fn provider_export_resources(
@@ -266,13 +285,17 @@ impl ControlService {
         resource_type: &str,
         resource_id: &str,
     ) -> Result<()> {
-        self.providers
-            .delete_resource(provider_id, resource_type, resource_id)
-            .await
+        self.codex_follows(
+            self.providers
+                .delete_resource(provider_id, resource_type, resource_id)
+                .await,
+        )
+        .await
     }
 
     pub async fn provider_sync_models(&self, provider_id: &str, channel_id: &str) -> Result<usize> {
-        self.providers.sync_models(provider_id, channel_id).await
+        self.codex_follows(self.providers.sync_models(provider_id, channel_id).await)
+            .await
     }
 
     pub async fn provider_set_model_enabled(
@@ -282,13 +305,17 @@ impl ControlService {
         model_id: &str,
         enabled: bool,
     ) -> Result<()> {
-        self.providers
-            .set_model_enabled(provider_id, channel_id, model_id, enabled)
-            .await
+        self.codex_follows(
+            self.providers
+                .set_model_enabled(provider_id, channel_id, model_id, enabled)
+                .await,
+        )
+        .await
     }
 
     pub async fn remove_provider_configuration(&self, provider_id: &str) -> Result<()> {
-        self.providers.remove(provider_id).await
+        self.codex_follows(self.providers.remove(provider_id).await)
+            .await
     }
 
     pub fn provider_runtime_status(&self) -> ProviderRuntimeStatus {
@@ -327,15 +354,18 @@ impl ControlService {
     }
 
     pub async fn create_models(&self, models: &[ModelConfigInput]) -> Result<Vec<ModelConfig>> {
-        self.store.create_models(models).await
+        self.codex_follows(self.store.create_models(models).await)
+            .await
     }
 
     pub async fn reorder_models(&self, model_hashes: &[String]) -> Result<Vec<ModelConfig>> {
-        self.store.reorder_models(model_hashes).await
+        self.codex_follows(self.store.reorder_models(model_hashes).await)
+            .await
     }
 
     pub async fn delete_model(&self, model_hash: &str) -> Result<()> {
-        self.store.delete_model(model_hash).await
+        self.codex_follows(self.store.delete_model(model_hash).await)
+            .await
     }
 
     pub async fn update_model(
@@ -343,7 +373,8 @@ impl ControlService {
         model_hash: &str,
         input: &ModelConfigInput,
     ) -> Result<ModelConfig> {
-        self.store.update_model(model_hash, input).await
+        self.codex_follows(self.store.update_model(model_hash, input).await)
+            .await
     }
 
     pub async fn test_model(
@@ -532,7 +563,9 @@ impl ControlService {
 
     pub async fn import_v0049_models(&self) -> Result<LegacyModelImportResult> {
         let path = crate::config::v0049_config_path()?;
-        let outcome = self.store.import_v0049_model_config(&path).await?;
+        let outcome = self
+            .codex_follows(self.store.import_v0049_model_config(&path).await)
+            .await?;
         Ok(LegacyModelImportResult {
             imported: outcome.imported,
             skipped: outcome.skipped,
@@ -686,7 +719,8 @@ impl ControlService {
         &self,
         settings: ExternalApiSettings,
     ) -> Result<ExternalApiSettings> {
-        self.store.set_external_api_settings(settings).await
+        self.codex_follows(self.store.set_external_api_settings(settings).await)
+            .await
     }
 
     pub async fn set_ports(&self, settings: PortSettings) -> Result<PortSettings> {

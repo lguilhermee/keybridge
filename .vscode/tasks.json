@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Cursor BYOK: desktop development",
+      "label": "Keybridge: desktop development",
       "type": "shell",
       "command": "npm",
       "args": ["run", "tauri:dev"],
@@ -12,7 +12,7 @@
       "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
-      "label": "Cursor BYOK: frontend check",
+      "label": "Keybridge: frontend check",
       "type": "shell",
       "command": "npm",
       "args": ["run", "check"],
@@ -20,7 +20,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Cursor BYOK: backend tests",
+      "label": "Keybridge: backend tests",
       "type": "shell",
       "command": "cargo",
       "args": ["test", "--locked", "-p", "cursor-server", "--lib"],

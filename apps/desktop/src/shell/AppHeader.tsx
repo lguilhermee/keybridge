@@ -29,9 +29,9 @@ export function AppHeader({ platform, nativeDesktop }: AppHeaderProps) {
     <div className={styles.uiLayer}>
       {showMacTrafficLights && <MacTrafficLights />}
       {showNativeUi && <>
-        <div className={styles.identity} aria-label="Cursor BYOK">
+        <div className={styles.identity} aria-label="Keybridge">
           <img src={appIcon} alt="" />
-          <span>{t("Cursor Assistant v{version}", { version })}</span>
+          <span>Keybridge v{version}</span>
         </div>
         <WindowControls />
       </>}

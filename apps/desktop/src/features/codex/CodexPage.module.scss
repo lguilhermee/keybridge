@@ -1,0 +1,57 @@
+@use "../../styles/typography" as type;
+
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status {
+  color: var(--oa-text-secondary);
+  font-size: type.$font-size-xs;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 16px;
+
+  & + & {
+    border-top: 1px solid var(--oa-border);
+  }
+}
+
+.value {
+  min-width: 0;
+  max-width: 70%;
+  color: var(--oa-text-secondary);
+  overflow-wrap: anywhere;
+  text-align: right;
+
+  &[data-state="enabled"] { color: var(--oa-success); }
+  &[data-state="degraded"] { color: var(--oa-warning); }
+}
+
+.hint {
+  color: var(--oa-text-secondary);
+  font-size: type.$font-size-xs;
+}
+
+.notes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--oa-text-secondary);
+  font-size: type.$font-size-xs;
+}

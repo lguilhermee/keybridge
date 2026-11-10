@@ -21,7 +21,7 @@ use super::{
     attempt::{send_once, Attempt},
     map_sse_error, merge_extra_params, protocol_event_error,
     recorder::recorded_headers,
-    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream,
+    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream, Refusal,
 };
 
 #[derive(Default)]
@@ -369,7 +369,7 @@ fn map_finish(value: &str, has_tools: bool) -> FinishReason {
     match value {
         "tool_calls" | "function_call" => FinishReason::ToolUse,
         "length" => FinishReason::Length,
-        "content_filter" => FinishReason::Stop,
+        "content_filter" => FinishReason::Refusal(Refusal::default()),
         // Observed tool calls outrank ordinary or unknown stop labels because
         // OpenAI-compatible servers commonly emit tools with `stop`.
         _ if has_tools => FinishReason::ToolUse,
@@ -453,15 +453,15 @@ mod tests {
     }
 
     #[test]
-    fn content_filter_never_executes_observed_tool_calls() {
-        assert_eq!(map_finish("content_filter", true), FinishReason::Stop);
-        assert_eq!(map_finish("content_filter", false), FinishReason::Stop);
+    fn content_filter_is_a_refusal_and_never_executes_observed_tool_calls() {
+        let refusal = FinishReason::Refusal(Refusal::default());
+        assert_eq!(map_finish("content_filter", true), refusal);
+        assert_eq!(map_finish("content_filter", false), refusal);
     }
 
     #[test]
     fn finish_reason_mapping_without_tool_calls_is_unchanged() {
         assert_eq!(map_finish("stop", false), FinishReason::Stop);
-        assert_eq!(map_finish("content_filter", false), FinishReason::Stop);
         assert_eq!(map_finish("", false), FinishReason::Stop);
         assert_eq!(map_finish("tool_calls", false), FinishReason::ToolUse);
         assert_eq!(map_finish("function_call", false), FinishReason::ToolUse);

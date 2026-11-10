@@ -10,6 +10,8 @@ use crate::model::{CheckpointId, ToolCall, ToolRoundId, Usage};
 pub enum RunFailure {
     Protocol(String),
     Provider(String),
+    /// The model declined on policy grounds; the text is the refusal as shown to the user.
+    Refusal(String),
     Store(String),
     Client(String),
 }
@@ -19,6 +21,7 @@ impl RunFailure {
         match self {
             Self::Protocol(_) => "protocol",
             Self::Provider(_) => "provider",
+            Self::Refusal(_) => "refusal",
             Self::Store(_) => "store",
             Self::Client(_) => "client",
         }
@@ -31,6 +34,7 @@ impl From<crate::Error> for RunFailure {
         match error {
             Error::Protocol(message) | Error::Config(message) => Self::Protocol(message),
             Error::Provider(message) => Self::Provider(message),
+            Error::Refusal(message) => Self::Refusal(message),
             Error::Store(message) => Self::Store(message),
             Error::Cancelled => Self::Client("run was cancelled".into()),
             Error::Http(error) => Self::Provider(error.to_string()),

@@ -929,3 +929,167 @@ async fn matching_http_protocols_forward_native_requests_and_responses() {
     server.abort();
     drop(directory);
 }
+
+fn codex_request() -> Value {
+    json!({
+        "model": "work/qwen/model",
+        "stream": true,
+        "input": [
+            {"type":"message","role":"developer","content":[{"type":"input_text","text":"base instructions"}]},
+            {"type":"message","role":"developer","content":[{"type":"input_text","text":"permissions"}]},
+            {"type":"message","role":"user","content":[{"type":"input_text","text":"hello"}]},
+            {"type":"reasoning","summary":[],"encrypted_content":"opaque"},
+            {"type":"message","role":"assistant","content":[{"type":"output_text","text":"working"}]},
+            {"type":"function_call","call_id":"call_1","name":"exec_command","arguments":"{\"cmd\":\"ls\"}"},
+            {"type":"function_call","call_id":"call_2","namespace":"multi_agent_v1","name":"wait_agent","arguments":""},
+            {"type":"web_search_call","status":"completed","action":{"type":"search","query":"x"}},
+            {"type":"function_call_output","call_id":"call_1","output":"files"},
+            {"type":"function_call_output","call_id":"call_2","output":[{"type":"input_text","text":"done"}]},
+            {"type":"message","role":"developer","content":[{"type":"input_text","text":"model switched"}]}
+        ],
+        "tools": [
+            {"type":"function","name":"exec_command","description":"Runs a command","strict":false,
+                "parameters":{"type":"object","properties":{"cmd":{"type":"string"}}}},
+            {"type":"namespace","name":"multi_agent_v1","description":"Agents","tools":[
+                {"type":"function","name":"spawn_agent","description":"Spawns","strict":false,
+                    "parameters":{"type":"object","properties":{}}},
+                {"type":"function","name":"wait_agent","description":"Waits","strict":false,
+                    "parameters":{"type":"object","properties":{}}}
+            ]},
+            {"type":"web_search","external_web_access":true}
+        ],
+        "reasoning": {"effort":"high","summary":"auto"},
+        "include": ["reasoning.encrypted_content"]
+    })
+}
+
+#[tokio::test]
+async fn responses_accept_a_codex_request_and_return_namespaced_tool_calls() {
+    let (router, protocol, store, _directory) = setup().await;
+    store
+        .set_external_api_settings(ExternalApiSettings {
+            enabled: true,
+            api_key: "secret".into(),
+        })
+        .await
+        .unwrap();
+    protocol.push(vec![
+        ModelEvent::ToolCallStart {
+            index: 0,
+            call_id: "call_3".into(),
+            name: "multi_agent_v1__spawn_agent".into(),
+        },
+        ModelEvent::ToolCallArgumentsDelta {
+            index: 0,
+            delta: "{}".into(),
+        },
+        ModelEvent::ToolCallEnd { index: 0 },
+        ModelEvent::Done(FinishReason::ToolUse),
+    ]);
+    let (status, body) = send(
+        router,
+        "POST",
+        "/byok/v1/responses",
+        Some("secret"),
+        codex_request(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+
+    let request = protocol.requests().pop().unwrap();
+    assert_eq!(
+        request.prompt.instructions,
+        "base instructions\n\npermissions"
+    );
+    assert_eq!(
+        request
+            .prompt
+            .tools
+            .iter()
+            .map(|tool| tool.name.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "exec_command",
+            "multi_agent_v1__spawn_agent",
+            "multi_agent_v1__wait_agent"
+        ]
+    );
+    // user, assistant (text and both calls), two tool results, late developer message.
+    assert_eq!(request.history.len(), 5, "{:?}", request.history);
+    let ProjectedContent::Assistant { text, calls, .. } = &request.history[1].content else {
+        panic!("expected one assistant turn: {:?}", request.history[1]);
+    };
+    assert_eq!(text, "working");
+    assert_eq!(
+        calls
+            .iter()
+            .map(|call| (call.index, call.name.as_str()))
+            .collect::<Vec<_>>(),
+        [(0, "exec_command"), (1, "multi_agent_v1__wait_agent")]
+    );
+    assert_eq!(calls[1].arguments, json!({}));
+    let ProjectedContent::ToolResult(result) = &request.history[3].content else {
+        panic!("expected a tool result: {:?}", request.history[3]);
+    };
+    assert_eq!(result.name, "multi_agent_v1__wait_agent");
+    assert_eq!(result.content, "done");
+    assert!(matches!(
+        request.history[4].content,
+        ProjectedContent::Parts(_)
+    ));
+
+    let events = body
+        .lines()
+        .filter_map(|line| line.strip_prefix("data: "))
+        .map(|data| serde_json::from_str::<Value>(data).unwrap())
+        .collect::<Vec<_>>();
+    let done = events
+        .iter()
+        .find(|event| event["type"] == "response.output_item.done")
+        .unwrap();
+    assert_eq!(done["item"]["type"], "function_call");
+    assert_eq!(done["item"]["namespace"], "multi_agent_v1");
+    assert_eq!(done["item"]["name"], "spawn_agent");
+    assert_eq!(done["item"]["call_id"], "call_3");
+    let completed = events
+        .iter()
+        .find(|event| event["type"] == "response.completed")
+        .unwrap();
+    assert_eq!(completed["response"]["output"][0]["name"], "spawn_agent");
+}
+
+#[tokio::test]
+async fn responses_stream_reports_an_upstream_failure_as_response_failed() {
+    let (router, protocol, store, _directory) = setup().await;
+    store
+        .set_external_api_settings(ExternalApiSettings {
+            enabled: true,
+            api_key: "secret".into(),
+        })
+        .await
+        .unwrap();
+    protocol.push_error(cursor_server::Error::Provider("upstream exploded".into()));
+    let (status, body) = send(
+        router,
+        "POST",
+        "/byok/v1/responses",
+        Some("secret"),
+        json!({"model":"work/qwen/model","input":"hello","stream":true}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let failed = body
+        .lines()
+        .filter_map(|line| line.strip_prefix("data: "))
+        .map(|data| serde_json::from_str::<Value>(data).unwrap())
+        .find(|event| event["type"] == "response.failed")
+        .unwrap_or_else(|| panic!("no response.failed event: {body}"));
+    assert_eq!(failed["response"]["status"], "failed");
+    assert!(
+        failed["response"]["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("upstream exploded"),
+        "{failed}"
+    );
+}
