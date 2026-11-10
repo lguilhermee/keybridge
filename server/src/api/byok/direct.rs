@@ -1,4 +1,4 @@
-//! Forwards matching HTTP protocols without projecting provider messages.
+//! Forwards matching HTTP protocols without projecting protocol messages.
 use std::time::Duration;
 
 use async_stream::try_stream;
@@ -21,7 +21,7 @@ use crate::{
     Error, Result,
 };
 
-use super::protocol::Protocol;
+use super::protocol::ApiProtocol;
 
 #[derive(Clone)]
 pub struct NativeForwarder {
@@ -51,7 +51,7 @@ impl NativeForwarder {
 
     pub(super) async fn forward(
         &self,
-        protocol: Protocol,
+        protocol: ApiProtocol,
         incoming_headers: &HeaderMap,
         mut body: Value,
         model: &ModelConfig,
@@ -64,9 +64,9 @@ impl NativeForwarder {
             conversation_id: call_id.clone(),
             provider_call_index: 0,
             model_hash: model.model_hash.clone(),
-            provider_type: model.provider_type(),
-            provider_url: request_url.clone(),
-            request_type: model.provider_type(),
+            protocol_type: model.protocol_type(),
+            endpoint_url: request_url.clone(),
+            request_type: model.protocol_type(),
             request_url: request_url.clone(),
             model_id: model.model_id.clone(),
             display_name: model.display_name.clone(),
@@ -110,7 +110,7 @@ impl NativeForwarder {
             upstream_headers.extend(custom_headers(&model.custom_headers, &call_id)?);
         }
         match protocol {
-            Protocol::Messages => {
+            ApiProtocol::Messages => {
                 upstream_headers.insert(
                     "x-api-key",
                     model.api_key.parse().map_err(|error| {
@@ -121,7 +121,7 @@ impl NativeForwarder {
                     upstream_headers.insert("anthropic-version", "2023-06-01".parse().unwrap());
                 }
             }
-            Protocol::Chat | Protocol::Responses => {
+            ApiProtocol::Chat | ApiProtocol::Responses => {
                 upstream_headers.insert(
                     header::AUTHORIZATION,
                     format!("Bearer {}", model.api_key)
@@ -132,7 +132,7 @@ impl NativeForwarder {
                 );
             }
         }
-        let client = self.clients.provider_client(self.request_timeout).await?;
+        let client = self.clients.protocol_client(self.request_timeout).await?;
         if let Some(route) = self.headroom.route(&call_id).await {
             crate::headroom::compress_body(&client, &route, &mut body, &mut upstream_headers).await;
         }
@@ -207,7 +207,7 @@ impl NativeForwarder {
 
     fn stream_response(
         &self,
-        protocol: Protocol,
+        protocol: ApiProtocol,
         response: reqwest::Response,
         recorder: CallRecorder,
         status: StatusCode,
@@ -278,13 +278,13 @@ struct NativeSummary {
 }
 
 impl NativeSummary {
-    fn from_value(protocol: Protocol, value: &Value) -> Self {
+    fn from_value(protocol: ApiProtocol, value: &Value) -> Self {
         let mut summary = Self::default();
         summary.observe(protocol, value);
         summary
     }
 
-    fn observe(&mut self, protocol: Protocol, value: &Value) {
+    fn observe(&mut self, protocol: ApiProtocol, value: &Value) {
         if matches!(
             value.get("type").and_then(Value::as_str),
             Some("error" | "response.failed")
@@ -301,16 +301,16 @@ impl NativeSummary {
             );
         }
         let usage = match protocol {
-            Protocol::Chat => value.get("usage"),
-            Protocol::Responses => value
+            ApiProtocol::Chat => value.get("usage"),
+            ApiProtocol::Responses => value
                 .pointer("/response/usage")
                 .or_else(|| value.get("usage")),
-            Protocol::Messages => value
+            ApiProtocol::Messages => value
                 .pointer("/message/usage")
                 .or_else(|| value.get("usage")),
         }
         .filter(|usage| !usage.is_null())
-        .map(|usage| crate::protocol::native_usage(protocol.provider_type(), usage));
+        .map(|usage| crate::protocol::native_usage(protocol.protocol_type(), usage));
         if let Some(usage) = usage {
             let current = self.usage.get_or_insert_default();
             for (target, incoming) in [
@@ -331,13 +331,13 @@ impl NativeSummary {
             }
         }
         let reason = match protocol {
-            Protocol::Chat => value
+            ApiProtocol::Chat => value
                 .pointer("/choices/0/finish_reason")
                 .and_then(Value::as_str),
-            Protocol::Responses => value
+            ApiProtocol::Responses => value
                 .pointer("/response/incomplete_details/reason")
                 .and_then(Value::as_str),
-            Protocol::Messages => value
+            ApiProtocol::Messages => value
                 .pointer("/delta/stop_reason")
                 .or_else(|| value.get("stop_reason"))
                 .and_then(Value::as_str),
@@ -348,7 +348,7 @@ impl NativeSummary {
             Some(_) => Some(FinishReason::Stop),
             None => self.finish,
         };
-        if matches!(protocol, Protocol::Responses)
+        if matches!(protocol, ApiProtocol::Responses)
             && (value.pointer("/item/type").and_then(Value::as_str) == Some("function_call")
                 || value
                     .pointer("/response/output")
@@ -365,7 +365,7 @@ impl NativeSummary {
 }
 
 async fn observe_events(
-    protocol: Protocol,
+    protocol: ApiProtocol,
     receiver: tokio::sync::mpsc::Receiver<Bytes>,
 ) -> NativeSummary {
     let source = ReceiverStream::new(receiver)

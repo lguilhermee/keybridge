@@ -75,9 +75,9 @@ async fn try_compress(
 ) -> Result<CompressOutcome> {
     let object = body
         .as_object()
-        .ok_or_else(|| Error::Provider("provider request body is not an object".into()))?;
+        .ok_or_else(|| Error::Provider("protocol request body is not an object".into()))?;
     if object.get("model").and_then(Value::as_str).is_none() {
-        return Err(Error::Provider("provider request body has no model".into()));
+        return Err(Error::Provider("protocol request body has no model".into()));
     }
     // Responses bodies keep `input`: Headroom compresses them through a native
     // view, while a `messages` rename makes it treat the transcript as chat and
@@ -85,7 +85,7 @@ async fn try_compress(
     let transcript = ["messages", "input"]
         .into_iter()
         .find(|key| object.get(*key).and_then(Value::as_array).is_some())
-        .ok_or_else(|| Error::Provider("provider request body has no messages".into()))?;
+        .ok_or_else(|| Error::Provider("protocol request body has no messages".into()))?;
     let mut payload = object.clone();
     let session_id = route.session_id.trim();
     if !session_id.is_empty() && session_id.chars().count() <= 256 {

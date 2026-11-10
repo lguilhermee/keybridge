@@ -8,7 +8,7 @@ use futures_util::StreamExt;
 use serde_json::{json, Map, Value};
 
 use crate::{
-    config::ProviderConfig,
+    config::ProtocolConfig,
     model::{
         ContentPart, ModelInvocation, ModelLatency, ProjectedContent, ProjectedMessage, Role,
         ToolCallContent, Usage,
@@ -19,9 +19,9 @@ use crate::{
 use super::{
     apply_body_allowlist, apply_openai_prompt_cache_key,
     attempt::{send_once, Attempt},
-    map_sse_error, merge_extra_params, provider_event_error,
+    map_sse_error, merge_extra_params, protocol_event_error,
     recorder::recorded_headers,
-    CallRecorder, FinishReason, ModelEvent, Provider, ProviderStream,
+    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream,
 };
 
 #[derive(Default)]
@@ -33,14 +33,14 @@ struct ChatToolState {
     started: bool,
 }
 
-pub struct OpenAiChatProvider {
+pub struct OpenAiChatProtocol {
     client: reqwest::Client,
-    config: ProviderConfig,
+    config: ProtocolConfig,
     recorder: Option<CallRecorder>,
 }
 
-impl OpenAiChatProvider {
-    pub fn new(client: reqwest::Client, config: ProviderConfig) -> Self {
+impl OpenAiChatProtocol {
+    pub fn new(client: reqwest::Client, config: ProtocolConfig) -> Self {
         Self {
             client,
             config,
@@ -54,12 +54,12 @@ impl OpenAiChatProvider {
     }
 }
 
-impl Provider for OpenAiChatProvider {
+impl Protocol for OpenAiChatProtocol {
     fn stream(
         &self,
         invocation: ModelInvocation,
         cancellation: tokio_util::sync::CancellationToken,
-    ) -> ProviderStream {
+    ) -> ProtocolStream {
         let client = self.client.clone();
         let config = self.config.clone();
         let recorder = self.recorder.clone();
@@ -70,7 +70,7 @@ impl Provider for OpenAiChatProvider {
                 call_id = %call_id,
                 history_len = request.history.len(),
                 tools_count = request.prompt.tools.len(),
-                "OpenAI Chat provider stream started"
+                "OpenAI Chat protocol stream started"
             );
             let messages = openai_chat_messages(&request.prompt.instructions, &request.history)?;
             let mut body = json!({
@@ -154,7 +154,7 @@ impl Provider for OpenAiChatProvider {
                 })?;
                 if event.data == "[DONE]" { saw_done_marker = true; break; }
                 let value: Value = serde_json::from_str(&event.data)?;
-                if let Some(error) = provider_event_error("OpenAI Chat", &value) {
+                if let Some(error) = protocol_event_error("OpenAI Chat", &value) {
                     Err(error)?;
                 }
                 if let Some(usage) = value.get("usage").filter(|value| !value.is_null()) {
@@ -207,8 +207,8 @@ impl Provider for OpenAiChatProvider {
             }
             if let Some(usage) = final_usage { yield ModelEvent::Usage(usage); }
             if !reasoning.is_empty() {
-                yield ModelEvent::ProviderReplayState(crate::model::ProviderReplayState {
-                    provider_kind: "openai_chat".into(),
+                yield ModelEvent::ProtocolReplayState(crate::model::ProtocolReplayState {
+                    protocol_kind: "openai_chat".into(),
                     value: json!({"reasoning_content": reasoning}),
                 });
             }
@@ -262,7 +262,7 @@ fn openai_chat_messages(instructions: &str, messages: &[ProjectedMessage]) -> Re
             } => {
                 let replay_reasoning = replay_state
                     .as_ref()
-                    .filter(|state| state.provider_kind == "openai_chat")
+                    .filter(|state| state.protocol_kind == "openai_chat")
                     .and_then(|state| state.value.get("reasoning_content"))
                     .and_then(Value::as_str)
                     .filter(|reasoning| !reasoning.is_empty());

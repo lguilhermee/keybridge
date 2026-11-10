@@ -1,4 +1,4 @@
-//! Defines the provider interface and exports provider implementations.
+//! Defines the protocol interface and exports protocol implementations.
 mod anthropic;
 mod attempt;
 mod event;
@@ -16,36 +16,36 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{model::ModelInvocation, Result};
 
-pub use anthropic::AnthropicProvider;
+pub use anthropic::AnthropicProtocol;
 pub use event::*;
-pub use openai_chat::OpenAiChatProvider;
-pub use openai_responses::OpenAiResponsesProvider;
+pub use openai_chat::OpenAiChatProtocol;
+pub use openai_responses::OpenAiResponsesProtocol;
 pub use recorder::CallRecorder;
 pub(crate) use router::custom_headers;
 
 pub(crate) fn native_usage(
-    kind: crate::model::ProviderType,
+    kind: crate::model::ProtocolType,
     value: &serde_json::Value,
 ) -> crate::model::Usage {
     match kind {
-        crate::model::ProviderType::OpenAiChat => openai_chat::openai_usage(value),
-        crate::model::ProviderType::OpenAiResponses => openai_responses::responses_usage(value),
-        crate::model::ProviderType::Anthropic => anthropic::anthropic_usage(value),
-        crate::model::ProviderType::Plugin => {
-            unreachable!("plugin calls have no native HTTP protocol")
+        crate::model::ProtocolType::OpenAiChat => openai_chat::openai_usage(value),
+        crate::model::ProtocolType::OpenAiResponses => openai_responses::responses_usage(value),
+        crate::model::ProtocolType::Anthropic => anthropic::anthropic_usage(value),
+        crate::model::ProtocolType::Provider => {
+            unreachable!("provider calls have no native HTTP protocol")
         }
     }
 }
-pub use router::{build as build_provider, ProviderRouter};
+pub use router::{build as build_protocol, ProtocolRouter};
 
-pub type ProviderStream = Pin<Box<dyn Stream<Item = Result<ModelEvent>> + Send>>;
+pub type ProtocolStream = Pin<Box<dyn Stream<Item = Result<ModelEvent>> + Send>>;
 
-pub trait Provider: Send + Sync {
+pub trait Protocol: Send + Sync {
     fn stream(
         &self,
         invocation: ModelInvocation,
         cancellation: CancellationToken,
-    ) -> ProviderStream;
+    ) -> ProtocolStream;
 }
 
 fn map_sse_error(
@@ -63,7 +63,7 @@ fn map_sse_error(
     }
 }
 
-fn provider_event_error(label: &str, value: &serde_json::Value) -> Option<crate::Error> {
+fn protocol_event_error(label: &str, value: &serde_json::Value) -> Option<crate::Error> {
     let kind = value.get("type").and_then(serde_json::Value::as_str);
     let direct_error = value.get("error").filter(|error| !error.is_null());
     if !matches!(kind, Some("error" | "response.failed")) && direct_error.is_none() {
@@ -100,7 +100,7 @@ fn merge_extra_params(body: &mut serde_json::Value, extra: &serde_json::Value) -
         .ok_or_else(|| crate::Error::Config("model extra params must be an object".into()))?;
     let body = body
         .as_object_mut()
-        .ok_or_else(|| crate::Error::Provider("provider request body must be an object".into()))?;
+        .ok_or_else(|| crate::Error::Provider("protocol request body must be an object".into()))?;
     for (name, value) in extra {
         if matches!(
             name.as_str(),
@@ -130,7 +130,7 @@ fn apply_body_allowlist(
         return Ok(());
     };
     body.as_object_mut()
-        .ok_or_else(|| crate::Error::Provider("provider request body must be an object".into()))?
+        .ok_or_else(|| crate::Error::Provider("protocol request body must be an object".into()))?
         .retain(|name, _| allowed.contains(name));
     Ok(())
 }
@@ -140,7 +140,7 @@ fn apply_openai_prompt_cache_key(body: &mut serde_json::Value, model_id: &str) -
         return Ok(());
     }
     body.as_object_mut()
-        .ok_or_else(|| crate::Error::Provider("provider request body must be an object".into()))?
+        .ok_or_else(|| crate::Error::Provider("protocol request body must be an object".into()))?
         .insert(
             "prompt_cache_key".into(),
             serde_json::Value::String("cursor-byok".into()),
@@ -168,8 +168,8 @@ mod tests {
     }
 
     #[test]
-    fn provider_error_events_extract_flat_and_nested_messages() {
-        assert_provider_error(
+    fn protocol_error_events_extract_flat_and_nested_messages() {
+        assert_protocol_error(
             "OpenAI Responses",
             serde_json::json!({
                 "type": "error",
@@ -177,14 +177,14 @@ mod tests {
             }),
             "OpenAI Responses error: Internal error during token generation",
         );
-        assert_provider_error(
+        assert_protocol_error(
             "OpenAI Chat",
             serde_json::json!({
                 "error": {"message": "quota exceeded", "type": "server_error"}
             }),
             "OpenAI Chat error: quota exceeded",
         );
-        assert_provider_error(
+        assert_protocol_error(
             "Anthropic",
             serde_json::json!({
                 "type": "error",
@@ -192,7 +192,7 @@ mod tests {
             }),
             "Anthropic error: Overloaded",
         );
-        assert_provider_error(
+        assert_protocol_error(
             "OpenAI Responses",
             serde_json::json!({
                 "type": "response.failed",
@@ -203,16 +203,16 @@ mod tests {
     }
 
     #[test]
-    fn successful_provider_events_are_not_errors() {
-        assert!(provider_event_error(
+    fn successful_protocol_events_are_not_errors() {
+        assert!(protocol_event_error(
             "OpenAI Responses",
             &serde_json::json!({"type": "response.completed", "error": null})
         )
         .is_none());
     }
 
-    fn assert_provider_error(label: &str, value: serde_json::Value, expected: &str) {
-        let Some(crate::Error::Provider(message)) = provider_event_error(label, &value) else {
+    fn assert_protocol_error(label: &str, value: serde_json::Value, expected: &str) {
+        let Some(crate::Error::Provider(message)) = protocol_event_error(label, &value) else {
             panic!("expected provider error");
         };
         assert_eq!(message, expected);

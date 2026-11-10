@@ -1,4 +1,4 @@
-//! Guarantees provider history ends with a user message before dispatch.
+//! Guarantees protocol history ends with a user message before dispatch.
 
 use crate::model::{ContentPart, ProjectedContent, ProjectedMessage, Role};
 
@@ -7,7 +7,7 @@ use crate::model::{ContentPart, ProjectedContent, ProjectedMessage, Role};
 /// Providers read an assistant-terminated history as a prefill request, and
 /// Anthropic refuses it outright: "This model does not support assistant
 /// message prefill. The conversation must end with a user message." The
-/// appended message is provider-visible only; it is never persisted, so the
+/// appended message is protocol-visible only; it is never persisted, so the
 /// committed checkpoint stays an exact prefix of the next turn.
 pub(super) fn user_terminated(
     mut history: Vec<ProjectedMessage>,

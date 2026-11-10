@@ -1,4 +1,4 @@
-//! Defines model and provider configuration.
+//! Defines model and protocol configuration.
 use std::{fmt, str::FromStr};
 
 use reqwest::Url;
@@ -11,36 +11,36 @@ pub const OPENAI_RESPONSES_ENDPOINT: &str = "/v1/responses";
 pub const OPENAI_CHAT_ENDPOINT: &str = "/v1/chat/completions";
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub enum ProviderType {
+pub enum ProtocolType {
     #[serde(rename = "openai-chat")]
     OpenAiChat,
     #[serde(rename = "openai-responses")]
     OpenAiResponses,
     #[serde(rename = "anthropic")]
     Anthropic,
-    /// Calls executed by a plugin; protocol details stay inside the plugin while the core records a uniform event stream.
+    /// Calls executed by a provider; protocol details stay inside the provider while the core records a uniform event stream.
     #[serde(rename = "plugin")]
-    Plugin,
+    Provider,
 }
 
-impl ProviderType {
+impl ProtocolType {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::OpenAiChat => "openai-chat",
             Self::OpenAiResponses => "openai-responses",
             Self::Anthropic => "anthropic",
-            Self::Plugin => "plugin",
+            Self::Provider => "plugin",
         }
     }
 }
 
-impl fmt::Display for ProviderType {
+impl fmt::Display for ProtocolType {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(self.as_str())
     }
 }
 
-impl FromStr for ProviderType {
+impl FromStr for ProtocolType {
     type Err = Error;
 
     fn from_str(value: &str) -> Result<Self> {
@@ -48,8 +48,8 @@ impl FromStr for ProviderType {
             "openai-chat" => Ok(Self::OpenAiChat),
             "openai-responses" => Ok(Self::OpenAiResponses),
             "anthropic" => Ok(Self::Anthropic),
-            "plugin" => Ok(Self::Plugin),
-            _ => Err(Error::Config(format!("unsupported provider type: {value}"))),
+            "plugin" => Ok(Self::Provider),
+            _ => Err(Error::Config(format!("unsupported protocol type: {value}"))),
         }
     }
 }
@@ -153,13 +153,13 @@ pub struct ModelConfig {
 }
 
 impl ModelConfig {
-    pub fn provider_type(&self) -> ProviderType {
+    pub fn protocol_type(&self) -> ProtocolType {
         match self.model_type {
-            ModelType::Anthropic => ProviderType::Anthropic,
+            ModelType::Anthropic => ProtocolType::Anthropic,
             ModelType::OpenAi if self.openai_endpoint == OPENAI_RESPONSES_ENDPOINT => {
-                ProviderType::OpenAiResponses
+                ProtocolType::OpenAiResponses
             }
-            ModelType::OpenAi => ProviderType::OpenAiChat,
+            ModelType::OpenAi => ProtocolType::OpenAiChat,
         }
     }
 

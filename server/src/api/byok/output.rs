@@ -16,11 +16,11 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     model::Usage,
-    protocol::{FinishReason, ModelEvent, ProviderStream},
+    protocol::{FinishReason, ModelEvent, ProtocolStream},
     Error, Result,
 };
 
-use super::protocol::Protocol;
+use super::protocol::ApiProtocol;
 
 #[derive(Default)]
 struct ToolOutput {
@@ -68,7 +68,7 @@ impl Output {
         }
     }
 
-    fn json(&self, protocol: Protocol, id: &str, model: &str) -> Value {
+    fn json(&self, protocol: ApiProtocol, id: &str, model: &str) -> Value {
         let usage = self.usage_json(protocol);
         let finish = match self.finish.unwrap_or(FinishReason::Stop) {
             FinishReason::Stop => "stop",
@@ -76,12 +76,14 @@ impl Output {
             FinishReason::ToolUse => "tool_calls",
         };
         match protocol {
-            Protocol::Chat => json!({"id":id,"object":"chat.completion","created":0,"model":model,
+            ApiProtocol::Chat => {
+                json!({"id":id,"object":"chat.completion","created":0,"model":model,
                 "choices":[{"index":0,"message":{"role":"assistant","content":self.text,
                     "tool_calls":self.tools.values().map(|tool| json!({"id":tool.id,"type":"function",
                         "function":{"name":tool.name,"arguments":tool.arguments}})).collect::<Vec<_>>()},"finish_reason":finish}],
-                "usage":usage}),
-            Protocol::Responses => {
+                "usage":usage})
+            }
+            ApiProtocol::Responses => {
                 let mut items = Vec::new();
                 if !self.text.is_empty() {
                     items.push(json!({"id":format!("msg_{id}"),"type":"message","status":"completed",
@@ -93,7 +95,7 @@ impl Output {
                     "output":items,"output_text":self.text,
                     "usage":usage})
             }
-            Protocol::Messages => {
+            ApiProtocol::Messages => {
                 let mut content = Vec::new();
                 if !self.text.is_empty() {
                     content.push(json!({"type":"text","text":self.text}));
@@ -109,7 +111,7 @@ impl Output {
         }
     }
 
-    fn usage_json(&self, protocol: Protocol) -> Value {
+    fn usage_json(&self, protocol: ApiProtocol) -> Value {
         let usage = self.usage.unwrap_or_default();
         let input = usage
             .context_input_tokens
@@ -117,7 +119,7 @@ impl Output {
             .unwrap_or(0);
         let output = usage.output_tokens.unwrap_or(0);
         match protocol {
-            Protocol::Chat => {
+            ApiProtocol::Chat => {
                 let mut value = json!({"prompt_tokens":input,"completion_tokens":output,
                     "total_tokens":usage.total_tokens.unwrap_or(input.saturating_add(output))});
                 if let Some(cached) = usage.cache_read_tokens {
@@ -128,7 +130,7 @@ impl Output {
                 }
                 value
             }
-            Protocol::Responses => {
+            ApiProtocol::Responses => {
                 let mut value = json!({"input_tokens":input,"output_tokens":output,
                     "total_tokens":usage.total_tokens.unwrap_or(input.saturating_add(output))});
                 if let Some(cached) = usage.cache_read_tokens {
@@ -139,7 +141,7 @@ impl Output {
                 }
                 value
             }
-            Protocol::Messages => {
+            ApiProtocol::Messages => {
                 let uncached =
                     usage
                         .context_input_tokens
@@ -162,8 +164,8 @@ impl Output {
 }
 
 pub(super) async fn complete(
-    protocol: Protocol,
-    mut stream: ProviderStream,
+    protocol: ApiProtocol,
+    mut stream: ProtocolStream,
     id: &str,
     model: &str,
 ) -> Result<Json<Value>> {
@@ -187,8 +189,8 @@ impl Drop for CancelOnDrop {
 }
 
 pub(super) fn streamed(
-    protocol: Protocol,
-    mut provider: ProviderStream,
+    protocol: ApiProtocol,
+    mut stream: ProtocolStream,
     cancellation: CancellationToken,
     id: String,
     model: String,
@@ -196,9 +198,9 @@ pub(super) fn streamed(
     let events = async_stream::stream! {
         let _cancel = CancelOnDrop(cancellation);
         let mut output = Output::default();
-        if matches!(protocol, Protocol::Chat) {
+        if matches!(protocol, ApiProtocol::Chat) {
             yield Ok::<Event, Infallible>(Event::default().data(chat_chunk(&id, &model, json!({"role":"assistant"}), Value::Null).to_string()));
-        } else if matches!(protocol, Protocol::Responses) {
+        } else if matches!(protocol, ApiProtocol::Responses) {
             yield Ok(Event::default().event("response.created").data(json!({"type":"response.created","response":{"id":id,"status":"in_progress","model":model}}).to_string()));
             yield Ok(Event::default().event("response.in_progress").data(json!({"type":"response.in_progress","response":{"id":id,"status":"in_progress","model":model}}).to_string()));
         } else {
@@ -207,10 +209,10 @@ pub(super) fn streamed(
         let mut text_started = false;
         let mut text_closed = false;
         let mut closed_tools = HashSet::new();
-        while let Some(result) = provider.next().await {
+        while let Some(result) = stream.next().await {
             match result {
                 Ok(event) => {
-                    if matches!(event, ModelEvent::TextDelta(_)) && !text_started && !matches!(protocol, Protocol::Chat) {
+                    if matches!(event, ModelEvent::TextDelta(_)) && !text_started && !matches!(protocol, ApiProtocol::Chat) {
                         for (name, value) in stream_events(protocol, &ModelEvent::TextStart, &id, &model, &output, &mut text_started) {
                             yield Ok(Event::default().event(name).data(value.to_string()));
                         }
@@ -244,7 +246,7 @@ pub(super) fn streamed(
                 }
             }
         }
-        if output.finish.is_some() && matches!(protocol, Protocol::Chat) {
+        if output.finish.is_some() && matches!(protocol, ApiProtocol::Chat) {
             yield Ok(Event::default().data("[DONE]"));
         }
     };
@@ -259,7 +261,7 @@ fn chat_chunk(id: &str, model: &str, delta: Value, finish: Value) -> Value {
 }
 
 fn stream_events(
-    protocol: Protocol,
+    protocol: ApiProtocol,
     event: &ModelEvent,
     id: &str,
     model: &str,
@@ -267,7 +269,7 @@ fn stream_events(
     text_started: &mut bool,
 ) -> Vec<(&'static str, Value)> {
     match protocol {
-        Protocol::Chat => match event {
+        ApiProtocol::Chat => match event {
             ModelEvent::TextDelta(delta) => vec![(
                 "message",
                 chat_chunk(id, model, json!({"content":delta}), Value::Null),
@@ -312,7 +314,7 @@ fn stream_events(
             }
             _ => Vec::new(),
         },
-        Protocol::Responses => match event {
+        ApiProtocol::Responses => match event {
             ModelEvent::TextStart if !*text_started => {
                 *text_started = true;
                 vec![
@@ -377,7 +379,7 @@ fn stream_events(
             )],
             _ => Vec::new(),
         },
-        Protocol::Messages => match event {
+        ApiProtocol::Messages => match event {
             ModelEvent::TextStart => {
                 if *text_started {
                     Vec::new()

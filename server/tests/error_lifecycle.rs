@@ -1,6 +1,6 @@
 //! Verifies unique persisted and streamed terminal outcomes.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -31,7 +31,7 @@ async fn abort_command_cancels_the_run_and_closes_output() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(fake_provider::FakeProvider::default()),
+        Arc::new(fake_protocol::FakeProtocol::default()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("abort-request").await.unwrap();
@@ -56,8 +56,8 @@ async fn abort_command_cancels_the_run_and_closes_output() {
 #[tokio::test]
 async fn provider_failure_retries_from_the_current_checkpoint_without_hiding_partial_output() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push_results(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_results(vec![
         Ok(ModelEvent::Start {
             model_call_id: "attempt-0".into(),
         }),
@@ -74,7 +74,7 @@ async fn provider_failure_retries_from_the_current_checkpoint_without_hiding_par
         }),
         Err(Error::Provider("stream disconnected".into())),
     ]);
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "attempt-1".into(),
         },
@@ -91,7 +91,7 @@ async fn provider_failure_retries_from_the_current_checkpoint_without_hiding_par
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("retry-request").await.unwrap();
@@ -155,7 +155,7 @@ async fn provider_failure_retries_from_the_current_checkpoint_without_hiding_par
         failed_tool_completed,
         "failed attempt must terminate its partial tool card"
     );
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 2);
     assert_eq!(requests[0], requests[1]);
     let messages = store
@@ -175,8 +175,8 @@ async fn provider_failure_retries_from_the_current_checkpoint_without_hiding_par
 #[tokio::test]
 async fn provider_failure_keeps_the_initial_checkpoint_then_returns_structured_error() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "length-limited".into(),
         },
@@ -190,7 +190,7 @@ async fn provider_failure_keeps_the_initial_checkpoint_then_returns_structured_e
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("failed-request").await.unwrap();
@@ -275,7 +275,7 @@ async fn provider_failure_keeps_the_initial_checkpoint_then_returns_structured_e
         None
     );
 
-    assert_eq!(provider.requests().len(), 1, "Length must not retry");
+    assert_eq!(protocol.requests().len(), 1, "Length must not retry");
     let messages = store
         .load_current_messages(&cursor_server::model::ConversationId::new(
             "failed-conversation",
@@ -311,8 +311,8 @@ async fn rate_limit_closes_cursor_output_without_retry() {
 
 async fn assert_provider_rejection_closes_cursor_output_without_retry(message: &str) {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push_error(Error::Provider(message.into()));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_error(Error::Provider(message.into()));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -321,7 +321,7 @@ async fn assert_provider_rejection_closes_cursor_output_without_retry(message: &
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -342,7 +342,7 @@ async fn assert_provider_rejection_closes_cursor_output_without_retry(message: &
         let frame = tokio::time::timeout(std::time::Duration::from_secs(2), output.recv())
             .await
             .unwrap()
-            .expect("provider rejection must close Cursor output immediately");
+            .expect("protocol rejection must close Cursor output immediately");
         let (flags, payload) = connect::decode_frames(&frame).unwrap().pop().unwrap();
         if flags & connect::END_STREAM_FLAG != 0 {
             break serde_json::from_slice::<serde_json::Value>(&payload).unwrap();
@@ -360,7 +360,7 @@ async fn assert_provider_rejection_closes_cursor_output_without_retry(message: &
         }
     };
 
-    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(protocol.requests().len(), 1);
     assert_eq!(error_json["error"]["code"], "invalid_argument");
     let encoded = error_json["error"]["details"][0]["value"].as_str().unwrap();
     let bytes = STANDARD_NO_PAD.decode(encoded).unwrap();
@@ -377,8 +377,8 @@ async fn assert_provider_rejection_closes_cursor_output_without_retry(message: &
 #[tokio::test]
 async fn unknown_tool_response_id_is_ignored_and_the_run_continues() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "model-call".into(),
         },
@@ -394,7 +394,7 @@ async fn unknown_tool_response_id_is_ignored_and_the_run_continues() {
         ModelEvent::ToolCallEnd { index: 0 },
         ModelEvent::Done(FinishReason::ToolUse),
     ]);
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "model-call-2".into(),
         },
@@ -411,7 +411,7 @@ async fn unknown_tool_response_id_is_ignored_and_the_run_continues() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider),
+        Arc::new(protocol),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -526,8 +526,8 @@ async fn unknown_tool_response_id_is_ignored_and_the_run_continues() {
 #[tokio::test]
 async fn newer_run_request_on_one_bidi_stream_replaces_the_active_run() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "model-call".into(),
         },
@@ -543,7 +543,7 @@ async fn newer_run_request_on_one_bidi_stream_replaces_the_active_run() {
         ModelEvent::ToolCallEnd { index: 0 },
         ModelEvent::Done(FinishReason::ToolUse),
     ]);
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "replacement-model-call".into(),
         },
@@ -560,7 +560,7 @@ async fn newer_run_request_on_one_bidi_stream_replaces_the_active_run() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -668,8 +668,8 @@ async fn newer_run_request_on_one_bidi_stream_replaces_the_active_run() {
     assert!(late_result_sent);
     assert!(saw_abort);
     assert!(terminal_json.get("error").is_none(), "{terminal_json}");
-    assert_eq!(provider.requests().len(), 2);
-    let replacement_history = serde_json::to_string(&provider.requests()[1].history).unwrap();
+    assert_eq!(protocol.requests().len(), 2);
+    let replacement_history = serde_json::to_string(&protocol.requests()[1].history).unwrap();
     assert!(replacement_history.contains("use the cropped history"));
     assert!(!replacement_history.contains("read it"));
     let statuses: Vec<String> = sqlx::query_scalar(
@@ -710,8 +710,8 @@ async fn assert_run_starts_without_parent_dependency(
     subagent_type_name: Option<&str>,
 ) {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "independent-model-call".into(),
         },
@@ -728,7 +728,7 @@ async fn assert_run_starts_without_parent_dependency(
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create(request_id).await.unwrap();
@@ -775,7 +775,7 @@ async fn assert_run_starts_without_parent_dependency(
     };
 
     assert!(terminal_json.get("error").is_none(), "{terminal_json}");
-    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(protocol.requests().len(), 1);
     let row: (String, Option<String>, Option<String>) = sqlx::query_as(
         "SELECT run_kind, parent_run_id, parent_tool_call_id FROM runs WHERE cursor_request_id = ?",
     )

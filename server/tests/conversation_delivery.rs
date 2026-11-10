@@ -1,6 +1,6 @@
 //! Verifies message delivery before, during, and after a Run.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -53,12 +53,12 @@ fn user_run(text: &str, id: &str) -> pb::AgentClientMessage {
 #[tokio::test]
 async fn background_completion_after_stop_waits_for_a_new_user_message() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(stop_response(
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(stop_response(
         "stop-answer",
         "Stopped. I won't take any further action.",
     ));
-    provider.push(stop_response(
+    protocol.push(stop_response(
         "resume-answer",
         "Continuing at your request.",
     ));
@@ -70,12 +70,12 @@ async fn background_completion_after_stop_waits_for_a_new_user_message() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let first = registry.get_or_create("user-stop").await.unwrap();
     drive_completion(&first, user_run("stop, seriously", "stop-message")).await;
-    let stopped_history = provider.requests()[0].history.clone();
+    let stopped_history = protocol.requests()[0].history.clone();
 
     let discord = registry.get_or_create("discord-after-stop").await.unwrap();
     drive_forwarded_completion(
@@ -87,7 +87,7 @@ async fn background_completion_after_stop_waits_for_a_new_user_message() {
     )
     .await;
     assert_eq!(
-        provider.requests().len(),
+        protocol.requests().len(),
         1,
         "Discord delivery cleared the explicit pause"
     );
@@ -104,7 +104,7 @@ async fn background_completion_after_stop_waits_for_a_new_user_message() {
         )
         .await;
         assert_eq!(
-            provider.requests().len(),
+            protocol.requests().len(),
             1,
             "background completion restarted the stopped agent"
         );
@@ -123,14 +123,14 @@ async fn background_completion_after_stop_waits_for_a_new_user_message() {
     let resumed_transport = registry.get_or_create("automatic-reconnect").await.unwrap();
     drive_forwarded_completion(&resumed_transport, reconnect).await;
     assert_eq!(
-        provider.requests().len(),
+        protocol.requests().len(),
         1,
         "reconnecting bypassed the conversation pause"
     );
 
     let next = registry.get_or_create("explicit-continue").await.unwrap();
     drive_completion(&next, user_run("continue the work", "continue-message")).await;
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 2);
     assert_eq!(
         stopped_history,
@@ -155,8 +155,8 @@ async fn background_completion_after_stop_waits_for_a_new_user_message() {
 #[tokio::test]
 async fn background_subagent_completion_starts_a_simulated_parent_turn() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(stop_response("model-call", "followed up"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(stop_response("model-call", "followed up"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -165,7 +165,7 @@ async fn background_subagent_completion_starts_a_simulated_parent_turn() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("completion-request").await.unwrap();
@@ -182,7 +182,7 @@ async fn background_subagent_completion_starts_a_simulated_parent_turn() {
     )
     .await;
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 1);
     let [runtime] = requests[0].history.as_slice() else {
         panic!("completion Run must add exactly one runtime message")
@@ -240,7 +240,7 @@ async fn background_subagent_completion_starts_a_simulated_parent_turn() {
         Some("child-id")
     );
 
-    provider.push(stop_response("model-call-2", "followed up again"));
+    protocol.push(stop_response("model-call-2", "followed up again"));
     let second = registry
         .get_or_create("completion-request-2")
         .await
@@ -251,7 +251,7 @@ async fn background_subagent_completion_starts_a_simulated_parent_turn() {
     )
     .await;
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 2);
     let runtime_ids = requests[1]
         .history
@@ -271,9 +271,9 @@ async fn background_subagent_completion_starts_a_simulated_parent_turn() {
 #[tokio::test]
 async fn background_completion_joins_the_active_run_instead_of_replacing_it() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    let first_ready = provider.push_gated(stop_response("model-call-1", "first response"));
-    provider.push(stop_response("model-call-2", "processed both completions"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    let first_ready = protocol.push_gated(stop_response("model-call-1", "first response"));
+    protocol.push(stop_response("model-call-2", "processed both completions"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -282,7 +282,7 @@ async fn background_completion_joins_the_active_run_instead_of_replacing_it() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let first = registry.get_or_create("active-completion-1").await.unwrap();
@@ -297,7 +297,7 @@ async fn background_completion_joins_the_active_run_instead_of_replacing_it() {
         )
         .await
     });
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         tokio::task::yield_now().await;
     }
 
@@ -318,7 +318,7 @@ async fn background_completion_joins_the_active_run_instead_of_replacing_it() {
 
     second_run.await.unwrap();
     first_run.await.unwrap();
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 2);
     let history = serde_json::to_string(&requests[1].history).unwrap();
     assert!(history.contains("child-1"));
@@ -335,7 +335,7 @@ async fn background_completion_joins_the_active_run_instead_of_replacing_it() {
 
 fn test_registry(
     store: &cursor_server::store::Store,
-    provider: &fake_provider::FakeProvider,
+    protocol: &fake_protocol::FakeProtocol,
 ) -> TransportRegistry {
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -345,7 +345,7 @@ fn test_registry(
     .unwrap();
     TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     )
 }
@@ -353,9 +353,9 @@ fn test_registry(
 #[tokio::test]
 async fn background_completion_marks_the_subagent_finished_in_the_parent_checkpoint() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(stop_response("model-call", "followed up"));
-    let registry = test_registry(&store, &provider);
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(stop_response("model-call", "followed up"));
+    let registry = test_registry(&store, &protocol);
     let handle = registry.get_or_create("finished-subagent").await.unwrap();
     let (checkpoint, _) = drive_completion(
         &handle,
@@ -372,10 +372,10 @@ async fn background_completion_marks_the_subagent_finished_in_the_parent_checkpo
 #[tokio::test]
 async fn completion_joining_an_active_run_marks_the_subagent_finished() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    let first_ready = provider.push_gated(stop_response("model-call-1", "first response"));
-    provider.push(stop_response("model-call-2", "processed both completions"));
-    let registry = test_registry(&store, &provider);
+    let protocol = fake_protocol::FakeProtocol::default();
+    let first_ready = protocol.push_gated(stop_response("model-call-1", "first response"));
+    protocol.push(stop_response("model-call-2", "processed both completions"));
+    let registry = test_registry(&store, &protocol);
     let state = backgrounded(&[("child-1", "task-1"), ("child-2", "task-2")]);
     let first = registry.get_or_create("joined-completion-1").await.unwrap();
     let first_state = state.clone();
@@ -392,7 +392,7 @@ async fn completion_joining_an_active_run_marks_the_subagent_finished() {
         )
         .await
     });
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         tokio::task::yield_now().await;
     }
     let second = registry.get_or_create("joined-completion-2").await.unwrap();
@@ -415,9 +415,9 @@ async fn completion_joining_an_active_run_marks_the_subagent_finished() {
 #[tokio::test]
 async fn completion_after_stop_marks_the_subagent_finished_without_resuming() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(stop_response("stop-answer", "Stopped."));
-    let registry = test_registry(&store, &provider);
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(stop_response("stop-answer", "Stopped."));
+    let registry = test_registry(&store, &protocol);
     let stop = registry
         .get_or_create("stop-before-completion")
         .await
@@ -439,7 +439,7 @@ async fn completion_after_stop_marks_the_subagent_finished_without_resuming() {
     .await
     .expect("a stopped parent must still record the finished subagent");
     assert_eq!(
-        provider.requests().len(),
+        protocol.requests().len(),
         1,
         "completion resumed a stopped agent"
     );
@@ -449,8 +449,8 @@ async fn completion_after_stop_marks_the_subagent_finished_without_resuming() {
 #[tokio::test]
 async fn retrying_one_background_completion_reuses_its_runtime_message() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(stop_response("model-call", "followed up"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(stop_response("model-call", "followed up"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -459,7 +459,7 @@ async fn retrying_one_background_completion_reuses_its_runtime_message() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let first = registry.get_or_create("completion-retry-1").await.unwrap();
@@ -476,7 +476,7 @@ async fn retrying_one_background_completion_reuses_its_runtime_message() {
     )
     .await;
 
-    provider.push(stop_response("model-call-2", "followed up again"));
+    protocol.push(stop_response("model-call-2", "followed up again"));
     let second = registry.get_or_create("completion-retry-2").await.unwrap();
     drive_completion(
         &second,
@@ -507,8 +507,8 @@ async fn retrying_one_background_completion_reuses_its_runtime_message() {
 #[tokio::test]
 async fn background_shell_completion_wakes_the_parent_with_the_captured_notification() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(stop_response(
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(stop_response(
         "shell-wakeup",
         "The background server was stopped.",
     ));
@@ -520,7 +520,7 @@ async fn background_shell_completion_wakes_the_parent_with_the_captured_notifica
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -536,7 +536,7 @@ async fn background_shell_completion_wakes_the_parent_with_the_captured_notifica
     )
     .await;
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     let [runtime] = requests[0].history.as_slice() else {
         panic!("Shell completion Run must add exactly one runtime message")
     };
@@ -592,8 +592,8 @@ async fn background_shell_completion_wakes_the_parent_with_the_captured_notifica
 #[tokio::test]
 async fn goal_continuation_starts_a_simulated_turn_and_preserves_goal_state() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(stop_response("model-call", "continuing the goal"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(stop_response("model-call", "continuing the goal"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -602,7 +602,7 @@ async fn goal_continuation_starts_a_simulated_turn_and_preserves_goal_state() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("goal-request").await.unwrap();
@@ -643,7 +643,7 @@ async fn goal_continuation_starts_a_simulated_turn_and_preserves_goal_state() {
     )
     .await;
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 1);
     let history = serde_json::to_string(&requests[0].history).unwrap();
     assert!(history.contains("find our screen-shot function"));

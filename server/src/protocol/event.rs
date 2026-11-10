@@ -1,5 +1,5 @@
-//! Defines normalized provider streaming events.
-use crate::model::{ProviderReplayState, Usage};
+//! Defines normalized protocol streaming events.
+use crate::model::{ProtocolReplayState, Usage};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FinishReason {
@@ -31,7 +31,7 @@ pub enum ModelEvent {
     ToolCallEnd {
         index: usize,
     },
-    ProviderReplayState(ProviderReplayState),
+    ProtocolReplayState(ProtocolReplayState),
     Usage(Usage),
     Done(FinishReason),
 }

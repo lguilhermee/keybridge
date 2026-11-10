@@ -1,10 +1,10 @@
-//! Translates between core model types and the plugin SDK wire contract.
+//! Translates between core model types and the provider SDK wire contract.
 use base64::{engine::general_purpose::STANDARD, Engine};
 
 use crate::{
     model::{
         ContentPart, ModelInvocation, ModelLatency, ProjectedContent, ProjectedMessage,
-        ProviderReplayState, Role, Usage,
+        ProtocolReplayState, Role, Usage,
     },
     protocol::{FinishReason, ModelEvent},
     Error, Result,
@@ -68,7 +68,7 @@ fn wire_message(message: &ProjectedMessage) -> Result<serde_json::Value> {
             "text": text,
             "thinking": thinking,
             "replayState": replay_state.as_ref().map(|state| serde_json::json!({
-                "providerKind": state.provider_kind,
+                "providerKind": state.protocol_kind,
                 "value": state.value,
             })),
             "toolCalls": calls.iter().map(|call| serde_json::json!({
@@ -113,12 +113,12 @@ fn joined_text(parts: &[ContentPart]) -> String {
         .collect()
 }
 
-/// Parses normalized events emitted by the plugin into core ModelEvents.
+/// Parses normalized events emitted by the provider into core ModelEvents.
 pub fn model_event(value: &serde_json::Value) -> Result<ModelEvent> {
     let kind = value
         .get("type")
         .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| Error::Protocol("plugin model event requires type".into()))?;
+        .ok_or_else(|| Error::Protocol("provider model event requires type".into()))?;
     let event = match kind {
         "text-start" => ModelEvent::TextStart,
         "text-delta" => ModelEvent::TextDelta(required_str(value, "text")?.to_owned()),
@@ -138,14 +138,14 @@ pub fn model_event(value: &serde_json::Value) -> Result<ModelEvent> {
         "tool-call-end" => ModelEvent::ToolCallEnd {
             index: required_index(value)?,
         },
-        "replay-state" => ModelEvent::ProviderReplayState(ProviderReplayState {
-            provider_kind: required_str(value, "providerKind")?.to_owned(),
+        "replay-state" => ModelEvent::ProtocolReplayState(ProtocolReplayState {
+            protocol_kind: required_str(value, "providerKind")?.to_owned(),
             value: value.get("value").cloned().unwrap_or_default(),
         }),
         "usage" => {
             let usage = value
                 .get("usage")
-                .ok_or_else(|| Error::Protocol("plugin usage event requires usage".into()))?;
+                .ok_or_else(|| Error::Protocol("provider usage event requires usage".into()))?;
             let tokens = |name: &str| usage.get(name).and_then(serde_json::Value::as_u64);
             let input_tokens = tokens("inputTokens");
             let cache_read_tokens = tokens("cacheReadTokens");
@@ -170,13 +170,13 @@ pub fn model_event(value: &serde_json::Value) -> Result<ModelEvent> {
             "tool-use" => FinishReason::ToolUse,
             reason => {
                 return Err(Error::Protocol(format!(
-                    "unknown plugin finish reason: {reason}"
+                    "unknown provider finish reason: {reason}"
                 )))
             }
         }),
         kind => {
             return Err(Error::Protocol(format!(
-                "unknown plugin model event: {kind}"
+                "unknown provider model event: {kind}"
             )))
         }
     };
@@ -187,7 +187,7 @@ fn required_str<'a>(value: &'a serde_json::Value, key: &str) -> Result<&'a str> 
     value
         .get(key)
         .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| Error::Protocol(format!("plugin model event requires string '{key}'")))
+        .ok_or_else(|| Error::Protocol(format!("provider model event requires string '{key}'")))
 }
 
 fn required_index(value: &serde_json::Value) -> Result<usize> {
@@ -195,7 +195,7 @@ fn required_index(value: &serde_json::Value) -> Result<usize> {
         .get("index")
         .and_then(serde_json::Value::as_u64)
         .map(|index| index as usize)
-        .ok_or_else(|| Error::Protocol("plugin model event requires index".into()))
+        .ok_or_else(|| Error::Protocol("provider model event requires index".into()))
 }
 
 #[cfg(test)]
@@ -232,8 +232,8 @@ mod tests {
                         content: ProjectedContent::Assistant {
                             text: "".into(),
                             thinking: "t".into(),
-                            replay_state: Some(ProviderReplayState {
-                                provider_kind: "openai_responses".into(),
+                            replay_state: Some(ProtocolReplayState {
+                                protocol_kind: "openai_responses".into(),
                                 value: serde_json::json!({"items": []}),
                             }),
                             calls: vec![ToolCallContent {
@@ -275,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_plugin_events_into_model_events() {
+    fn parses_provider_events_into_model_events() {
         assert_eq!(
             model_event(&serde_json::json!({"type":"text-delta","text":"hi"})).unwrap(),
             ModelEvent::TextDelta("hi".into())
@@ -305,7 +305,7 @@ mod tests {
     }
 
     #[test]
-    fn plugin_usage_context_is_unknown_without_an_input_count() {
+    fn provider_usage_context_is_unknown_without_an_input_count() {
         let usage = model_event(&serde_json::json!({
             "type":"usage",
             "usage":{"inputTokens":null,"outputTokens":2,"cacheReadTokens":4,"cacheWriteTokens":6}

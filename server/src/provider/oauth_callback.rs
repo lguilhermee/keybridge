@@ -1,4 +1,4 @@
-//! Core-owned loopback callback transport for plugin OAuth authorization-code flows.
+//! Core-owned loopback callback transport for provider OAuth authorization-code flows.
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use axum::{
@@ -42,8 +42,8 @@ impl Drop for CallbackHandle {
 #[derive(Clone)]
 struct CallbackState {
     expected_state: String,
-    plugin_name: String,
-    plugin_icon: String,
+    provider_name: String,
+    provider_icon: String,
     resource_name: serde_json::Value,
     sender: Arc<Mutex<Option<oneshot::Sender<CallbackRequest>>>>,
     shutdown: CancellationToken,
@@ -61,8 +61,8 @@ pub(super) async fn bind(
     port: Option<u16>,
     path: &str,
     expected_state: String,
-    plugin_name: String,
-    plugin_icon: String,
+    provider_name: String,
+    provider_icon: String,
     resource_name: serde_json::Value,
 ) -> Result<CallbackHandle> {
     let address = SocketAddr::from(([127, 0, 0, 1], port.unwrap_or(0)));
@@ -70,7 +70,7 @@ pub(super) async fn bind(
         .await
         .map_err(|error| {
             Error::Config(format!(
-                "cannot bind plugin OAuth callback at {address}: {error}"
+                "cannot bind provider OAuth callback at {address}: {error}"
             ))
         })?;
     let local_address = listener.local_addr()?;
@@ -79,8 +79,8 @@ pub(super) async fn bind(
     let shutdown = CancellationToken::new();
     let state = CallbackState {
         expected_state,
-        plugin_name,
-        plugin_icon,
+        provider_name,
+        provider_icon,
         resource_name,
         sender: Arc::new(Mutex::new(Some(sender))),
         shutdown: shutdown.clone(),
@@ -94,7 +94,7 @@ pub(super) async fn bind(
             .with_graceful_shutdown(async move { graceful.cancelled().await })
             .await
         {
-            tracing::debug!(%error, "plugin OAuth callback server stopped");
+            tracing::debug!(%error, "provider OAuth callback server stopped");
         }
     });
     Ok(CallbackHandle {
@@ -121,9 +121,10 @@ async fn handle_callback(
 
     let result = match query.code.filter(|code| !code.trim().is_empty()) {
         Some(code) => Ok(code),
-        None => Err(query.error_description.or(query.error).unwrap_or_else(|| {
-            "Authorization was cancelled.".to_owned()
-        })),
+        None => Err(query
+            .error_description
+            .or(query.error)
+            .unwrap_or_else(|| "Authorization was cancelled.".to_owned())),
     };
     let Some(sender) = state.sender.lock().await.take() else {
         return Html(render_page(
@@ -211,8 +212,8 @@ fn render_page(
     success: bool,
     message: Option<&str>,
 ) -> String {
-    let plugin_name = escape_html(&state.plugin_name);
-    let plugin_icon = escape_html(&state.plugin_icon);
+    let provider_name = escape_html(&state.provider_name);
+    let provider_icon = escape_html(&state.provider_icon);
     let resource_name = escape_html(&localized_value(&state.resource_name, locale));
     let title = if success {
         "Resource added"
@@ -221,7 +222,7 @@ fn render_page(
     };
     let detail = message.map(escape_html).unwrap_or_else(|| {
         if success {
-            "A resource has been added for this plugin.".to_owned()
+            "A resource has been added for this provider.".to_owned()
         } else {
             "Return to the app and try again.".to_owned()
         }
@@ -232,8 +233,8 @@ fn render_page(
 <html lang="{locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
 <title>{title}</title><style>
-:root{{color-scheme:light dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;font:15px system-ui,-apple-system,sans-serif;background:Canvas;color:CanvasText}}main{{width:min(420px,calc(100vw - 48px));text-align:center}}img{{width:56px;height:56px;object-fit:contain}}h1{{font-size:20px;margin:16px 0 6px}}.plugin{{opacity:.72;margin-bottom:24px}}.resource{{font-weight:600;margin:8px 0}}.detail{{opacity:.82;line-height:1.6}}.close{{opacity:.62;margin-top:24px;font-size:13px}}
-</style></head><body><main><img src="{plugin_icon}" alt=""><h1>{title}</h1><div class="plugin">{plugin_name}</div><div class="resource">{resource_name}</div><div class="detail">{detail}</div><div class="close">{close}</div></main></body></html>"#
+:root{{color-scheme:light dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;font:15px system-ui,-apple-system,sans-serif;background:Canvas;color:CanvasText}}main{{width:min(420px,calc(100vw - 48px));text-align:center}}img{{width:56px;height:56px;object-fit:contain}}h1{{font-size:20px;margin:16px 0 6px}}.provider{{opacity:.72;margin-bottom:24px}}.resource{{font-weight:600;margin:8px 0}}.detail{{opacity:.82;line-height:1.6}}.close{{opacity:.62;margin-top:24px;font-size:13px}}
+</style></head><body><main><img src="{provider_icon}" alt=""><h1>{title}</h1><div class="provider">{provider_name}</div><div class="resource">{resource_name}</div><div class="detail">{detail}</div><div class="close">{close}</div></main></body></html>"#
     )
 }
 
@@ -242,19 +243,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn escapes_plugin_content_in_callback_page() {
+    fn escapes_provider_content_in_callback_page() {
         let state = CallbackState {
             expected_state: "state".into(),
-            plugin_name: "<plugin>".into(),
-            plugin_icon: "data:image/svg+xml;base64,abc".into(),
+            provider_name: "<provider>".into(),
+            provider_icon: "data:image/svg+xml;base64,abc".into(),
             resource_name: serde_json::json!({"en-US": "Accounts & keys"}),
             sender: Arc::new(Mutex::new(None)),
             shutdown: CancellationToken::new(),
         };
         let page = render_page(&state, "en-US", true, None);
-        assert!(page.contains("&lt;plugin&gt;"));
+        assert!(page.contains("&lt;provider&gt;"));
         assert!(page.contains("Accounts &amp; keys"));
-        assert!(!page.contains("<plugin>"));
+        assert!(!page.contains("<provider>"));
     }
 
     #[tokio::test]
@@ -263,7 +264,7 @@ mod tests {
             None,
             "/oauth-callback",
             "expected".into(),
-            "Plugin".into(),
+            "Provider".into(),
             "data:image/svg+xml;base64,abc".into(),
             serde_json::json!("Account"),
         )

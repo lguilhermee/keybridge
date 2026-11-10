@@ -13,8 +13,8 @@ use crate::{
         transport::TransportRegistry,
     },
     local_app::CursorHarness,
-    provider::{PluginRegistry, PluginRuntime},
-    protocol::ProviderRouter,
+    protocol::ProtocolRouter,
+    provider::{ProviderRegistry, ProviderRuntime},
     search::WebCache,
     store::Store,
     Result,
@@ -39,48 +39,48 @@ impl App {
         }
         let assets = PromptAssets::embedded()?;
         let compiler = PromptCompiler::new(assets);
-        let plugin_runtime = PluginRuntime::managed()?;
+        let provider_runtime = ProviderRuntime::managed()?;
         let clients = crate::network::NetworkClients::new(store.clone());
         let headroom = crate::headroom::HeadroomRuntime::new(store.clone(), clients.clone());
-        let plugins = PluginRegistry::managed(
+        let providers = ProviderRegistry::managed(
             store.clone(),
-            plugin_runtime.clone(),
+            provider_runtime.clone(),
             config.app_version.clone(),
             headroom.clone(),
         )?;
-        let provider = std::sync::Arc::new(ProviderRouter::new(
+        let protocol = std::sync::Arc::new(ProtocolRouter::new(
             store.clone(),
-            plugins.clone(),
+            providers.clone(),
             clients.clone(),
             headroom.clone(),
-            config.provider_request_timeout,
-            config.provider_stream_idle_timeout,
+            config.protocol_request_timeout,
+            config.protocol_stream_idle_timeout,
         ));
         let byok = api::byok::router(
             store.clone(),
-            plugins.clone(),
-            provider.clone(),
+            providers.clone(),
+            protocol.clone(),
             Some(api::byok::NativeForwarder::new(
                 store.clone(),
                 clients.clone(),
                 headroom.clone(),
-                config.provider_request_timeout,
-                config.provider_stream_idle_timeout,
+                config.protocol_request_timeout,
+                config.protocol_stream_idle_timeout,
             )),
         );
-        let registry = TransportRegistry::with_plugins(
+        let registry = TransportRegistry::with_providers(
             store.clone(),
-            provider.clone(),
+            protocol.clone(),
             compiler,
             WebCache::managed()?,
-            plugins.clone(),
+            providers.clone(),
             crate::config::managed_data_dir()?.join("rules"),
         );
         let control = control::ControlService::new(
             store.clone(),
-            provider,
-            plugin_runtime,
-            plugins,
+            protocol,
+            provider_runtime,
+            providers,
             clients.clone(),
             headroom.clone(),
         )?;

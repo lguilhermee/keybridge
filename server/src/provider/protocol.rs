@@ -1,4 +1,4 @@
-//! Defines newline-delimited messages exchanged with a plugin worker.
+//! Defines newline-delimited messages exchanged with a provider worker.
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]

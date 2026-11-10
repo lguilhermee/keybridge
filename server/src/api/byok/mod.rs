@@ -17,24 +17,24 @@ use serde_json::{json, Value};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    model::ModelInvocation, provider::PluginRegistry, protocol::Provider, store::Store, Error,
+    model::ModelInvocation, protocol::Protocol, provider::ProviderRegistry, store::Store, Error,
 };
 
-use self::protocol::Protocol;
+use self::protocol::ApiProtocol;
 pub use direct::NativeForwarder;
 
 #[derive(Clone)]
 struct ApiState {
     store: Store,
-    plugins: PluginRegistry,
-    provider: Arc<dyn Provider>,
+    providers: ProviderRegistry,
+    protocol: Arc<dyn Protocol>,
     native: Option<NativeForwarder>,
 }
 
 pub fn router(
     store: Store,
-    plugins: PluginRegistry,
-    provider: Arc<dyn Provider>,
+    providers: ProviderRegistry,
+    protocol: Arc<dyn Protocol>,
     native: Option<NativeForwarder>,
 ) -> Router {
     Router::new()
@@ -44,8 +44,8 @@ pub fn router(
         .route("/byok/v1/messages", post(messages))
         .with_state(ApiState {
             store,
-            plugins,
-            provider,
+            providers,
+            protocol,
             native,
         })
 }
@@ -105,7 +105,7 @@ async fn list_models(State(state): State<ApiState>, headers: HeaderMap) -> Respo
     if let Err(error) = authorized(&state, &headers).await {
         return *error;
     }
-    match models::list(&state.store, &state.plugins).await {
+    match models::list(&state.store, &state.providers).await {
         Ok(models) => Json(models::response(&models)).into_response(),
         Err(error) => api_error(StatusCode::CONFLICT, error),
     }
@@ -116,7 +116,7 @@ async fn chat(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> Response {
-    generate(state, headers, body, Protocol::Chat).await
+    generate(state, headers, body, ApiProtocol::Chat).await
 }
 
 async fn responses(
@@ -124,7 +124,7 @@ async fn responses(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> Response {
-    generate(state, headers, body, Protocol::Responses).await
+    generate(state, headers, body, ApiProtocol::Responses).await
 }
 
 async fn messages(
@@ -132,14 +132,14 @@ async fn messages(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> Response {
-    generate(state, headers, body, Protocol::Messages).await
+    generate(state, headers, body, ApiProtocol::Messages).await
 }
 
 async fn generate(
     state: ApiState,
     headers: HeaderMap,
     body: Value,
-    protocol: Protocol,
+    protocol: ApiProtocol,
 ) -> Response {
     if let Err(error) = authorized(&state, &headers).await {
         return *error;
@@ -151,7 +151,7 @@ async fn generate(
     else {
         return api_error(StatusCode::BAD_REQUEST, "model is required");
     };
-    let models = match models::list(&state.store, &state.plugins).await {
+    let models = match models::list(&state.store, &state.providers).await {
         Ok(models) => models,
         Err(error) => return api_error(StatusCode::CONFLICT, error),
     };
@@ -163,7 +163,7 @@ async fn generate(
     };
     if let Some(native) = &state.native {
         match state.store.model(&model.internal_id).await {
-            Ok(Some(config)) if protocol.provider_type() == config.provider_type() => {
+            Ok(Some(config)) if protocol.protocol_type() == config.protocol_type() => {
                 return match native.forward(protocol, &headers, body, &config).await {
                     Ok(response) => response,
                     Err(error) => api_error(StatusCode::BAD_GATEWAY, error),
@@ -188,7 +188,7 @@ async fn generate(
         request,
     };
     let cancellation = CancellationToken::new();
-    let stream = state.provider.stream(invocation, cancellation.clone());
+    let stream = state.protocol.stream(invocation, cancellation.clone());
     if parsed.stream {
         output::streamed(protocol, stream, cancellation, id, parsed.public_model_id)
     } else {

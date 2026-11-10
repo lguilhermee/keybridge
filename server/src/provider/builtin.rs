@@ -1,10 +1,10 @@
-//! Pre-installs bundled built-in plugins into the user's installed directory.
+//! Pre-installs bundled built-in providers into the user's installed directory.
 use std::path::Path;
 
 use super::definition::write_if_changed;
 use crate::Result;
 
-/// Built-in plugin files packaged into the binary; release builds have no source directory, so they are preinstalled from here.
+/// Built-in provider files packaged into the binary; release builds have no source directory, so they are preinstalled from here.
 const CODEX_AUTH: &[(&str, &str)] = &[
     (
         "plugin.json",
@@ -269,7 +269,7 @@ const OPENCODE_AUTH: &[(&str, &str)] = &[
     ),
 ];
 
-const PLUGINS: &[(&str, &[(&str, &str)])] = &[
+const PROVIDERS: &[(&str, &[(&str, &str)])] = &[
     ("codex-auth", CODEX_AUTH),
     ("grok-auth", GROK_AUTH),
     ("antigravity-auth", ANTIGRAVITY_AUTH),
@@ -278,15 +278,15 @@ const PLUGINS: &[(&str, &[(&str, &str)])] = &[
     ("opencode-auth", OPENCODE_AUTH),
 ];
 
-/// Preinstalls built-in plugins into the installed directory. The manifest version is the cache key:
+/// Preinstalls built-in providers into the installed directory. The manifest version is the cache key:
 /// identical version means zero writes; a version change syncs the whole directory and removes leftover files.
 pub(super) fn install(installed: &Path) -> Result<()> {
-    for (name, files) in PLUGINS {
+    for (name, files) in PROVIDERS {
         let directory = installed.join(name);
         if disk_version(&directory) == Some(embedded_version(files)?) {
             continue;
         }
-        write_plugin(&directory, files)?;
+        write_provider(&directory, files)?;
     }
     Ok(())
 }
@@ -296,13 +296,13 @@ fn embedded_version(files: &[(&str, &str)]) -> Result<String> {
         .iter()
         .find(|(name, _)| *name == "plugin.json")
         .map(|(_, content)| *content)
-        .expect("built-in plugin bundles plugin.json");
+        .expect("built-in provider bundles plugin.json");
     let value: serde_json::Value = serde_json::from_str(manifest)?;
     value
         .get("version")
         .and_then(serde_json::Value::as_str)
         .map(str::to_owned)
-        .ok_or_else(|| crate::Error::Config("built-in plugin manifest requires version".into()))
+        .ok_or_else(|| crate::Error::Config("built-in provider manifest requires version".into()))
 }
 
 fn disk_version(directory: &Path) -> Option<String> {
@@ -311,10 +311,10 @@ fn disk_version(directory: &Path) -> Option<String> {
     Some(value.get("version")?.as_str()?.to_owned())
 }
 
-fn write_plugin(directory: &Path, files: &[(&str, &str)]) -> Result<()> {
+fn write_provider(directory: &Path, files: &[(&str, &str)]) -> Result<()> {
     for (relative, content) in files {
         let path = directory.join(relative);
-        let parent = path.parent().expect("plugin file path has a parent");
+        let parent = path.parent().expect("provider file path has a parent");
         std::fs::create_dir_all(parent)?;
         #[cfg(unix)]
         {
@@ -332,7 +332,7 @@ fn write_plugin(directory: &Path, files: &[(&str, &str)]) -> Result<()> {
     Ok(())
 }
 
-/// Removes files and empty directories from the plugin directory that are not in the embedded manifest (leftovers from older versions).
+/// Removes files and empty directories from the provider directory that are not in the embedded manifest (leftovers from older versions).
 fn prune_unknown_files(root: &Path, directory: &Path, files: &[(&str, &str)]) -> Result<()> {
     for entry in std::fs::read_dir(directory)? {
         let entry = entry?;
@@ -369,11 +369,11 @@ mod tests {
     #[test]
     fn install_is_version_gated_and_syncs_on_version_change() {
         let root = tempfile::tempdir().unwrap();
-        let plugin = root.path().join("codex-auth");
+        let provider = root.path().join("codex-auth");
 
         install(root.path()).unwrap();
         assert_eq!(
-            std::fs::read_to_string(plugin.join("main.ts")).unwrap(),
+            std::fs::read_to_string(provider.join("main.ts")).unwrap(),
             embedded_main()
         );
         assert!(root
@@ -383,25 +383,25 @@ mod tests {
         assert!(root.path().join("devin-auth/provider.ts").is_file());
 
         // Version identical: local edits and extra files are left alone and nothing is written.
-        std::fs::write(plugin.join("main.ts"), "edited").unwrap();
-        std::fs::write(plugin.join("stale.ts"), "extra").unwrap();
+        std::fs::write(provider.join("main.ts"), "edited").unwrap();
+        std::fs::write(provider.join("stale.ts"), "extra").unwrap();
         install(root.path()).unwrap();
         assert_eq!(
-            std::fs::read_to_string(plugin.join("main.ts")).unwrap(),
+            std::fs::read_to_string(provider.join("main.ts")).unwrap(),
             "edited"
         );
-        assert!(plugin.join("stale.ts").exists());
+        assert!(provider.join("stale.ts").exists());
 
         // Version changed: the whole directory is synced back to the embedded content and leftovers are cleaned up.
-        let manifest = std::fs::read_to_string(plugin.join("plugin.json")).unwrap();
+        let manifest = std::fs::read_to_string(provider.join("plugin.json")).unwrap();
         let mut value: serde_json::Value = serde_json::from_str(&manifest).unwrap();
         value["version"] = serde_json::Value::String("0.0.1".into());
-        std::fs::write(plugin.join("plugin.json"), value.to_string()).unwrap();
+        std::fs::write(provider.join("plugin.json"), value.to_string()).unwrap();
         install(root.path()).unwrap();
         assert_eq!(
-            std::fs::read_to_string(plugin.join("main.ts")).unwrap(),
+            std::fs::read_to_string(provider.join("main.ts")).unwrap(),
             embedded_main()
         );
-        assert!(!plugin.join("stale.ts").exists());
+        assert!(!provider.join("stale.ts").exists());
     }
 }

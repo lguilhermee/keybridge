@@ -44,8 +44,9 @@ pub struct ToolResultContent {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct ProviderReplayState {
-    pub provider_kind: String,
+pub struct ProtocolReplayState {
+    #[serde(rename = "provider_kind")]
+    pub protocol_kind: String,
     pub value: Value,
 }
 
@@ -74,7 +75,7 @@ pub enum MessageContent {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         tool_round_id: Option<ToolRoundId>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        replay_state: Option<ProviderReplayState>,
+        replay_state: Option<ProtocolReplayState>,
         tool_calls: Vec<ToolCallContent>,
     },
     ToolResult(ToolResultContent),

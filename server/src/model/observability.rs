@@ -1,5 +1,5 @@
-//! Defines provider call and usage observability records.
-use super::ProviderType;
+//! Defines model call and usage observability records.
+use super::ProtocolType;
 
 mod usage {
     use std::ops::AddAssign;
@@ -104,7 +104,7 @@ pub use usage::*;
 mod llm_call {
     use serde::Serialize;
 
-    use super::ProviderType;
+    use super::ProtocolType;
 
     #[derive(Clone, Debug)]
     pub struct NewLlmCall {
@@ -113,9 +113,9 @@ mod llm_call {
         pub conversation_id: String,
         pub provider_call_index: i64,
         pub model_hash: String,
-        pub provider_type: ProviderType,
-        pub provider_url: String,
-        pub request_type: ProviderType,
+        pub protocol_type: ProtocolType,
+        pub endpoint_url: String,
+        pub request_type: ProtocolType,
         pub request_url: String,
         pub model_id: String,
         pub display_name: String,
@@ -133,8 +133,10 @@ mod llm_call {
         pub conversation_id: String,
         pub provider_call_index: i64,
         pub model_hash: Option<String>,
-        pub provider_type: String,
-        pub provider_url: String,
+        #[serde(rename = "provider_type")]
+        pub protocol_type: String,
+        #[serde(rename = "provider_url")]
+        pub endpoint_url: String,
         pub request_type: String,
         pub request_url: String,
         pub model_id: String,

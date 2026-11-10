@@ -1,4 +1,4 @@
-//! Orchestrates plugin capabilities: resources, model catalogs, and invocation.
+//! Orchestrates provider capabilities: resources, model catalogs, and invocation.
 use std::{collections::HashMap, path::Path, sync::Arc, time::Duration};
 
 use async_stream::try_stream;
@@ -9,23 +9,25 @@ use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 
 use super::{
-    catalog::{PluginCatalog, PluginEntry},
-    data::PluginDataStore,
+    catalog::{ProviderCatalog, ProviderEntry},
+    data::ProviderDataStore,
     descriptor::{
-        parse_model_id, PluginDescriptor, PluginModelDescriptor, PluginProviderDescriptor,
-        PluginResourceDescriptor, PluginResourceView, ProviderDefinition, ResourceActionResponse,
-        ResourceActionResult, ResourceDefinition, ResourcePresentation, OAUTH2_ADD_METHOD,
-        OAUTH2_AUTHORIZATION_CODE_ADD_METHOD,
+        parse_model_id, ChannelDefinition, ChannelDescriptor, ProviderDescriptor,
+        ProviderModelDescriptor, ProviderResourceDescriptor, ProviderResourceView,
+        ResourceActionResponse, ResourceActionResult, ResourceDefinition, ResourcePresentation,
+        OAUTH2_ADD_METHOD, OAUTH2_AUTHORIZATION_CODE_ADD_METHOD,
     },
     oauth_callback::{self, CallbackHandle, CallbackOutcome, CallbackRequest},
-    runtime::PluginRuntime,
-    state::{now_ms, PluginStateStore, ResourceDraft, ResourcePatch, ResourceRecord, StoredModel},
+    runtime::ProviderRuntime,
+    state::{
+        now_ms, ProviderStateStore, ResourceDraft, ResourcePatch, ResourceRecord, StoredModel,
+    },
     wire,
-    worker::{PluginWorker, WorkerStreamItem},
+    worker::{ProviderWorker, WorkerStreamItem},
 };
 use crate::{
     model::ModelInvocation,
-    protocol::ProviderStream,
+    protocol::ProtocolStream,
     protocol::{CallRecorder, ModelEvent},
     store::Store,
     Error, Result,
@@ -35,23 +37,23 @@ const OAUTH_SLOW_DOWN_STEP_MS: i64 = 5_000;
 const MAX_IMPORT_DRAFTS: usize = 256;
 
 #[derive(Clone)]
-pub struct PluginRegistry {
+pub struct ProviderRegistry {
     inner: Arc<RegistryInner>,
 }
 
 struct RegistryInner {
     store: Store,
-    runtime: PluginRuntime,
-    catalog: PluginCatalog,
-    state: PluginStateStore,
+    runtime: ProviderRuntime,
+    catalog: ProviderCatalog,
+    state: ProviderStateStore,
     headroom: crate::headroom::HeadroomRuntime,
-    entries: RwLock<Option<Vec<PluginEntry>>>,
-    workers: Mutex<HashMap<String, Arc<PluginWorker>>>,
+    entries: RwLock<Option<Vec<ProviderEntry>>>,
+    workers: Mutex<HashMap<String, Arc<ProviderWorker>>>,
     oauth_sessions: Mutex<HashMap<String, OAuthSession>>,
 }
 
 struct OAuthSession {
-    plugin_id: String,
+    provider_id: String,
     resource_type: String,
     method_id: String,
     session: serde_json::Value,
@@ -72,14 +74,14 @@ enum OAuthFlow {
 
 enum OAuthPollWork {
     DeviceCode {
-        plugin_id: String,
+        provider_id: String,
         resource_type: String,
         method_id: String,
         session: serde_json::Value,
         poll_interval_ms: i64,
     },
     AuthorizationCode {
-        plugin_id: String,
+        provider_id: String,
         resource_type: String,
         method_id: String,
         session: serde_json::Value,
@@ -126,27 +128,27 @@ pub struct ImportResponse {
     pub model_sync_error: Option<String>,
 }
 
-/// Plugin model metadata the routing branch needs when creating a Recorder.
+/// Provider model metadata the routing branch needs when creating a Recorder.
 #[derive(Clone, Debug)]
-pub struct PluginInvocationPlan {
-    pub model: PluginModelDescriptor,
+pub struct ProviderInvocationPlan {
+    pub model: ProviderModelDescriptor,
     pub request_url: String,
 }
 
-impl PluginRegistry {
+impl ProviderRegistry {
     pub fn managed(
         store: Store,
-        runtime: PluginRuntime,
+        runtime: ProviderRuntime,
         app_version: String,
         headroom: crate::headroom::HeadroomRuntime,
     ) -> Result<Self> {
-        let data = PluginDataStore::managed()?;
+        let data = ProviderDataStore::managed()?;
         Ok(Self {
             inner: Arc::new(RegistryInner {
                 store,
                 runtime,
-                catalog: PluginCatalog::managed(app_version)?,
-                state: PluginStateStore::new(data),
+                catalog: ProviderCatalog::managed(app_version)?,
+                state: ProviderStateStore::new(data),
                 headroom,
                 entries: RwLock::new(None),
                 workers: Mutex::new(HashMap::new()),
@@ -155,14 +157,14 @@ impl PluginRegistry {
         })
     }
 
-    pub async fn plugins(&self) -> Vec<PluginDescriptor> {
+    pub async fn providers(&self) -> Vec<ProviderDescriptor> {
         let Some(executable) = self.inner.runtime.executable() else {
             return self
                 .inner
                 .catalog
                 .manifests()
                 .into_iter()
-                .map(|(manifest, icon)| PluginDescriptor {
+                .map(|(manifest, icon)| ProviderDescriptor {
                     id: manifest.id,
                     name: manifest.name,
                     version: manifest.version,
@@ -173,36 +175,36 @@ impl PluginRegistry {
                 })
                 .collect();
         };
-        let mut plugins = Vec::new();
+        let mut providers = Vec::new();
         for entry in self.entries(&executable).await {
-            plugins.push(self.descriptor(&entry, &executable).await);
+            providers.push(self.descriptor(&entry, &executable).await);
         }
-        plugins
+        providers
     }
 
-    /// All plugin models whose invocation prerequisites are satisfied; each enters the Cursor catalog independently.
-    pub async fn configured_models(&self) -> Vec<PluginModelDescriptor> {
+    /// All provider models whose invocation prerequisites are satisfied; each enters the Cursor catalog independently.
+    pub async fn configured_models(&self) -> Vec<ProviderModelDescriptor> {
         let Some(executable) = self.inner.runtime.executable() else {
             return Vec::new();
         };
         let mut models = Vec::new();
         for entry in self.entries(&executable).await {
-            for provider in &entry.definition.providers {
-                if !self.provider_configured(&entry, provider).await {
+            for channel in &entry.definition.providers {
+                if !self.channel_configured(&entry, channel).await {
                     continue;
                 }
                 let stored = self
                     .inner
                     .state
-                    .models(&entry.manifest.id, &provider.id)
+                    .models(&entry.manifest.id, &channel.id)
                     .await
                     .unwrap_or_default();
                 models.extend(stored.iter().filter(|model| model.enabled).map(|model| {
-                    PluginModelDescriptor::new(
+                    ProviderModelDescriptor::new(
                         &entry.manifest.id,
                         &entry.manifest.name,
                         &entry.icon,
-                        provider,
+                        channel,
                         model,
                     )
                 }));
@@ -211,59 +213,59 @@ impl PluginRegistry {
         models
     }
 
-    pub async fn model_descriptor(&self, model_id: &str) -> Result<PluginModelDescriptor> {
-        let (plugin_id, provider_id, upstream_id) = parse_model_id(model_id)
-            .ok_or_else(|| Error::Provider(format!("invalid plugin model ID: {model_id}")))?;
+    pub async fn model_descriptor(&self, model_id: &str) -> Result<ProviderModelDescriptor> {
+        let (provider_id, channel_id, upstream_id) = parse_model_id(model_id)
+            .ok_or_else(|| Error::Provider(format!("invalid provider model ID: {model_id}")))?;
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
-        let provider = find_provider(&entry, provider_id)?;
+        let entry = self.find_entry(&executable, provider_id).await?;
+        let channel = find_channel(&entry, channel_id)?;
         let stored = self
             .inner
             .state
-            .models(plugin_id, provider_id)
+            .models(provider_id, channel_id)
             .await?
             .into_iter()
             .find(|model| model.id == upstream_id)
-            .ok_or_else(|| Error::RunNotFound(format!("plugin model {model_id}")))?;
-        Ok(PluginModelDescriptor::new(
-            plugin_id,
+            .ok_or_else(|| Error::RunNotFound(format!("provider model {model_id}")))?;
+        Ok(ProviderModelDescriptor::new(
+            provider_id,
             &entry.manifest.name,
             &entry.icon,
-            provider,
+            channel,
             &stored,
         ))
     }
 
-    pub async fn plan_model(&self, model_id: &str) -> Result<PluginInvocationPlan> {
+    pub async fn plan_model(&self, model_id: &str) -> Result<ProviderInvocationPlan> {
         let model = self.model_descriptor(model_id).await?;
-        let request_url = format!("plugin://{}/{}", model.plugin_id, model.provider_id);
-        Ok(PluginInvocationPlan { model, request_url })
+        let request_url = format!("plugin://{}/{}", model.provider_id, model.channel_id);
+        Ok(ProviderInvocationPlan { model, request_url })
     }
 
-    /// The unified Provider stream for plugin models: picks the first usable resource and executes via the Worker,
-    /// with events flowing through the same pipeline as built-in Providers. Future load balancing retries here.
+    /// The unified Protocol stream for provider models: picks the first usable resource and executes via the Worker,
+    /// with events flowing through the same pipeline as built-in Protocols. Future load balancing retries here.
     pub fn stream_model(
         &self,
         invocation: ModelInvocation,
         cancellation: CancellationToken,
         recorder: CallRecorder,
-    ) -> ProviderStream {
+    ) -> ProtocolStream {
         let registry = self.clone();
         Box::pin(try_stream! {
             let model_id = invocation.request.model.model_id.clone();
-            let (plugin_id, provider_id, upstream_id) = parse_model_id(&model_id)
-                .map(|(plugin, provider, model)| (plugin.to_owned(), provider.to_owned(), model.to_owned()))
-                .ok_or_else(|| Error::Provider(format!("invalid plugin model ID: {model_id}")))?;
+            let (provider_id, channel_id, upstream_id) = parse_model_id(&model_id)
+                .map(|(provider, channel, model)| (provider.to_owned(), channel.to_owned(), model.to_owned()))
+                .ok_or_else(|| Error::Provider(format!("invalid provider model ID: {model_id}")))?;
             let executable = registry.executable()?;
-            let entry = registry.find_entry(&executable, &plugin_id).await?;
-            let provider = find_provider(&entry, &provider_id)?.clone();
-            let stored = registry.inner.state.models(&plugin_id, &provider_id).await?
+            let entry = registry.find_entry(&executable, &provider_id).await?;
+            let channel = find_channel(&entry, &channel_id)?.clone();
+            let stored = registry.inner.state.models(&provider_id, &channel_id).await?
                 .into_iter()
                 .find(|model| model.id == upstream_id)
-                .ok_or_else(|| Error::RunNotFound(format!("plugin model {model_id}")))?;
-            let candidates: Vec<Option<(String, ResourceRecord)>> = match &provider.resource_type {
+                .ok_or_else(|| Error::RunNotFound(format!("provider model {model_id}")))?;
+            let candidates: Vec<Option<(String, ResourceRecord)>> = match &channel.resource_type {
                 Some(resource_type) => registry
-                    .select_resources(&plugin_id, resource_type)
+                    .select_resources(&provider_id, resource_type)
                     .await?
                     .into_iter()
                     .map(|record| Some((resource_type.clone(), record)))
@@ -276,7 +278,7 @@ impl PluginRegistry {
             yield ModelEvent::Start { model_call_id: invocation.call_id.clone() };
             for (attempt_index, resource) in candidates.into_iter().enumerate() {
                 let params = serde_json::json!({
-                    "providerId": provider_id,
+                    "providerId": channel_id,
                     "model": stored.snapshot(),
                     "resource": resource.as_ref().map(|(resource_type, record)| record.snapshot(resource_type)),
                     "request": request,
@@ -314,10 +316,10 @@ impl PluginRegistry {
                                 if let Err(error) = registry
                                     .inner
                                     .state
-                                    .apply_patch(&plugin_id, resource_type, &record.id, patch)
+                                    .apply_patch(&provider_id, resource_type, &record.id, patch)
                                     .await
                                 {
-                                    tracing::warn!(plugin = %plugin_id, %error, "failed to apply plugin resource patch");
+                                    tracing::warn!(provider = %provider_id, %error, "failed to apply provider resource patch");
                                 }
                             }
                             match status {
@@ -326,14 +328,14 @@ impl PluginRegistry {
                                     let message = value
                                         .get("message")
                                         .and_then(serde_json::Value::as_str)
-                                        .unwrap_or("plugin provider call failed");
+                                        .unwrap_or("provider channel call failed");
                                     if !emitted && attempt_index + 1 < total_candidates {
                                         tracing::warn!(
-                                            plugin = %plugin_id,
+                                            provider = %provider_id,
                                             attempt = attempt_index + 1,
                                             total = total_candidates,
                                             %message,
-                                            "plugin resource hit limit or failed before output; switching to next resource"
+                                            "provider resource hit limit or failed before output; switching to next resource"
                                         );
                                         switch_to_next = true;
                                         break;
@@ -344,12 +346,12 @@ impl PluginRegistry {
                                     let message = value
                                         .get("message")
                                         .and_then(serde_json::Value::as_str)
-                                        .unwrap_or("plugin provider call failed");
+                                        .unwrap_or("provider channel call failed");
                                     Err(Error::Provider(message.to_owned()))?;
                                 }
                                 status => {
                                     Err(Error::Protocol(format!(
-                                        "unknown plugin provider result: {status}"
+                                        "unknown provider channel result: {status}"
                                     )))?;
                                 }
                             }
@@ -360,7 +362,7 @@ impl PluginRegistry {
                     continue;
                 }
                 Err(Error::Provider(format!(
-                    "plugin '{plugin_id}' worker stopped mid-stream"
+                    "provider '{provider_id}' worker stopped mid-stream"
                 )))?;
             }
         })
@@ -368,12 +370,12 @@ impl PluginRegistry {
 
     pub async fn oauth_begin(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         method_id: &str,
     ) -> Result<OAuthBeginResponse> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
+        let entry = self.find_entry(&executable, provider_id).await?;
         let resource = find_resource(&entry, resource_type)?;
         let method = resource
             .add
@@ -381,13 +383,13 @@ impl PluginRegistry {
             .find(|method| method.id == method_id)
             .ok_or_else(|| {
                 Error::Config(format!(
-                    "plugin '{plugin_id}' does not define OAuth method '{method_id}'"
+                    "provider '{provider_id}' does not define OAuth method '{method_id}'"
                 ))
             })?;
         // Each add entry point has a single active lifecycle. Restarting drops the old session first,
         // and dropping the CallbackHandle in the authorization-code session releases the loopback listener at once.
         self.inner.oauth_sessions.lock().await.retain(|_, session| {
-            session.plugin_id != plugin_id
+            session.provider_id != provider_id
                 || session.resource_type != resource_type
                 || session.method_id != method_id
         });
@@ -476,20 +478,20 @@ impl PluginRegistry {
             }
             method_type => {
                 return Err(Error::Config(format!(
-                        "plugin '{plugin_id}' OAuth method '{method_id}' uses unsupported type '{method_type}'"
+                        "provider '{provider_id}' OAuth method '{method_id}' uses unsupported type '{method_type}'"
                     )));
             }
         };
 
         if expires_at_ms <= now_ms() {
             return Err(Error::Protocol(format!(
-                "plugin '{plugin_id}' OAuth method '{method_id}' returned an expired session"
+                "provider '{provider_id}' OAuth method '{method_id}' returned an expired session"
             )));
         }
         self.inner.oauth_sessions.lock().await.insert(
             session_id.clone(),
             OAuthSession {
-                plugin_id: plugin_id.to_owned(),
+                provider_id: provider_id.to_owned(),
                 resource_type: resource_type.to_owned(),
                 method_id: method_id.to_owned(),
                 session,
@@ -544,14 +546,14 @@ impl PluginRegistry {
             state.next_poll_at_ms = now + state.poll_interval_ms;
 
             let common = (
-                state.plugin_id.clone(),
+                state.provider_id.clone(),
                 state.resource_type.clone(),
                 state.method_id.clone(),
                 state.session.clone(),
             );
             match &mut state.flow {
                 OAuthFlow::DeviceCode => OAuthPollWork::DeviceCode {
-                    plugin_id: common.0,
+                    provider_id: common.0,
                     resource_type: common.1,
                     method_id: common.2,
                     session: common.3,
@@ -563,7 +565,7 @@ impl PluginRegistry {
                     callback,
                 } => match callback.receiver.try_recv() {
                     Ok(callback_request) => OAuthPollWork::AuthorizationCode {
-                        plugin_id: common.0,
+                        provider_id: common.0,
                         resource_type: common.1,
                         method_id: common.2,
                         session: common.3,
@@ -588,7 +590,7 @@ impl PluginRegistry {
 
         match work {
             OAuthPollWork::DeviceCode {
-                plugin_id,
+                provider_id,
                 resource_type,
                 method_id,
                 session,
@@ -596,7 +598,7 @@ impl PluginRegistry {
             } => {
                 self.poll_device_code(
                     session_id,
-                    plugin_id,
+                    provider_id,
                     resource_type,
                     method_id,
                     session,
@@ -605,7 +607,7 @@ impl PluginRegistry {
                 .await
             }
             OAuthPollWork::AuthorizationCode {
-                plugin_id,
+                provider_id,
                 resource_type,
                 method_id,
                 session,
@@ -615,7 +617,7 @@ impl PluginRegistry {
             } => {
                 self.complete_authorization_code(
                     session_id,
-                    plugin_id,
+                    provider_id,
                     resource_type,
                     method_id,
                     session,
@@ -631,14 +633,14 @@ impl PluginRegistry {
     async fn poll_device_code(
         &self,
         session_id: &str,
-        plugin_id: String,
+        provider_id: String,
         resource_type: String,
         method_id: String,
         session: serde_json::Value,
         poll_interval_ms: i64,
     ) -> Result<OAuthPollResponse> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, &plugin_id).await?;
+        let entry = self.find_entry(&executable, &provider_id).await?;
         let value = self
             .worker(&entry, &executable)
             .await
@@ -672,7 +674,7 @@ impl PluginRegistry {
                     .persist_oauth_resources(
                         &entry,
                         &executable,
-                        &plugin_id,
+                        &provider_id,
                         &resource_type,
                         resources,
                     )
@@ -695,7 +697,7 @@ impl PluginRegistry {
     async fn complete_authorization_code(
         &self,
         session_id: &str,
-        plugin_id: String,
+        provider_id: String,
         resource_type: String,
         method_id: String,
         session: serde_json::Value,
@@ -720,7 +722,7 @@ impl PluginRegistry {
 
         let result = async {
             let executable = self.executable()?;
-            let entry = self.find_entry(&executable, &plugin_id).await?;
+            let entry = self.find_entry(&executable, &provider_id).await?;
             let value = self
                 .worker(&entry, &executable)
                 .await
@@ -740,8 +742,14 @@ impl PluginRegistry {
                 )
                 .await?;
             let resources: Vec<ResourceDraft> = serde_json::from_value(value)?;
-            self.persist_oauth_resources(&entry, &executable, &plugin_id, &resource_type, resources)
-                .await
+            self.persist_oauth_resources(
+                &entry,
+                &executable,
+                &provider_id,
+                &resource_type,
+                resources,
+            )
+            .await
         }
         .await;
 
@@ -767,19 +775,19 @@ impl PluginRegistry {
 
     async fn persist_oauth_resources(
         &self,
-        entry: &PluginEntry,
+        entry: &ProviderEntry,
         executable: &Path,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resources: Vec<ResourceDraft>,
     ) -> Result<OAuthPollResponse> {
         let outcome = self
             .inner
             .state
-            .upsert_resources(plugin_id, resource_type, resources)
+            .upsert_resources(provider_id, resource_type, resources)
             .await?;
         let model_sync_error = self
-            .sync_provider_models_for_resource(entry, executable, resource_type)
+            .sync_channel_models_for_resource(entry, executable, resource_type)
             .await;
         Ok(OAuthPollResponse::Completed {
             added: outcome.added,
@@ -790,16 +798,16 @@ impl PluginRegistry {
 
     pub async fn import_resources(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         files: serde_json::Value,
     ) -> Result<ImportResponse> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
+        let entry = self.find_entry(&executable, provider_id).await?;
         let resource = find_resource(&entry, resource_type)?;
         if resource.import.is_none() {
             return Err(Error::Config(format!(
-                "plugin '{plugin_id}' resource '{resource_type}' does not support import"
+                "provider '{provider_id}' resource '{resource_type}' does not support import"
             )));
         }
         let value = self
@@ -829,10 +837,10 @@ impl PluginRegistry {
         let outcome = self
             .inner
             .state
-            .upsert_resources(plugin_id, resource_type, parsed.resources)
+            .upsert_resources(provider_id, resource_type, parsed.resources)
             .await?;
         let model_sync_error = self
-            .sync_provider_models_for_resource(&entry, &executable, resource_type)
+            .sync_channel_models_for_resource(&entry, &executable, resource_type)
             .await;
         Ok(ImportResponse {
             added: outcome.added,
@@ -845,13 +853,17 @@ impl PluginRegistry {
     /// Exports all private data for one resource type for backup or migration; format matches bulk import.
     pub async fn export_resources(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
     ) -> Result<serde_json::Value> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
+        let entry = self.find_entry(&executable, provider_id).await?;
         find_resource(&entry, resource_type)?;
-        let records = self.inner.state.resources(plugin_id, resource_type).await?;
+        let records = self
+            .inner
+            .state
+            .resources(provider_id, resource_type)
+            .await?;
         Ok(serde_json::json!({
             "accounts": records
                 .iter()
@@ -862,20 +874,20 @@ impl PluginRegistry {
 
     pub async fn refresh_resource(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
     ) -> Result<()> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
+        let entry = self.find_entry(&executable, provider_id).await?;
         let resource = find_resource(&entry, resource_type)?;
         if !resource.can_refresh {
             return Err(Error::Config(format!(
-                "plugin '{plugin_id}' resource '{resource_type}' does not support refresh"
+                "provider '{provider_id}' resource '{resource_type}' does not support refresh"
             )));
         }
         let record = self
-            .find_record(plugin_id, resource_type, resource_id)
+            .find_record(provider_id, resource_type, resource_id)
             .await?;
         let value = self
             .worker(&entry, &executable)
@@ -892,20 +904,20 @@ impl PluginRegistry {
         let patch: ResourcePatch = serde_json::from_value(value)?;
         self.inner
             .state
-            .apply_patch(plugin_id, resource_type, resource_id, patch)
+            .apply_patch(provider_id, resource_type, resource_id, patch)
             .await
     }
 
     pub async fn resource_action(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
         action_id: &str,
         input: serde_json::Value,
     ) -> Result<serde_json::Value> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
+        let entry = self.find_entry(&executable, provider_id).await?;
         let resource = find_resource(&entry, resource_type)?;
         let action = resource
             .actions
@@ -913,16 +925,16 @@ impl PluginRegistry {
             .find(|action| action.id == action_id)
             .ok_or_else(|| {
                 Error::Config(format!(
-                    "plugin '{plugin_id}' resource '{resource_type}' does not define action '{action_id}'"
+                    "provider '{provider_id}' resource '{resource_type}' does not define action '{action_id}'"
                 ))
             })?;
         if !matches!(action.target.as_str(), "resource" | "card") {
             return Err(Error::Config(format!(
-                "plugin '{plugin_id}' resource action '{action_id}' has an invalid target"
+                "provider '{provider_id}' resource action '{action_id}' has an invalid target"
             )));
         }
         let record = self
-            .find_record(plugin_id, resource_type, resource_id)
+            .find_record(provider_id, resource_type, resource_id)
             .await?;
         let value = self
             .worker(&entry, &executable)
@@ -942,7 +954,7 @@ impl PluginRegistry {
         if let Some(patch) = result.patch.clone() {
             self.inner
                 .state
-                .apply_patch(plugin_id, resource_type, resource_id, patch)
+                .apply_patch(provider_id, resource_type, resource_id, patch)
                 .await?;
         }
         Ok(serde_json::to_value(ResourceActionResponse::from(result))?)
@@ -950,15 +962,15 @@ impl PluginRegistry {
 
     pub async fn delete_resource(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
     ) -> Result<()> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
+        let entry = self.find_entry(&executable, provider_id).await?;
         let resource = find_resource(&entry, resource_type)?;
         let record = self
-            .find_record(plugin_id, resource_type, resource_id)
+            .find_record(provider_id, resource_type, resource_id)
             .await?;
         if resource.can_remove {
             // An upstream revoke failure does not block local deletion: users must be able to remove dead resources.
@@ -975,80 +987,80 @@ impl PluginRegistry {
                 )
                 .await
             {
-                tracing::warn!(plugin = %plugin_id, %error, "plugin resource remove hook failed");
+                tracing::warn!(provider = %provider_id, %error, "provider resource remove hook failed");
             }
         }
         self.inner
             .state
-            .remove_resource(plugin_id, resource_type, resource_id)
+            .remove_resource(provider_id, resource_type, resource_id)
             .await?;
         Ok(())
     }
 
-    pub async fn sync_models(&self, plugin_id: &str, provider_id: &str) -> Result<usize> {
+    pub async fn sync_models(&self, provider_id: &str, channel_id: &str) -> Result<usize> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
-        let provider = find_provider(&entry, provider_id)?.clone();
-        self.sync_provider_models(&entry, &executable, &provider)
+        let entry = self.find_entry(&executable, provider_id).await?;
+        let channel = find_channel(&entry, channel_id)?.clone();
+        self.sync_channel_models(&entry, &executable, &channel)
             .await
     }
 
     pub async fn set_model_enabled(
         &self,
-        plugin_id: &str,
         provider_id: &str,
+        channel_id: &str,
         model_id: &str,
         enabled: bool,
     ) -> Result<()> {
         let executable = self.executable()?;
-        let entry = self.find_entry(&executable, plugin_id).await?;
-        let provider = find_provider(&entry, provider_id)?;
-        if !provider.has_models {
+        let entry = self.find_entry(&executable, provider_id).await?;
+        let channel = find_channel(&entry, channel_id)?;
+        if !channel.has_models {
             return Err(Error::Config(format!(
-                "plugin provider '{provider_id}' does not enumerate models"
+                "provider channel '{channel_id}' does not enumerate models"
             )));
         }
         self.inner
             .state
-            .set_model_enabled(plugin_id, provider_id, model_id, enabled)
+            .set_model_enabled(provider_id, channel_id, model_id, enabled)
             .await
     }
 
-    pub async fn remove(&self, plugin_id: &str) -> Result<()> {
-        if let Some(worker) = self.inner.workers.lock().await.remove(plugin_id) {
+    pub async fn remove(&self, provider_id: &str) -> Result<()> {
+        if let Some(worker) = self.inner.workers.lock().await.remove(provider_id) {
             worker.stop().await;
         }
-        self.inner.state.clear(plugin_id).await
+        self.inner.state.clear(provider_id).await
     }
 
-    async fn descriptor(&self, entry: &PluginEntry, executable: &Path) -> PluginDescriptor {
-        let plugin_id = &entry.manifest.id;
+    async fn descriptor(&self, entry: &ProviderEntry, executable: &Path) -> ProviderDescriptor {
+        let provider_id = &entry.manifest.id;
         let mut providers = Vec::new();
-        for provider in &entry.definition.providers {
+        for channel in &entry.definition.providers {
             let stored = self
                 .inner
                 .state
-                .models(plugin_id, &provider.id)
+                .models(provider_id, &channel.id)
                 .await
                 .unwrap_or_default();
-            let configured = self.provider_configured(entry, provider).await;
-            providers.push(PluginProviderDescriptor {
-                id: provider.id.clone(),
-                plugin_id: plugin_id.clone(),
-                display_name: provider.display_name.clone(),
-                description: provider.description.clone(),
-                provider_type: provider.provider_type.clone(),
-                resource_type: provider.resource_type.clone(),
-                has_models: provider.has_models,
+            let configured = self.channel_configured(entry, channel).await;
+            providers.push(ChannelDescriptor {
+                id: channel.id.clone(),
+                provider_id: provider_id.clone(),
+                display_name: channel.display_name.clone(),
+                description: channel.description.clone(),
+                brand: channel.brand.clone(),
+                resource_type: channel.resource_type.clone(),
+                has_models: channel.has_models,
                 configured,
                 models: stored
                     .iter()
                     .map(|model| {
-                        PluginModelDescriptor::new(
-                            plugin_id,
+                        ProviderModelDescriptor::new(
+                            provider_id,
                             &entry.manifest.name,
                             &entry.icon,
-                            provider,
+                            channel,
                             model,
                         )
                     })
@@ -1060,13 +1072,13 @@ impl PluginRegistry {
             let records = self
                 .inner
                 .state
-                .resources(plugin_id, &definition.resource_type)
+                .resources(provider_id, &definition.resource_type)
                 .await
                 .unwrap_or_default();
             let views = self
                 .present_resources(entry, executable, definition, &records)
                 .await;
-            resources.push(PluginResourceDescriptor {
+            resources.push(ProviderResourceDescriptor {
                 resource_type: definition.resource_type.clone(),
                 display_name: definition.display_name.clone(),
                 add: definition.add.clone(),
@@ -1077,8 +1089,8 @@ impl PluginRegistry {
                 resources: views,
             });
         }
-        PluginDescriptor {
-            id: plugin_id.clone(),
+        ProviderDescriptor {
+            id: provider_id.clone(),
             name: entry.manifest.name.clone(),
             version: entry.manifest.version.clone(),
             author: entry.manifest.author.clone(),
@@ -1090,11 +1102,11 @@ impl PluginRegistry {
 
     async fn present_resources(
         &self,
-        entry: &PluginEntry,
+        entry: &ProviderEntry,
         executable: &Path,
         definition: &ResourceDefinition,
         records: &[ResourceRecord],
-    ) -> Vec<PluginResourceView> {
+    ) -> Vec<ProviderResourceView> {
         if records.is_empty() {
             return Vec::new();
         }
@@ -1121,12 +1133,12 @@ impl PluginRegistry {
             Ok(views) if views.len() == records.len() => records
                 .iter()
                 .zip(views)
-                .map(|(record, view)| PluginResourceView::from_record(record, view))
+                .map(|(record, view)| ProviderResourceView::from_record(record, view))
                 .collect(),
             Ok(_) | Err(_) => records
                 .iter()
                 .map(|record| {
-                    PluginResourceView::from_record(
+                    ProviderResourceView::from_record(
                         record,
                         ResourcePresentation {
                             display_name: record.key.clone(),
@@ -1139,28 +1151,24 @@ impl PluginRegistry {
         }
     }
 
-    async fn provider_configured(
-        &self,
-        entry: &PluginEntry,
-        provider: &ProviderDefinition,
-    ) -> bool {
-        let plugin_id = &entry.manifest.id;
-        if provider.has_models {
+    async fn channel_configured(&self, entry: &ProviderEntry, channel: &ChannelDefinition) -> bool {
+        let provider_id = &entry.manifest.id;
+        if channel.has_models {
             let models = self
                 .inner
                 .state
-                .models(plugin_id, &provider.id)
+                .models(provider_id, &channel.id)
                 .await
                 .unwrap_or_default();
             if models.is_empty() {
                 return false;
             }
         }
-        match &provider.resource_type {
+        match &channel.resource_type {
             Some(resource_type) => !self
                 .inner
                 .state
-                .resources(plugin_id, resource_type)
+                .resources(provider_id, resource_type)
                 .await
                 .unwrap_or_default()
                 .is_empty(),
@@ -1169,43 +1177,40 @@ impl PluginRegistry {
     }
 
     /// Refreshes the Provider model catalog using that resource type once a resource lands; failures are reported, not fatal.
-    async fn sync_provider_models_for_resource(
+    async fn sync_channel_models_for_resource(
         &self,
-        entry: &PluginEntry,
+        entry: &ProviderEntry,
         executable: &Path,
         resource_type: &str,
     ) -> Option<String> {
         let mut errors = Vec::new();
-        for provider in entry.definition.providers.clone() {
-            if provider.resource_type.as_deref() != Some(resource_type) || !provider.has_models {
+        for channel in entry.definition.providers.clone() {
+            if channel.resource_type.as_deref() != Some(resource_type) || !channel.has_models {
                 continue;
             }
-            if let Err(error) = self
-                .sync_provider_models(entry, executable, &provider)
-                .await
-            {
-                errors.push(format!("{}: {error}", provider.id));
+            if let Err(error) = self.sync_channel_models(entry, executable, &channel).await {
+                errors.push(format!("{}: {error}", channel.id));
             }
         }
         (!errors.is_empty()).then(|| errors.join("; "))
     }
 
-    async fn sync_provider_models(
+    async fn sync_channel_models(
         &self,
-        entry: &PluginEntry,
+        entry: &ProviderEntry,
         executable: &Path,
-        provider: &ProviderDefinition,
+        channel: &ChannelDefinition,
     ) -> Result<usize> {
-        if !provider.has_models {
+        if !channel.has_models {
             return Err(Error::Config(format!(
-                "plugin provider '{}' does not enumerate models",
-                provider.id
+                "provider channel '{}' does not enumerate models",
+                channel.id
             )));
         }
-        let plugin_id = &entry.manifest.id;
-        let resource = match &provider.resource_type {
+        let provider_id = &entry.manifest.id;
+        let resource = match &channel.resource_type {
             Some(resource_type) => {
-                let record = self.select_resource(plugin_id, resource_type).await?;
+                let record = self.select_resource(provider_id, resource_type).await?;
                 Some(record.snapshot(resource_type))
             }
             None => None,
@@ -1215,13 +1220,13 @@ impl PluginRegistry {
             .await
             .invoke(
                 "models.list",
-                serde_json::json!({ "providerId": provider.id, "resource": resource }),
+                serde_json::json!({ "providerId": channel.id, "resource": resource }),
                 CancellationToken::new(),
             )
             .await?;
         let definitions = value
             .as_array()
-            .ok_or_else(|| Error::Protocol("plugin models.list must return an array".into()))?;
+            .ok_or_else(|| Error::Protocol("provider models.list must return an array".into()))?;
         let mut models = Vec::with_capacity(definitions.len());
         let mut seen = std::collections::HashSet::new();
         for definition in definitions {
@@ -1232,13 +1237,13 @@ impl PluginRegistry {
         }
         if models.is_empty() {
             return Err(Error::Provider(format!(
-                "plugin provider '{}' returned no models",
-                provider.id
+                "provider channel '{}' returned no models",
+                channel.id
             )));
         }
         self.inner
             .state
-            .replace_models(plugin_id, &provider.id, &models)
+            .replace_models(provider_id, &channel.id, &models)
             .await?;
         Ok(models.len())
     }
@@ -1246,13 +1251,17 @@ impl PluginRegistry {
     /// Sorts resources by health and quota headroom: healthy with ample quota first, low quota next, cooling down by recovery time, and dead last.
     async fn select_resources(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
     ) -> Result<Vec<ResourceRecord>> {
-        let records = self.inner.state.resources(plugin_id, resource_type).await?;
+        let records = self
+            .inner
+            .state
+            .resources(provider_id, resource_type)
+            .await?;
         if records.is_empty() {
             return Err(Error::Provider(format!(
-                "plugin '{plugin_id}' has no '{resource_type}' resource; add one first"
+                "provider '{provider_id}' has no '{resource_type}' resource; add one first"
             )));
         }
         Ok(rank_resources(records, now_ms()))
@@ -1260,29 +1269,29 @@ impl PluginRegistry {
 
     async fn select_resource(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
     ) -> Result<ResourceRecord> {
-        self.select_resources(plugin_id, resource_type)
+        self.select_resources(provider_id, resource_type)
             .await?
             .into_iter()
             .next()
-            .ok_or_else(|| Error::Provider("no plugin resource is available".into()))
+            .ok_or_else(|| Error::Provider("no provider resource is available".into()))
     }
 
     async fn find_record(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
     ) -> Result<ResourceRecord> {
         self.inner
             .state
-            .resources(plugin_id, resource_type)
+            .resources(provider_id, resource_type)
             .await?
             .into_iter()
             .find(|record| record.id == resource_id)
-            .ok_or_else(|| Error::RunNotFound(format!("plugin resource {resource_id}")))
+            .ok_or_else(|| Error::RunNotFound(format!("provider resource {resource_id}")))
     }
 
     async fn update_session(
@@ -1306,10 +1315,10 @@ impl PluginRegistry {
         self.inner
             .runtime
             .executable()
-            .ok_or_else(|| Error::Config("plugin runtime is not ready".into()))
+            .ok_or_else(|| Error::Config("provider runtime is not ready".into()))
     }
 
-    async fn entries(&self, executable: &Path) -> Vec<PluginEntry> {
+    async fn entries(&self, executable: &Path) -> Vec<ProviderEntry> {
         if let Some(entries) = self.inner.entries.read().await.as_ref() {
             return entries.clone();
         }
@@ -1318,20 +1327,20 @@ impl PluginRegistry {
         loaded
     }
 
-    async fn find_entry(&self, executable: &Path, plugin_id: &str) -> Result<PluginEntry> {
+    async fn find_entry(&self, executable: &Path, provider_id: &str) -> Result<ProviderEntry> {
         self.entries(executable)
             .await
             .into_iter()
-            .find(|entry| entry.manifest.id == plugin_id)
-            .ok_or_else(|| Error::RunNotFound(format!("plugin {plugin_id}")))
+            .find(|entry| entry.manifest.id == provider_id)
+            .ok_or_else(|| Error::RunNotFound(format!("provider {provider_id}")))
     }
 
-    async fn worker(&self, entry: &PluginEntry, executable: &Path) -> Arc<PluginWorker> {
+    async fn worker(&self, entry: &ProviderEntry, executable: &Path) -> Arc<ProviderWorker> {
         let mut workers = self.inner.workers.lock().await;
         workers
             .entry(entry.manifest.id.clone())
             .or_insert_with(|| {
-                Arc::new(PluginWorker::new(
+                Arc::new(ProviderWorker::new(
                     entry,
                     executable.to_path_buf(),
                     self.inner.catalog.loader().clone(),
@@ -1406,22 +1415,22 @@ struct ImportParseResult {
     warnings: Vec<String>,
 }
 
-fn find_provider<'a>(entry: &'a PluginEntry, provider_id: &str) -> Result<&'a ProviderDefinition> {
+fn find_channel<'a>(entry: &'a ProviderEntry, channel_id: &str) -> Result<&'a ChannelDefinition> {
     entry
         .definition
         .providers
         .iter()
-        .find(|provider| provider.id == provider_id)
+        .find(|channel| channel.id == channel_id)
         .ok_or_else(|| {
             Error::RunNotFound(format!(
-                "plugin '{}' provider {provider_id}",
+                "provider '{}' channel {channel_id}",
                 entry.manifest.id
             ))
         })
 }
 
 fn find_resource<'a>(
-    entry: &'a PluginEntry,
+    entry: &'a ProviderEntry,
     resource_type: &str,
 ) -> Result<&'a ResourceDefinition> {
     entry
@@ -1431,7 +1440,7 @@ fn find_resource<'a>(
         .find(|resource| resource.resource_type == resource_type)
         .ok_or_else(|| {
             Error::RunNotFound(format!(
-                "plugin '{}' resource type {resource_type}",
+                "provider '{}' resource type {resource_type}",
                 entry.manifest.id
             ))
         })

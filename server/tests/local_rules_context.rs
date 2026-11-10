@@ -1,6 +1,6 @@
 //! Verifies local markdown rules are merged into the request-context message.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -21,8 +21,8 @@ use prost::Message;
 #[tokio::test]
 async fn local_markdown_rules_land_in_the_request_context_message() {
     let (_store_dir, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "call-1".into(),
         },
@@ -45,7 +45,7 @@ async fn local_markdown_rules_land_in_the_request_context_message() {
 
     let registry = TransportRegistry::with_local_rules(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
         rules_root,
     );
@@ -85,7 +85,7 @@ async fn local_markdown_rules_land_in_the_request_context_message() {
         }
     }
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 1);
     let context_texts = requests[0]
         .history

@@ -1,4 +1,4 @@
-//! Stores plugin-owned JSON with private permissions and atomic replacement.
+//! Stores provider-owned JSON with private permissions and atomic replacement.
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -11,12 +11,12 @@ use tokio::sync::Mutex as AsyncMutex;
 use crate::{config, Error, Result};
 
 #[derive(Clone)]
-pub struct PluginDataStore {
+pub struct ProviderDataStore {
     root: PathBuf,
     locks: Arc<Mutex<HashMap<String, Arc<AsyncMutex<()>>>>>,
 }
 
-impl PluginDataStore {
+impl ProviderDataStore {
     pub fn managed() -> Result<Self> {
         Self::new(config::managed_data_dir()?.join("plugins/data"))
     }
@@ -35,9 +35,9 @@ impl PluginDataStore {
         })
     }
 
-    pub async fn read(&self, plugin_id: &str, key: &str) -> Result<serde_json::Value> {
-        let path = self.path(plugin_id, key)?;
-        let lock = self.lock(plugin_id);
+    pub async fn read(&self, provider_id: &str, key: &str) -> Result<serde_json::Value> {
+        let path = self.path(provider_id, key)?;
+        let lock = self.lock(provider_id);
         let _guard = lock.lock().await;
         match tokio::fs::read(&path).await {
             Ok(bytes) => Ok(serde_json::from_slice(&bytes)?),
@@ -45,7 +45,7 @@ impl PluginDataStore {
                 Ok(serde_json::Value::Null)
             }
             Err(error) => Err(Error::Config(format!(
-                "plugin data read failed at {}: {error}",
+                "provider data read failed at {}: {error}",
                 path.display()
             ))),
         }
@@ -53,19 +53,19 @@ impl PluginDataStore {
 
     pub async fn update(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         key: &str,
         value: &serde_json::Value,
     ) -> Result<()> {
-        let path = self.path(plugin_id, key)?;
-        let lock = self.lock(plugin_id);
+        let path = self.path(provider_id, key)?;
+        let lock = self.lock(provider_id);
         let _guard = lock.lock().await;
         self.write_locked(&path, key, value)
             .await
             // Include the concrete path so Windows access-denied errors can be traced to the step.
             .map_err(|error| {
                 Error::Config(format!(
-                    "plugin data write failed at {}: {error}",
+                    "provider data write failed at {}: {error}",
                     path.display()
                 ))
             })
@@ -76,7 +76,7 @@ impl PluginDataStore {
     async fn write_locked(&self, path: &Path, key: &str, value: &serde_json::Value) -> Result<()> {
         let directory = path
             .parent()
-            .expect("plugin data path has a parent")
+            .expect("provider data path has a parent")
             .to_owned();
         let temporary = directory.join(format!(".{key}.{}.tmp", uuid::Uuid::new_v4()));
         let target = path.to_owned();
@@ -90,7 +90,7 @@ impl PluginDataStore {
                     Ok(()) => return Ok(()),
                     Err((step, error)) if attempts < 20 && transient(&error) => {
                         attempts += 1;
-                        tracing::debug!(step, attempts, %error, "retrying plugin data write");
+                        tracing::debug!(step, attempts, %error, "retrying provider data write");
                         std::thread::sleep(std::time::Duration::from_millis(100));
                     }
                     Err((step, error)) => {
@@ -100,7 +100,7 @@ impl PluginDataStore {
                             step,
                             attempts,
                             %error,
-                            "plugin data write failed"
+                            "provider data write failed"
                         );
                         return Err(Error::Config(format!("{step}: {error}")));
                     }
@@ -108,34 +108,34 @@ impl PluginDataStore {
             }
         })
         .await
-        .expect("plugin data write task panicked")
+        .expect("provider data write task panicked")
     }
 
-    pub async fn clear(&self, plugin_id: &str) -> Result<()> {
-        validate_component(plugin_id, "plugin id")?;
-        let lock = self.lock(plugin_id);
+    pub async fn clear(&self, provider_id: &str) -> Result<()> {
+        validate_component(provider_id, "provider id")?;
+        let lock = self.lock(provider_id);
         let _guard = lock.lock().await;
-        let path = self.root.join(plugin_id);
+        let path = self.root.join(provider_id);
         match tokio::fs::remove_dir_all(&path).await {
             Ok(()) => Ok(()),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
             Err(error) => Err(Error::Config(format!(
-                "plugin data cleanup failed at {}: {error}",
+                "provider data cleanup failed at {}: {error}",
                 path.display()
             ))),
         }
     }
 
-    fn path(&self, plugin_id: &str, key: &str) -> Result<PathBuf> {
-        validate_component(plugin_id, "plugin id")?;
-        validate_component(key, "plugin data key")?;
-        Ok(self.root.join(plugin_id).join(format!("{key}.json")))
+    fn path(&self, provider_id: &str, key: &str) -> Result<PathBuf> {
+        validate_component(provider_id, "provider id")?;
+        validate_component(key, "provider data key")?;
+        Ok(self.root.join(provider_id).join(format!("{key}.json")))
     }
 
-    fn lock(&self, plugin_id: &str) -> Arc<AsyncMutex<()>> {
+    fn lock(&self, provider_id: &str) -> Arc<AsyncMutex<()>> {
         self.locks
             .lock()
-            .entry(plugin_id.to_owned())
+            .entry(provider_id.to_owned())
             .or_insert_with(|| Arc::new(AsyncMutex::new(())))
             .clone()
     }
@@ -235,7 +235,7 @@ mod tests {
     #[tokio::test]
     async fn writes_reads_and_removes_json() {
         let root = tempfile::tempdir().unwrap();
-        let store = PluginDataStore::new(root.path().join("data")).unwrap();
+        let store = ProviderDataStore::new(root.path().join("data")).unwrap();
         store
             .update(
                 "com.example",

@@ -6,7 +6,7 @@ use futures_util::StreamExt;
 use serde_json::{json, Map, Value};
 
 use crate::{
-    config::ProviderConfig,
+    config::ProtocolConfig,
     model::{
         ContentPart, ModelInvocation, ModelLatency, ProjectedContent, ProjectedMessage, Role, Usage,
     },
@@ -16,9 +16,9 @@ use crate::{
 use super::{
     apply_body_allowlist, apply_openai_prompt_cache_key,
     attempt::{send_once, Attempt},
-    map_sse_error, merge_extra_params, provider_event_error,
+    map_sse_error, merge_extra_params, protocol_event_error,
     recorder::recorded_headers,
-    CallRecorder, FinishReason, ModelEvent, Provider, ProviderStream,
+    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream,
 };
 
 #[derive(Default)]
@@ -37,14 +37,14 @@ enum ResponseToolArguments<'a> {
     Snapshot(&'a str),
 }
 
-pub struct OpenAiResponsesProvider {
+pub struct OpenAiResponsesProtocol {
     client: reqwest::Client,
-    config: ProviderConfig,
+    config: ProtocolConfig,
     recorder: Option<CallRecorder>,
 }
 
-impl OpenAiResponsesProvider {
-    pub fn new(client: reqwest::Client, config: ProviderConfig) -> Self {
+impl OpenAiResponsesProtocol {
+    pub fn new(client: reqwest::Client, config: ProtocolConfig) -> Self {
         Self {
             client,
             config,
@@ -58,12 +58,12 @@ impl OpenAiResponsesProvider {
     }
 }
 
-impl Provider for OpenAiResponsesProvider {
+impl Protocol for OpenAiResponsesProtocol {
     fn stream(
         &self,
         invocation: ModelInvocation,
         cancellation: tokio_util::sync::CancellationToken,
-    ) -> ProviderStream {
+    ) -> ProtocolStream {
         let client = self.client.clone();
         let config = self.config.clone();
         let recorder = self.recorder.clone();
@@ -132,7 +132,7 @@ impl Provider for OpenAiResponsesProvider {
                 let event = event.map_err(|error| map_sse_error("OpenAI Responses", error))?;
                 if event.data == "[DONE]" { break; }
                 let value: Value = serde_json::from_str(&event.data)?;
-                if let Some(error) = provider_event_error("OpenAI Responses", &value) {
+                if let Some(error) = protocol_event_error("OpenAI Responses", &value) {
                     Err(error)?;
                 }
                 let kind = value.get("type").and_then(Value::as_str).unwrap_or(&event.event);
@@ -233,9 +233,9 @@ impl Provider for OpenAiResponsesProvider {
                         }
                         terminal = true;
                         if !reasoning_items.is_empty() {
-                            yield ModelEvent::ProviderReplayState(
-                                crate::model::ProviderReplayState {
-                                    provider_kind: "openai_responses".into(),
+                            yield ModelEvent::ProtocolReplayState(
+                                crate::model::ProtocolReplayState {
+                                    protocol_kind: "openai_responses".into(),
                                     value: json!({"items": std::mem::take(&mut reasoning_items)}),
                                 },
                             );
@@ -263,8 +263,8 @@ impl Provider for OpenAiResponsesProvider {
                 }
                 terminal = true;
                 if !reasoning_items.is_empty() {
-                    yield ModelEvent::ProviderReplayState(crate::model::ProviderReplayState {
-                        provider_kind: "openai_responses".into(),
+                    yield ModelEvent::ProtocolReplayState(crate::model::ProtocolReplayState {
+                        protocol_kind: "openai_responses".into(),
                         value: json!({"items": std::mem::take(&mut reasoning_items)}),
                     });
                 }
@@ -414,7 +414,7 @@ fn responses_input(messages: &[ProjectedMessage]) -> Result<Vec<Value>> {
             } => {
                 if let Some(state) = replay_state
                     .as_ref()
-                    .filter(|state| state.provider_kind == "openai_responses")
+                    .filter(|state| state.protocol_kind == "openai_responses")
                 {
                     let items = state
                         .value
@@ -548,7 +548,7 @@ pub(crate) fn responses_usage(value: &Value) -> Usage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::ProviderReplayState;
+    use crate::model::ProtocolReplayState;
 
     #[test]
     fn reasoning_replay_projects_response_items_to_valid_input_items() {
@@ -558,8 +558,8 @@ mod tests {
             content: ProjectedContent::Assistant {
                 text: String::new(),
                 thinking: String::new(),
-                replay_state: Some(ProviderReplayState {
-                    provider_kind: "openai_responses".into(),
+                replay_state: Some(ProtocolReplayState {
+                    protocol_kind: "openai_responses".into(),
                     value: json!({
                         "items": [{
                             "type": "reasoning",

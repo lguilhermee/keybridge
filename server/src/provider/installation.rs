@@ -13,7 +13,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::{
     asset::{RuntimeAsset, DENO_VERSION},
-    runtime::PluginRuntimePhase,
+    runtime::ProviderRuntimePhase,
 };
 use crate::{network, store::Store, Error, Result};
 
@@ -26,7 +26,7 @@ pub(super) async fn install(
     store: &Store,
     asset: RuntimeAsset,
     cancellation: CancellationToken,
-    on_progress: impl Fn(PluginRuntimePhase, u64, Option<u64>),
+    on_progress: impl Fn(ProviderRuntimePhase, u64, Option<u64>),
 ) -> Result<()> {
     let paths = RuntimePaths::new(root, asset);
     tokio::fs::create_dir_all(&paths.download_dir).await?;
@@ -59,7 +59,7 @@ async fn download_and_install(
     asset: RuntimeAsset,
     paths: &RuntimePaths,
     cancellation: &CancellationToken,
-    on_progress: &impl Fn(PluginRuntimePhase, u64, Option<u64>),
+    on_progress: &impl Fn(ProviderRuntimePhase, u64, Option<u64>),
 ) -> Result<()> {
     ensure_not_cancelled(cancellation)?;
     let client = network::client(store).await?;
@@ -78,7 +78,7 @@ async fn download_and_install(
         ));
     }
 
-    on_progress(PluginRuntimePhase::Downloading, 0, total_bytes);
+    on_progress(ProviderRuntimePhase::Downloading, 0, total_bytes);
     let mut archive = tokio::fs::File::create(&paths.archive).await?;
     let mut hasher = Sha256::new();
     let mut downloaded_bytes = 0_u64;
@@ -99,7 +99,7 @@ async fn download_and_install(
         archive.write_all(&chunk).await?;
         hasher.update(&chunk);
         on_progress(
-            PluginRuntimePhase::Downloading,
+            ProviderRuntimePhase::Downloading,
             downloaded_bytes,
             total_bytes,
         );
@@ -109,7 +109,11 @@ async fn download_and_install(
     drop(archive);
     ensure_not_cancelled(cancellation)?;
 
-    on_progress(PluginRuntimePhase::Verifying, downloaded_bytes, total_bytes);
+    on_progress(
+        ProviderRuntimePhase::Verifying,
+        downloaded_bytes,
+        total_bytes,
+    );
     let actual_hash = hex::encode(hasher.finalize());
     if actual_hash != asset.sha256 {
         return Err(Error::Config(format!(
@@ -119,7 +123,7 @@ async fn download_and_install(
     }
 
     on_progress(
-        PluginRuntimePhase::Installing,
+        ProviderRuntimePhase::Installing,
         downloaded_bytes,
         total_bytes,
     );
@@ -147,7 +151,7 @@ async fn download_and_install(
     ensure_not_cancelled(cancellation)?;
 
     on_progress(
-        PluginRuntimePhase::Validating,
+        ProviderRuntimePhase::Validating,
         downloaded_bytes,
         total_bytes,
     );
@@ -159,7 +163,7 @@ async fn download_and_install(
         version = DENO_VERSION,
         target = asset.target,
         path = %paths.executable.display(),
-        "plugin runtime initialized"
+        "provider runtime initialized"
     );
     Ok(())
 }
@@ -259,7 +263,7 @@ mod tests {
 
     #[test]
     fn uses_versioned_runtime_directory() {
-        let root = PathBuf::from("/tmp/plugin-runtime");
+        let root = PathBuf::from("/tmp/provider-runtime");
         let asset = super::super::asset::RuntimeAsset::for_platform("macos", "aarch64").unwrap();
         let paths = RuntimePaths::new(&root, asset);
         assert_eq!(

@@ -1,7 +1,7 @@
 //! Verifies registry ownership follows the transport actor rather than output subscriptions.
 
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -25,7 +25,7 @@ async fn registry() -> (tempfile::TempDir, TransportRegistry) {
         directory,
         TransportRegistry::new(
             store,
-            Arc::new(fake_provider::FakeProvider::default()),
+            Arc::new(fake_protocol::FakeProtocol::default()),
             PromptCompiler::new(assets),
         ),
     )

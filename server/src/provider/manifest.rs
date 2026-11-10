@@ -1,4 +1,4 @@
-//! Defines and validates the static filesystem plugin manifest.
+//! Defines and validates the static filesystem provider manifest.
 use std::{collections::HashSet, path::Path};
 
 use regex::Regex;
@@ -6,30 +6,30 @@ use serde::Deserialize;
 
 use crate::{Error, Result};
 
-pub const PLUGIN_API_VERSION: u32 = 1;
+pub const PROVIDER_API_VERSION: u32 = 1;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct PluginManifest {
+pub struct ProviderManifest {
     pub api_version: u32,
     pub id: String,
     pub name: String,
-    /// The plugin's own version; used as the cache key when preinstalling built-in plugins.
+    /// The provider's own version; used as the cache key when preinstalling built-in providers.
     pub version: String,
     #[serde(default)]
     pub author: Option<String>,
-    /// Minimum app version required by the plugin; ignored when the app is too old.
+    /// Minimum app version required by the provider; ignored when the app is too old.
     #[serde(default)]
     pub min_app_version: Option<String>,
     pub icon: String,
     pub entry: String,
     #[serde(default)]
-    pub permissions: PluginPermissions,
+    pub permissions: ProviderPermissions,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct PluginPermissions {
+pub struct ProviderPermissions {
     #[serde(default)]
     pub network: Vec<String>,
     /// Subset of `network`; requests to these hosts use the BoringSSL-emulated TLS fingerprint.
@@ -37,21 +37,22 @@ pub struct PluginPermissions {
     pub tls_emulation: Vec<String>,
 }
 
-impl PluginManifest {
+impl ProviderManifest {
     pub fn validate(&self, directory: &Path) -> Result<()> {
-        if self.api_version != PLUGIN_API_VERSION {
+        if self.api_version != PROVIDER_API_VERSION {
             return Err(Error::Config(format!(
-                "plugin '{}' uses unsupported API version {}",
+                "provider '{}' uses unsupported API version {}",
                 self.id, self.api_version
             )));
         }
-        validate_id(&self.id, "plugin id")?;
-        required(&self.name, "plugin name")?;
+        validate_id(&self.id, "provider id")?;
+        required(&self.name, "provider name")?;
         parse_version(&self.version)
-            .ok_or_else(|| Error::Config(format!("invalid plugin version: {}", self.version)))?;
+            .ok_or_else(|| Error::Config(format!("invalid provider version: {}", self.version)))?;
         if let Some(minimum) = &self.min_app_version {
-            parse_version(minimum)
-                .ok_or_else(|| Error::Config(format!("invalid plugin minAppVersion: {minimum}")))?;
+            parse_version(minimum).ok_or_else(|| {
+                Error::Config(format!("invalid provider minAppVersion: {minimum}"))
+            })?;
         }
         validate_entry_path(directory, &self.entry)?;
         validate_asset_path(directory, &self.icon)?;
@@ -60,7 +61,7 @@ impl PluginManifest {
             validate_network_host(host)?;
             if !hosts.insert(host.to_ascii_lowercase()) {
                 return Err(Error::Config(format!(
-                    "plugin '{}' contains duplicate network host '{host}'",
+                    "provider '{}' contains duplicate network host '{host}'",
                     self.id
                 )));
             }
@@ -70,13 +71,13 @@ impl PluginManifest {
             validate_network_host(host)?;
             if !hosts.contains(&host.to_ascii_lowercase()) {
                 return Err(Error::Config(format!(
-                    "plugin '{}' tlsEmulation host '{host}' is not in the network allowlist",
+                    "provider '{}' tlsEmulation host '{host}' is not in the network allowlist",
                     self.id
                 )));
             }
             if !emulated.insert(host.to_ascii_lowercase()) {
                 return Err(Error::Config(format!(
-                    "plugin '{}' contains duplicate tlsEmulation host '{host}'",
+                    "provider '{}' contains duplicate tlsEmulation host '{host}'",
                     self.id
                 )));
             }
@@ -120,15 +121,15 @@ fn validate_network_host(value: &str) -> Result<()> {
         || value.ends_with('.')
     {
         return Err(Error::Config(format!(
-            "invalid plugin network host: {value}"
+            "invalid provider network host: {value}"
         )));
     }
     let parsed = url::Url::parse(&format!("https://{value}")).map_err(|error| {
-        Error::Config(format!("invalid plugin network host '{value}': {error}"))
+        Error::Config(format!("invalid provider network host '{value}': {error}"))
     })?;
     if parsed.host_str() != Some(value) {
         return Err(Error::Config(format!(
-            "invalid plugin network host: {value}"
+            "invalid provider network host: {value}"
         )));
     }
     Ok(())
@@ -146,7 +147,9 @@ fn required<'a>(value: &'a str, label: &str) -> Result<&'a str> {
 fn validate_entry_path(directory: &Path, value: &str) -> Result<()> {
     let path = Path::new(value);
     if !is_safe_relative_path(path) {
-        return Err(Error::Config(format!("invalid plugin entry path: {value}")));
+        return Err(Error::Config(format!(
+            "invalid provider entry path: {value}"
+        )));
     }
     let extension = path
         .extension()
@@ -155,20 +158,20 @@ fn validate_entry_path(directory: &Path, value: &str) -> Result<()> {
         .to_ascii_lowercase();
     if !matches!(extension.as_str(), "js" | "mjs" | "ts" | "mts") {
         return Err(Error::Config(format!(
-            "unsupported plugin entry format: {value}"
+            "unsupported provider entry format: {value}"
         )));
     }
     let entry = directory.join(path);
     if !entry.is_file() {
         return Err(Error::Config(format!(
-            "plugin entry does not exist: {value}"
+            "provider entry does not exist: {value}"
         )));
     }
     let root = directory.canonicalize()?;
     let entry = entry.canonicalize()?;
     if !entry.starts_with(root) {
         return Err(Error::Config(format!(
-            "plugin entry escapes its directory: {value}"
+            "provider entry escapes its directory: {value}"
         )));
     }
     Ok(())
@@ -189,7 +192,9 @@ fn is_safe_relative_path(path: &Path) -> bool {
 fn validate_asset_path(directory: &Path, value: &str) -> Result<()> {
     let path = Path::new(value);
     if !is_safe_relative_path(path) {
-        return Err(Error::Config(format!("invalid plugin asset path: {value}")));
+        return Err(Error::Config(format!(
+            "invalid provider asset path: {value}"
+        )));
     }
     let extension = path
         .extension()
@@ -198,12 +203,12 @@ fn validate_asset_path(directory: &Path, value: &str) -> Result<()> {
         .to_ascii_lowercase();
     if !matches!(extension.as_str(), "svg" | "png" | "webp") {
         return Err(Error::Config(format!(
-            "unsupported plugin icon format: {value}"
+            "unsupported provider icon format: {value}"
         )));
     }
     if !directory.join(path).is_file() {
         return Err(Error::Config(format!(
-            "plugin icon does not exist: {value}"
+            "provider icon does not exist: {value}"
         )));
     }
     Ok(())

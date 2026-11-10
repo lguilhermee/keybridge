@@ -1,8 +1,8 @@
 //! Verifies captured Cursor Connect framing and protobuf compatibility.
 #[path = "support/fake_cursor.rs"]
 mod fake_cursor;
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -106,7 +106,7 @@ async fn bidi_append_gzip_body_is_decompressed_before_protobuf_decode() {
     let clients = NetworkClients::new(store.clone());
     let registry = TransportRegistry::new(
         store,
-        Arc::new(fake_provider::FakeProvider::default()),
+        Arc::new(fake_protocol::FakeProtocol::default()),
         PromptCompiler::new(assets),
     );
     let wire = ai::BidiAppendRequest {

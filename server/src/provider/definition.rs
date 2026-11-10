@@ -1,4 +1,4 @@
-//! Evaluates TypeScript plugin definitions through the host-owned virtual module.
+//! Evaluates TypeScript provider definitions through the host-owned virtual module.
 use std::{
     path::{Path, PathBuf},
     process::Stdio,
@@ -7,7 +7,7 @@ use std::{
 
 use tokio::io::AsyncReadExt;
 
-use super::descriptor::PluginModuleDefinition;
+use super::descriptor::ProviderModuleDefinition;
 use crate::{config, Error, Result};
 
 const DEFINITION_TIMEOUT: Duration = Duration::from_secs(10);
@@ -15,7 +15,7 @@ const MAX_OUTPUT_BYTES: u64 = 2 * 1024 * 1024;
 const OUTPUT_PREFIX: &str = "CURSOR_BYOK_PLUGIN_DEFINITION:";
 
 #[derive(Clone)]
-pub struct PluginDefinitionLoader {
+pub struct ProviderDefinitionLoader {
     sdk_dir: PathBuf,
     import_map: PathBuf,
     collector: PathBuf,
@@ -23,7 +23,7 @@ pub struct PluginDefinitionLoader {
     deno_dir: PathBuf,
 }
 
-impl PluginDefinitionLoader {
+impl ProviderDefinitionLoader {
     pub fn managed() -> Result<Self> {
         Self::in_directory(config::managed_data_dir()?.join("plugins/runtime/sdk/v1"))
     }
@@ -105,9 +105,9 @@ impl PluginDefinitionLoader {
     pub async fn load(
         &self,
         executable: &Path,
-        plugin_directory: &Path,
+        provider_directory: &Path,
         entry: &Path,
-    ) -> Result<PluginModuleDefinition> {
+    ) -> Result<ProviderModuleDefinition> {
         let entry_url = file_url(entry)?;
         let mut command = tokio::process::Command::new(executable);
         super::detach_console(&mut command);
@@ -119,7 +119,7 @@ impl PluginDefinitionLoader {
             .arg("--no-npm")
             .arg("--no-remote")
             .arg("--no-prompt")
-            .arg(format!("--allow-read={}", plugin_directory.display()))
+            .arg(format!("--allow-read={}", provider_directory.display()))
             .arg(format!("--allow-read={}", self.sdk_dir.display()))
             .arg(format!("--import-map={}", self.import_map.display()))
             .arg(&self.collector)
@@ -134,21 +134,20 @@ impl PluginDefinitionLoader {
         let stdout = child
             .stdout
             .take()
-            .ok_or_else(|| Error::Config("cannot capture plugin definition output".into()))?;
-        let stderr = child
-            .stderr
-            .take()
-            .ok_or_else(|| Error::Config("cannot capture plugin definition error output".into()))?;
+            .ok_or_else(|| Error::Config("cannot capture provider definition output".into()))?;
+        let stderr = child.stderr.take().ok_or_else(|| {
+            Error::Config("cannot capture provider definition error output".into())
+        })?;
         let (stdout, stderr, status) = tokio::time::timeout(DEFINITION_TIMEOUT, async move {
             let (stdout, stderr, status) =
                 tokio::join!(read_limited(stdout), read_limited(stderr), child.wait());
             Ok::<_, Error>((stdout?, stderr?, status?))
         })
         .await
-        .map_err(|_| Error::Config("plugin definition evaluation timed out".into()))??;
+        .map_err(|_| Error::Config("provider definition evaluation timed out".into()))??;
         if !status.success() {
             return Err(Error::Config(format!(
-                "plugin definition evaluation failed: {}",
+                "provider definition evaluation failed: {}",
                 String::from_utf8_lossy(&stderr).trim()
             )));
         }
@@ -159,7 +158,7 @@ impl PluginDefinitionLoader {
 pub(super) fn file_url(path: &Path) -> Result<url::Url> {
     url::Url::from_file_path(path).map_err(|_| {
         Error::Config(format!(
-            "plugin entry path is not a valid file URL: {}",
+            "provider entry path is not a valid file URL: {}",
             path.display()
         ))
     })
@@ -173,21 +172,21 @@ async fn read_limited(reader: impl tokio::io::AsyncRead + Unpin) -> Result<Vec<u
         .await?;
     if bytes.len() as u64 > MAX_OUTPUT_BYTES {
         return Err(Error::Config(
-            "plugin definition output is larger than allowed".into(),
+            "provider definition output is larger than allowed".into(),
         ));
     }
     Ok(bytes)
 }
 
-fn parse_definition_output(output: &[u8]) -> Result<PluginModuleDefinition> {
+fn parse_definition_output(output: &[u8]) -> Result<ProviderModuleDefinition> {
     let output = String::from_utf8(output.to_vec()).map_err(|error| {
-        Error::Config(format!("plugin definition output is not UTF-8: {error}"))
+        Error::Config(format!("provider definition output is not UTF-8: {error}"))
     })?;
     let json = output
         .lines()
         .rev()
         .find_map(|line| line.strip_prefix(OUTPUT_PREFIX))
-        .ok_or_else(|| Error::Config("plugin definition did not produce a descriptor".into()))?;
+        .ok_or_else(|| Error::Config("provider definition did not produce a descriptor".into()))?;
     Ok(serde_json::from_str(json)?)
 }
 

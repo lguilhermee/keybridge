@@ -5,15 +5,15 @@ use serde_json::{json, Value};
 
 use crate::model::{
     project_messages, CanonicalMessage, ContentPart, MessageContent, ProjectedContent,
-    ProjectedMessage, ProviderReplayState, Role, ToolCall, ToolResultContent, ToolRoundAssistant,
+    ProjectedMessage, ProtocolReplayState, Role, ToolCall, ToolResultContent, ToolRoundAssistant,
 };
 
 use super::{decode, decode_pending, encode::wire_message, staged_tool_round};
 
 #[test]
 fn pending_tool_round_is_one_complete_assistant_message_and_round_trips() {
-    let replay_state = ProviderReplayState {
-        provider_kind: "anthropic".into(),
+    let replay_state = ProtocolReplayState {
+        protocol_kind: "anthropic".into(),
         value: json!({"blocks":[{"type":"thinking","thinking":"why","signature":"sig"}]}),
     };
     let assistant = ToolRoundAssistant {
@@ -262,7 +262,7 @@ fn opaque_cursor_reasoning_signature_round_trips_without_decoding() {
         panic!("expected assistant");
     };
     assert_eq!(
-        replay_state.as_ref().unwrap().provider_kind,
+        replay_state.as_ref().unwrap().protocol_kind,
         "cursor_opaque"
     );
     let projected = project_messages(&[message]).unwrap();

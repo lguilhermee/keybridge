@@ -6,28 +6,28 @@ use futures_util::StreamExt;
 use serde_json::{json, Value};
 
 use crate::{
-    config::ProviderConfig,
+    config::ProtocolConfig,
     model::{ContentPart, ModelInvocation, ProjectedContent, ProjectedMessage, Role, Usage},
     Error, Result,
 };
 
 use super::{
     attempt::{send_once, Attempt},
-    map_sse_error, merge_extra_params, provider_event_error,
+    map_sse_error, merge_extra_params, protocol_event_error,
     recorder::recorded_headers,
-    CallRecorder, FinishReason, ModelEvent, Provider, ProviderStream,
+    CallRecorder, FinishReason, ModelEvent, Protocol, ProtocolStream,
 };
 
 const DEFAULT_MAX_OUTPUT_TOKENS: u64 = 65_000;
 
-pub struct AnthropicProvider {
+pub struct AnthropicProtocol {
     client: reqwest::Client,
-    config: ProviderConfig,
+    config: ProtocolConfig,
     recorder: Option<CallRecorder>,
 }
 
-impl AnthropicProvider {
-    pub fn new(client: reqwest::Client, config: ProviderConfig) -> Self {
+impl AnthropicProtocol {
+    pub fn new(client: reqwest::Client, config: ProtocolConfig) -> Self {
         Self {
             client,
             config,
@@ -41,12 +41,12 @@ impl AnthropicProvider {
     }
 }
 
-impl Provider for AnthropicProvider {
+impl Protocol for AnthropicProtocol {
     fn stream(
         &self,
         invocation: ModelInvocation,
         cancellation: tokio_util::sync::CancellationToken,
-    ) -> ProviderStream {
+    ) -> ProtocolStream {
         let client = self.client.clone();
         let config = self.config.clone();
         let recorder = self.recorder.clone();
@@ -132,7 +132,7 @@ impl Provider for AnthropicProvider {
             } {
                 let event = event.map_err(|error| map_sse_error("Anthropic", error))?;
                 let value: Value = serde_json::from_str(&event.data)?;
-                if let Some(error) = provider_event_error("Anthropic", &value) {
+                if let Some(error) = protocol_event_error("Anthropic", &value) {
                     Err(error)?;
                 }
                 let data_kind = value.get("type").and_then(Value::as_str);
@@ -228,9 +228,9 @@ impl Provider for AnthropicProvider {
                         }
                         terminal = true;
                         if !thinking_blocks.is_empty() {
-                            yield ModelEvent::ProviderReplayState(
-                                crate::model::ProviderReplayState {
-                                    provider_kind: "anthropic".into(),
+                            yield ModelEvent::ProtocolReplayState(
+                                crate::model::ProtocolReplayState {
+                                    protocol_kind: "anthropic".into(),
                                     value: json!({"blocks": std::mem::take(&mut thinking_blocks)}),
                                 },
                             );
@@ -256,8 +256,8 @@ impl Provider for AnthropicProvider {
                     }
                 }
                 if !thinking_blocks.is_empty() {
-                    yield ModelEvent::ProviderReplayState(crate::model::ProviderReplayState {
-                        provider_kind: "anthropic".into(),
+                    yield ModelEvent::ProtocolReplayState(crate::model::ProtocolReplayState {
+                        protocol_kind: "anthropic".into(),
                         value: json!({"blocks": std::mem::take(&mut thinking_blocks)}),
                     });
                 }
@@ -378,7 +378,7 @@ fn anthropic_messages(messages: &[ProjectedMessage]) -> Result<Vec<Value>> {
                 let mut content = Vec::new();
                 if let Some(blocks) = replay_state
                     .as_ref()
-                    .filter(|state| state.provider_kind == "anthropic")
+                    .filter(|state| state.protocol_kind == "anthropic")
                     .and_then(|state| state.value.get("blocks"))
                     .and_then(Value::as_array)
                 {

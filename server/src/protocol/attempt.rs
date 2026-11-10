@@ -1,4 +1,4 @@
-//! Sends one Provider HTTP attempt without applying retry policy.
+//! Sends one protocol HTTP attempt without applying retry policy.
 
 use tokio_util::sync::CancellationToken;
 

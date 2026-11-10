@@ -30,8 +30,8 @@ use crate::{
         ContentPart, ModelInvocation, ModelRequest, ModelSpec, ProjectedContent, ProjectedMessage,
         PromptSpec, Role,
     },
+    protocol::{ModelEvent, Protocol},
     provider::ADAPTER_ID_PREFIX,
-    protocol::{ModelEvent, Provider},
     store::CommitSettings,
     Error, Result,
 };
@@ -90,9 +90,9 @@ async fn generate_local(
     let model_id = settings.model_id.trim();
     ensure_configured_model(registry, model_id).await?;
     let invocation = build_invocation(&settings, model_id, build_user_content(&request, &diffs));
-    let provider = registry.conversations().dependencies().provider.clone();
+    let protocol = registry.conversations().dependencies().protocol.clone();
     let generated = generate(
-        provider,
+        protocol,
         invocation,
         connect_timeout_ms.map(Duration::from_millis),
     )
@@ -113,10 +113,10 @@ async fn generate_local(
 
 async fn ensure_configured_model(registry: &TransportRegistry, model_id: &str) -> Result<()> {
     if model_id.starts_with(ADAPTER_ID_PREFIX) {
-        let plugins = registry.plugins().ok_or_else(|| {
-            Error::Provider(format!("commit plugin model {model_id} is unavailable"))
+        let providers = registry.providers().ok_or_else(|| {
+            Error::Provider(format!("commit provider model {model_id} is unavailable"))
         })?;
-        plugins.model_descriptor(model_id).await?;
+        providers.model_descriptor(model_id).await?;
         return Ok(());
     }
     if registry.store().model(model_id).await?.is_some() {
@@ -157,12 +157,12 @@ fn build_invocation(
 }
 
 async fn generate(
-    provider: Arc<dyn Provider>,
+    protocol: Arc<dyn Protocol>,
     invocation: ModelInvocation,
     client_timeout: Option<Duration>,
 ) -> Result<String> {
     let cancellation = CancellationToken::new();
-    let stream = provider.stream(invocation, cancellation.clone());
+    let stream = protocol.stream(invocation, cancellation.clone());
     let mut accumulated = String::new();
     let soft_deadline = client_timeout
         .map(|timeout| timeout.saturating_sub(Duration::from_millis(700)))
@@ -204,7 +204,7 @@ async fn generate(
         }
         if !finished && !deadline_hit {
             return Err(Error::Provider(
-                "provider stream ended without Done during commit message generation".into(),
+                "protocol stream ended without Done during commit message generation".into(),
             ));
         }
         Ok(())

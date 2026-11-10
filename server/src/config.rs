@@ -10,8 +10,8 @@ const DATA_DIR_NAME: &str = ".cursor-byok-v3";
 const DATABASE_FILE_NAME: &str = "cursor-byok.db";
 const V0049_DATA_DIR_NAME: &str = ".cursor-local-assistant-v2";
 const V0049_CONFIG_FILE_NAME: &str = "config.yaml";
-const DEFAULT_PROVIDER_REQUEST_TIMEOUT: Duration = Duration::from_secs(60 * 60);
-const DEFAULT_PROVIDER_STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+const DEFAULT_PROTOCOL_REQUEST_TIMEOUT: Duration = Duration::from_secs(60 * 60);
+const DEFAULT_PROTOCOL_STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
 pub fn managed_data_dir() -> Result<PathBuf> {
     let home_dir = dirs::home_dir()
@@ -32,22 +32,22 @@ pub fn v0049_config_path() -> Result<PathBuf> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ProviderKind {
+pub enum ProtocolKind {
     OpenAiChat,
     OpenAiResponses,
     Anthropic,
 }
 
 #[derive(Clone)]
-pub struct ProviderConfig {
-    pub kind: ProviderKind,
+pub struct ProtocolConfig {
+    pub kind: ProtocolKind,
     pub request_url: String,
     pub api_key: String,
     pub custom_headers: reqwest::header::HeaderMap,
     pub max_output_tokens: Option<u64>,
     pub request_timeout: Duration,
     pub allowed_body_fields: Option<std::collections::HashSet<String>>,
-    /// When set, the serialized provider body is rewritten through the
+    /// When set, the serialized request body is rewritten through the
     /// Headroom gateway (`POST /v1/compress`) before dispatch.
     pub headroom: Option<crate::headroom::HeadroomRoute>,
 }
@@ -56,11 +56,11 @@ pub struct ProviderConfig {
 pub struct Config {
     pub listen_addr: SocketAddr,
     pub database_url: String,
-    pub provider_request_timeout: Duration,
-    pub provider_stream_idle_timeout: Duration,
+    pub protocol_request_timeout: Duration,
+    pub protocol_stream_idle_timeout: Duration,
     pub console: Option<ConsoleSource>,
     pub use_persisted_ports: bool,
-    /// User-facing app version; the desktop shell overrides it with its own, used for plugin minAppVersion gating.
+    /// User-facing app version; the desktop shell overrides it with its own, used for provider minAppVersion gating.
     pub app_version: String,
 }
 
@@ -80,7 +80,7 @@ impl Config {
             Ok(value) => Duration::from_secs(value.parse().map_err(|error| {
                 Error::Config(format!("invalid CURSOR_PROVIDER_TIMEOUT_SECONDS: {error}"))
             })?),
-            Err(env::VarError::NotPresent) => DEFAULT_PROVIDER_REQUEST_TIMEOUT,
+            Err(env::VarError::NotPresent) => DEFAULT_PROTOCOL_REQUEST_TIMEOUT,
             Err(error) => {
                 return Err(Error::Config(format!(
                     "invalid CURSOR_PROVIDER_TIMEOUT_SECONDS: {error}"
@@ -109,8 +109,8 @@ impl Config {
         Ok(Self {
             listen_addr,
             database_url: database_url_from_env()?,
-            provider_request_timeout: request_timeout,
-            provider_stream_idle_timeout: DEFAULT_PROVIDER_STREAM_IDLE_TIMEOUT,
+            protocol_request_timeout: request_timeout,
+            protocol_stream_idle_timeout: DEFAULT_PROTOCOL_STREAM_IDLE_TIMEOUT,
             console,
             use_persisted_ports: false,
             app_version: env!("CARGO_PKG_VERSION").into(),
@@ -123,8 +123,8 @@ impl Config {
                 .parse()
                 .expect("desktop listen address is static"),
             database_url: default_database_url()?,
-            provider_request_timeout: DEFAULT_PROVIDER_REQUEST_TIMEOUT,
-            provider_stream_idle_timeout: DEFAULT_PROVIDER_STREAM_IDLE_TIMEOUT,
+            protocol_request_timeout: DEFAULT_PROTOCOL_REQUEST_TIMEOUT,
+            protocol_stream_idle_timeout: DEFAULT_PROTOCOL_STREAM_IDLE_TIMEOUT,
             console: None,
             use_persisted_ports: true,
             app_version: env!("CARGO_PKG_VERSION").into(),
@@ -160,13 +160,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn provider_timeout_defaults_match_runtime_boundaries() {
+    fn protocol_timeout_defaults_match_runtime_boundaries() {
         assert_eq!(
-            DEFAULT_PROVIDER_STREAM_IDLE_TIMEOUT,
+            DEFAULT_PROTOCOL_STREAM_IDLE_TIMEOUT,
             Duration::from_secs(30 * 60)
         );
         assert_eq!(
-            DEFAULT_PROVIDER_REQUEST_TIMEOUT,
+            DEFAULT_PROTOCOL_REQUEST_TIMEOUT,
             Duration::from_secs(60 * 60)
         );
     }

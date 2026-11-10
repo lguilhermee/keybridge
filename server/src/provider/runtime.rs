@@ -18,21 +18,21 @@ use super::{
 use crate::{config, store::Store, Error, Result};
 
 #[derive(Clone)]
-pub struct PluginRuntime {
-    inner: Arc<PluginRuntimeInner>,
+pub struct ProviderRuntime {
+    inner: Arc<ProviderRuntimeInner>,
 }
 
-struct PluginRuntimeInner {
+struct ProviderRuntimeInner {
     root: PathBuf,
     asset: Option<RuntimeAsset>,
-    status: RwLock<PluginRuntimeStatus>,
+    status: RwLock<ProviderRuntimeStatus>,
     initializing: AtomicBool,
     cancellation: Mutex<Option<CancellationToken>>,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum PluginRuntimeState {
+pub enum ProviderRuntimeState {
     Uninitialized,
     Initializing,
     Ready,
@@ -42,7 +42,7 @@ pub enum PluginRuntimeState {
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum PluginRuntimePhase {
+pub enum ProviderRuntimePhase {
     Checking,
     Downloading,
     Verifying,
@@ -51,28 +51,28 @@ pub enum PluginRuntimePhase {
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
-pub struct PluginRuntimeStatus {
-    pub state: PluginRuntimeState,
+pub struct ProviderRuntimeStatus {
+    pub state: ProviderRuntimeState,
     pub version: String,
     pub target: Option<String>,
-    pub phase: Option<PluginRuntimePhase>,
+    pub phase: Option<ProviderRuntimePhase>,
     pub downloaded_bytes: u64,
     pub total_bytes: Option<u64>,
     pub error: Option<String>,
 }
 
-impl PluginRuntimeStatus {
+impl ProviderRuntimeStatus {
     fn uninitialized(asset: RuntimeAsset) -> Self {
-        Self::new(PluginRuntimeState::Uninitialized, Some(asset))
+        Self::new(ProviderRuntimeState::Uninitialized, Some(asset))
     }
 
     fn ready(asset: RuntimeAsset) -> Self {
-        Self::new(PluginRuntimeState::Ready, Some(asset))
+        Self::new(ProviderRuntimeState::Ready, Some(asset))
     }
 
     fn unsupported() -> Self {
         Self {
-            state: PluginRuntimeState::Unsupported,
+            state: ProviderRuntimeState::Unsupported,
             version: DENO_VERSION.into(),
             target: None,
             phase: None,
@@ -86,7 +86,7 @@ impl PluginRuntimeStatus {
         }
     }
 
-    fn new(state: PluginRuntimeState, asset: Option<RuntimeAsset>) -> Self {
+    fn new(state: ProviderRuntimeState, asset: Option<RuntimeAsset>) -> Self {
         Self {
             state,
             version: DENO_VERSION.into(),
@@ -99,7 +99,7 @@ impl PluginRuntimeStatus {
     }
 }
 
-impl PluginRuntime {
+impl ProviderRuntime {
     pub fn managed() -> Result<Self> {
         Self::new(config::managed_data_dir()?.join("plugins").join("runtime"))
     }
@@ -114,13 +114,13 @@ impl PluginRuntime {
         let asset = RuntimeAsset::current();
         let status = match asset {
             Some(asset) if installation::runtime_complete(&root, asset) => {
-                PluginRuntimeStatus::ready(asset)
+                ProviderRuntimeStatus::ready(asset)
             }
-            Some(asset) => PluginRuntimeStatus::uninitialized(asset),
-            None => PluginRuntimeStatus::unsupported(),
+            Some(asset) => ProviderRuntimeStatus::uninitialized(asset),
+            None => ProviderRuntimeStatus::unsupported(),
         };
         Ok(Self {
-            inner: Arc::new(PluginRuntimeInner {
+            inner: Arc::new(ProviderRuntimeInner {
                 root,
                 asset,
                 status: RwLock::new(status),
@@ -130,12 +130,12 @@ impl PluginRuntime {
         })
     }
 
-    pub fn status(&self) -> PluginRuntimeStatus {
+    pub fn status(&self) -> ProviderRuntimeStatus {
         let mut status = self.inner.status.write();
-        if status.state == PluginRuntimeState::Ready {
+        if status.state == ProviderRuntimeState::Ready {
             if let Some(asset) = self.inner.asset {
                 if !installation::runtime_complete(&self.inner.root, asset) {
-                    *status = PluginRuntimeStatus::uninitialized(asset);
+                    *status = ProviderRuntimeStatus::uninitialized(asset);
                 }
             }
         }
@@ -144,18 +144,18 @@ impl PluginRuntime {
 
     pub fn executable(&self) -> Option<PathBuf> {
         let asset = self.inner.asset?;
-        if self.status().state != PluginRuntimeState::Ready {
+        if self.status().state != ProviderRuntimeState::Ready {
             return None;
         }
         Some(installation::runtime_executable(&self.inner.root, asset))
     }
 
-    pub fn initialize(&self, store: Store) -> PluginRuntimeStatus {
+    pub fn initialize(&self, store: Store) -> ProviderRuntimeStatus {
         let Some(asset) = self.inner.asset else {
             return self.status();
         };
         if installation::runtime_complete(&self.inner.root, asset) {
-            let ready = PluginRuntimeStatus::ready(asset);
+            let ready = ProviderRuntimeStatus::ready(asset);
             *self.inner.status.write() = ready.clone();
             return ready;
         }
@@ -169,8 +169,8 @@ impl PluginRuntime {
         }
 
         let mut initializing =
-            PluginRuntimeStatus::new(PluginRuntimeState::Initializing, Some(asset));
-        initializing.phase = Some(PluginRuntimePhase::Checking);
+            ProviderRuntimeStatus::new(ProviderRuntimeState::Initializing, Some(asset));
+        initializing.phase = Some(ProviderRuntimePhase::Checking);
         *self.inner.status.write() = initializing.clone();
 
         let cancellation = CancellationToken::new();
@@ -188,13 +188,13 @@ impl PluginRuntime {
             )
             .await;
             let status = match result {
-                Ok(()) => PluginRuntimeStatus::ready(asset),
-                Err(Error::Cancelled) => PluginRuntimeStatus::uninitialized(asset),
+                Ok(()) => ProviderRuntimeStatus::ready(asset),
+                Err(Error::Cancelled) => ProviderRuntimeStatus::uninitialized(asset),
                 Err(error) => {
-                    tracing::error!(%error, target = asset.target, "plugin runtime initialization failed");
+                    tracing::error!(%error, target = asset.target, "provider runtime initialization failed");
                     let mut failed =
-                        PluginRuntimeStatus::new(PluginRuntimeState::Failed, Some(asset));
-                    failed.error = Some("plugin runtime initialization failed".into());
+                        ProviderRuntimeStatus::new(ProviderRuntimeState::Failed, Some(asset));
+                    failed.error = Some("provider runtime initialization failed".into());
                     failed
                 }
             };
@@ -206,7 +206,7 @@ impl PluginRuntime {
         initializing
     }
 
-    pub fn cancel_initialization(&self) -> PluginRuntimeStatus {
+    pub fn cancel_initialization(&self) -> ProviderRuntimeStatus {
         if let Some(cancellation) = self.inner.cancellation.lock().as_ref() {
             cancellation.cancel();
         }
@@ -215,12 +215,12 @@ impl PluginRuntime {
 
     fn update_progress(
         &self,
-        phase: PluginRuntimePhase,
+        phase: ProviderRuntimePhase,
         downloaded_bytes: u64,
         total_bytes: Option<u64>,
     ) {
         let mut status = self.inner.status.write();
-        status.state = PluginRuntimeState::Initializing;
+        status.state = ProviderRuntimeState::Initializing;
         status.phase = Some(phase);
         status.downloaded_bytes = downloaded_bytes;
         status.total_bytes = total_bytes;

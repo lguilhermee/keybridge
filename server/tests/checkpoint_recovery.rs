@@ -1,6 +1,6 @@
 //! Verifies Conversation recovery and resumable checkpoint state.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -215,8 +215,8 @@ async fn checkpoint_dependencies_are_content_addressed_without_a_persistent_stre
 #[tokio::test]
 async fn eligible_pending_checkpoint_resumes_tools_before_the_next_model_call() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "model-1".into(),
         },
@@ -232,7 +232,7 @@ async fn eligible_pending_checkpoint_resumes_tools_before_the_next_model_call() 
         ModelEvent::ToolCallEnd { index: 0 },
         ModelEvent::Done(FinishReason::ToolUse),
     ]);
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "model-2".into(),
         },
@@ -249,7 +249,7 @@ async fn eligible_pending_checkpoint_resumes_tools_before_the_next_model_call() 
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -294,7 +294,7 @@ async fn eligible_pending_checkpoint_resumes_tools_before_the_next_model_call() 
             .unwrap()["providerOptions"]["cursor"]["pendingToolCallStartedAtMs"]
             .as_u64()
             .unwrap();
-    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(protocol.requests().len(), 1);
     first.disconnect().await;
 
     let resumed = registry.get_or_create("resumed-run").await.unwrap();
@@ -326,7 +326,7 @@ async fn eligible_pending_checkpoint_resumes_tools_before_the_next_model_call() 
         }
     };
     assert_eq!(
-        provider.requests().len(),
+        protocol.requests().len(),
         1,
         "resume must execute the pending batch before calling the model"
     );
@@ -372,7 +372,7 @@ async fn eligible_pending_checkpoint_resumes_tools_before_the_next_model_call() 
                 }
                 if !saw_settled_barrier_blob {
                     assert_eq!(
-                        provider.requests().len(),
+                        protocol.requests().len(),
                         1,
                         "the next model call must wait for the settled Blob barrier"
                     );
@@ -406,7 +406,7 @@ async fn eligible_pending_checkpoint_resumes_tools_before_the_next_model_call() 
         .root_prompt_messages_json
         .iter()
         .all(|id| !resumed_set_blob_ids.contains(id)));
-    assert_eq!(provider.requests().len(), 2);
+    assert_eq!(protocol.requests().len(), 2);
     assert!(resumed_checkpoints
         .last()
         .unwrap()
@@ -476,7 +476,7 @@ async fn recovery_rejects_a_kv_get_payload_whose_hash_does_not_match_the_blob_id
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(fake_provider::FakeProvider::default()),
+        Arc::new(fake_protocol::FakeProtocol::default()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("bad-blob-run").await.unwrap();

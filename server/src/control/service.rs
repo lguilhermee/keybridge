@@ -18,10 +18,10 @@ use crate::{
         ContentPart, CursorRunTraceArtifact, CursorRunTraceSummary, LlmCallRequest,
         LlmCallResponseChunk, LlmCallSummary, ModelConfig, ModelConfigInput, ModelInvocation,
         ModelRequest, ModelSpec, ModelType, Overview, ProjectedContent, ProjectedMessage,
-        PromptSpec, ProviderType, Role,
+        PromptSpec, ProtocolType, Role,
     },
-    provider::{PluginDescriptor, PluginRegistry, PluginRuntime, PluginRuntimeStatus},
-    protocol::{is_valid_response_event, ModelEvent, Provider},
+    protocol::{is_valid_response_event, ModelEvent, Protocol},
+    provider::{ProviderDescriptor, ProviderRegistry, ProviderRuntime, ProviderRuntimeStatus},
     store::{
         CommitSettings, DesktopSettings, ExternalApiSettings, PortSettings, ProxySettings,
         ProxySettingsInput, StatisticsStorage, Store, TabSettings, TokenPricingSettings,
@@ -33,9 +33,9 @@ use crate::{
 pub struct ControlService {
     store: Store,
     cursor_harness: CursorHarness,
-    provider: Arc<dyn Provider>,
-    plugin_runtime: PluginRuntime,
-    plugins: PluginRegistry,
+    protocol: Arc<dyn Protocol>,
+    provider_runtime: ProviderRuntime,
+    providers: ProviderRegistry,
     clients: crate::network::NetworkClients,
     headroom: crate::headroom::HeadroomRuntime,
     model_tests: Arc<Mutex<BTreeMap<String, CancellationToken>>>,
@@ -145,18 +145,18 @@ pub struct ObservabilitySettings {
 impl ControlService {
     pub fn new(
         store: Store,
-        provider: Arc<dyn Provider>,
-        plugin_runtime: PluginRuntime,
-        plugins: PluginRegistry,
+        protocol: Arc<dyn Protocol>,
+        provider_runtime: ProviderRuntime,
+        providers: ProviderRegistry,
         clients: crate::network::NetworkClients,
         headroom: crate::headroom::HeadroomRuntime,
     ) -> Result<Self> {
         Ok(Self {
             cursor_harness: CursorHarness::new(store.clone())?,
             store,
-            provider,
-            plugin_runtime,
-            plugins,
+            protocol,
+            provider_runtime,
+            providers,
             clients,
             headroom,
             model_tests: Arc::new(Mutex::new(BTreeMap::new())),
@@ -183,114 +183,114 @@ impl ControlService {
         self.headroom.install().await
     }
 
-    pub async fn plugins(&self) -> Vec<PluginDescriptor> {
-        self.plugins.plugins().await
+    pub async fn providers(&self) -> Vec<ProviderDescriptor> {
+        self.providers.providers().await
     }
 
-    pub async fn plugin_oauth_begin(
+    pub async fn provider_oauth_begin(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         method_id: &str,
     ) -> Result<crate::provider::OAuthBeginResponse> {
-        self.plugins
-            .oauth_begin(plugin_id, resource_type, method_id)
+        self.providers
+            .oauth_begin(provider_id, resource_type, method_id)
             .await
     }
 
-    pub async fn plugin_oauth_poll(
+    pub async fn provider_oauth_poll(
         &self,
         session_id: &str,
     ) -> Result<crate::provider::OAuthPollResponse> {
-        self.plugins.oauth_poll(session_id).await
+        self.providers.oauth_poll(session_id).await
     }
 
-    pub async fn plugin_import(
+    pub async fn provider_import(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         files: serde_json::Value,
     ) -> Result<crate::provider::ImportResponse> {
-        self.plugins
-            .import_resources(plugin_id, resource_type, files)
+        self.providers
+            .import_resources(provider_id, resource_type, files)
             .await
     }
 
-    pub async fn plugin_export_resources(
+    pub async fn provider_export_resources(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
     ) -> Result<serde_json::Value> {
-        self.plugins
-            .export_resources(plugin_id, resource_type)
+        self.providers
+            .export_resources(provider_id, resource_type)
             .await
     }
 
-    pub async fn plugin_refresh_resource(
+    pub async fn provider_refresh_resource(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
     ) -> Result<()> {
-        self.plugins
-            .refresh_resource(plugin_id, resource_type, resource_id)
+        self.providers
+            .refresh_resource(provider_id, resource_type, resource_id)
             .await
     }
 
-    pub async fn plugin_resource_action(
+    pub async fn provider_resource_action(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
         action_id: &str,
         input: serde_json::Value,
     ) -> Result<serde_json::Value> {
-        self.plugins
-            .resource_action(plugin_id, resource_type, resource_id, action_id, input)
+        self.providers
+            .resource_action(provider_id, resource_type, resource_id, action_id, input)
             .await
     }
 
-    pub async fn plugin_delete_resource(
+    pub async fn provider_delete_resource(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
     ) -> Result<()> {
-        self.plugins
-            .delete_resource(plugin_id, resource_type, resource_id)
+        self.providers
+            .delete_resource(provider_id, resource_type, resource_id)
             .await
     }
 
-    pub async fn plugin_sync_models(&self, plugin_id: &str, provider_id: &str) -> Result<usize> {
-        self.plugins.sync_models(plugin_id, provider_id).await
+    pub async fn provider_sync_models(&self, provider_id: &str, channel_id: &str) -> Result<usize> {
+        self.providers.sync_models(provider_id, channel_id).await
     }
 
-    pub async fn plugin_set_model_enabled(
+    pub async fn provider_set_model_enabled(
         &self,
-        plugin_id: &str,
         provider_id: &str,
+        channel_id: &str,
         model_id: &str,
         enabled: bool,
     ) -> Result<()> {
-        self.plugins
-            .set_model_enabled(plugin_id, provider_id, model_id, enabled)
+        self.providers
+            .set_model_enabled(provider_id, channel_id, model_id, enabled)
             .await
     }
 
-    pub async fn remove_plugin_configuration(&self, plugin_id: &str) -> Result<()> {
-        self.plugins.remove(plugin_id).await
+    pub async fn remove_provider_configuration(&self, provider_id: &str) -> Result<()> {
+        self.providers.remove(provider_id).await
     }
 
-    pub fn plugin_runtime_status(&self) -> PluginRuntimeStatus {
-        self.plugin_runtime.status()
+    pub fn provider_runtime_status(&self) -> ProviderRuntimeStatus {
+        self.provider_runtime.status()
     }
 
-    pub fn initialize_plugin_runtime(&self) -> PluginRuntimeStatus {
-        self.plugin_runtime.initialize(self.store.clone())
+    pub fn initialize_provider_runtime(&self) -> ProviderRuntimeStatus {
+        self.provider_runtime.initialize(self.store.clone())
     }
 
-    pub fn cancel_plugin_runtime_initialization(&self) -> PluginRuntimeStatus {
-        self.plugin_runtime.cancel_initialization()
+    pub fn cancel_provider_runtime_initialization(&self) -> ProviderRuntimeStatus {
+        self.provider_runtime.cancel_initialization()
     }
 
     pub async fn models(&self) -> Result<Vec<ModelConfig>> {
@@ -381,7 +381,7 @@ impl ControlService {
 
         let mut model = ModelSpec::new(model_hash);
         if model_hash.starts_with(crate::provider::ADAPTER_ID_PREFIX) {
-            let descriptor = self.plugins.model_descriptor(model_hash).await?;
+            let descriptor = self.providers.model_descriptor(model_hash).await?;
             model.display_name = Some(descriptor.display_name);
             model.max_output_tokens = Some(descriptor.max_output_tokens.unwrap_or(65_536));
         } else {
@@ -418,7 +418,7 @@ impl ControlService {
         let mut first_valid_response_at = None;
         let mut output_tokens = None;
         let mut output = String::new();
-        let stream = self.provider.stream(invocation, cancellation.clone());
+        let stream = self.protocol.stream(invocation, cancellation.clone());
         let completed = tokio::time::timeout(TEST_TIMEOUT, async {
             futures_util::pin_mut!(stream);
             let mut finished = false;
@@ -506,8 +506,8 @@ impl ControlService {
         discover_models_from_endpoint(
             &client,
             match input.model_type {
-                ModelType::OpenAi => ProviderType::OpenAiResponses,
-                ModelType::Anthropic => ProviderType::Anthropic,
+                ModelType::OpenAi => ProtocolType::OpenAiResponses,
+                ModelType::Anthropic => ProtocolType::Anthropic,
             },
             &base_url,
             &input.api_key,
@@ -758,8 +758,8 @@ fn official_call(trace: CursorRunTraceSummary) -> CallSummary {
                 .unwrap_or_else(|| trace.request_id.clone()),
             provider_call_index: 0,
             model_hash: None,
-            provider_type: "cursor-official".into(),
-            provider_url: "https://api2.cursor.sh".into(),
+            protocol_type: "cursor-official".into(),
+            endpoint_url: "https://api2.cursor.sh".into(),
             request_type: "cursor-run-sse".into(),
             request_url: "https://api2.cursor.sh/agent.v1.AgentService/RunSSE".into(),
             model_id: model_id.clone(),
@@ -830,21 +830,21 @@ fn readable_utf8(data: &[u8]) -> Option<&str> {
 
 async fn discover_models_from_endpoint(
     client: &reqwest::Client,
-    provider_type: ProviderType,
+    protocol_type: ProtocolType,
     base_url: &str,
     api_key: &str,
     custom_headers: &serde_json::Value,
 ) -> Result<DiscoveredModels> {
-    let mut models = match provider_type {
-        ProviderType::OpenAiChat | ProviderType::OpenAiResponses => {
+    let mut models = match protocol_type {
+        ProtocolType::OpenAiChat | ProtocolType::OpenAiResponses => {
             openai_models(client, base_url, api_key, custom_headers).await?
         }
-        ProviderType::Anthropic => {
+        ProtocolType::Anthropic => {
             anthropic_models(client, base_url, api_key, custom_headers).await?
         }
-        ProviderType::Plugin => {
+        ProtocolType::Provider => {
             return Err(Error::Config(
-                "plugin providers discover models through their plugin".into(),
+                "provider channels discover models through their provider".into(),
             ))
         }
     };

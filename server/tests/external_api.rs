@@ -1,5 +1,5 @@
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -20,8 +20,8 @@ use cursor_server::{
         OPENAI_RESPONSES_ENDPOINT,
     },
     network::NetworkClients,
-    provider::{PluginRegistry, PluginRuntime},
-    protocol::{FinishReason, ModelEvent, ProviderRouter},
+    protocol::{FinishReason, ModelEvent, ProtocolRouter},
+    provider::{ProviderRegistry, ProviderRuntime},
     store::ExternalApiSettings,
 };
 use serde_json::{json, Value};
@@ -60,39 +60,39 @@ fn headroom(store: &cursor_server::store::Store) -> cursor_server::headroom::Hea
 
 async fn setup() -> (
     axum::Router,
-    fake_provider::FakeProvider,
+    fake_protocol::FakeProtocol,
     cursor_server::store::Store,
     tempfile::TempDir,
 ) {
     let (directory, store) = fixtures::temp_store().await;
     store.create_model(&model_input()).await.unwrap();
-    let runtime = PluginRuntime::managed().unwrap();
-    let plugins = PluginRegistry::managed(
+    let runtime = ProviderRuntime::managed().unwrap();
+    let providers = ProviderRegistry::managed(
         store.clone(),
         runtime.clone(),
         "0.1.0".into(),
         headroom(&store),
     )
     .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    let shared_provider = Arc::new(provider.clone());
+    let protocol = fake_protocol::FakeProtocol::default();
+    let shared_protocol = Arc::new(protocol.clone());
     let control = control::ControlService::new(
         store.clone(),
-        shared_provider.clone(),
+        shared_protocol.clone(),
         runtime,
-        plugins.clone(),
+        providers.clone(),
         NetworkClients::new(store.clone()),
         headroom(&store),
     )
     .unwrap();
-    let router = byok::router(store.clone(), plugins, shared_provider, None)
+    let router = byok::router(store.clone(), providers, shared_protocol, None)
         .merge(control::api_router(control));
-    (router, provider, store, directory)
+    (router, protocol, store, directory)
 }
 
 #[tokio::test]
 async fn management_settings_enable_the_external_route_without_restart() {
-    let (router, _provider, _store, _directory) = setup().await;
+    let (router, _protocol, _store, _directory) = setup().await;
     let (status, body) = send(
         router.clone(),
         "GET",
@@ -154,7 +154,7 @@ async fn send(
 
 #[tokio::test]
 async fn disabled_and_unauthorized_requests_cannot_list_models() {
-    let (router, _provider, store, _directory) = setup().await;
+    let (router, _protocol, store, _directory) = setup().await;
     assert_eq!(
         send(
             router.clone(),
@@ -202,7 +202,7 @@ async fn disabled_and_unauthorized_requests_cannot_list_models() {
 
 #[tokio::test]
 async fn duplicate_public_model_ids_use_the_first_configured_model() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     let first = store.models().await.unwrap().remove(0);
     let mut duplicate = model_input();
     duplicate.sort_order = 1;
@@ -239,7 +239,7 @@ async fn duplicate_public_model_ids_use_the_first_configured_model() {
         .collect::<Vec<_>>();
     assert_eq!(ids, ["work/qwen/model", "work/qwen/other"]);
 
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::TextDelta("ok".into()),
         ModelEvent::Done(FinishReason::Stop),
     ]);
@@ -252,12 +252,12 @@ async fn duplicate_public_model_ids_use_the_first_configured_model() {
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{body}");
-    assert_eq!(provider.requests()[0].model.model_id, first.model_hash);
+    assert_eq!(protocol.requests()[0].model.model_id, first.model_hash);
 }
 
 #[tokio::test]
 async fn all_three_protocols_use_the_public_model_id() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     store
         .set_external_api_settings(ExternalApiSettings {
             enabled: true,
@@ -279,7 +279,7 @@ async fn all_three_protocols_use_the_public_model_id() {
             json!({"model":"work/qwen/model","max_tokens":100,"messages":[{"role":"user","content":"hello"}]}),
         ),
     ] {
-        provider.push(vec![
+        protocol.push(vec![
             ModelEvent::TextStart,
             ModelEvent::TextDelta("world".into()),
             ModelEvent::TextEnd,
@@ -289,8 +289,8 @@ async fn all_three_protocols_use_the_public_model_id() {
         assert_eq!(status, StatusCode::OK, "{path}: {response}");
         assert!(response.contains("world"), "{path}: {response}");
     }
-    assert_eq!(provider.requests().len(), 3);
-    assert!(provider
+    assert_eq!(protocol.requests().len(), 3);
+    assert!(protocol
         .requests()
         .iter()
         .all(|request| request.model.model_id != "work/qwen/model"));
@@ -298,7 +298,7 @@ async fn all_three_protocols_use_the_public_model_id() {
 
 #[tokio::test]
 async fn streaming_chat_returns_incremental_sse_and_tool_calls() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     store
         .set_external_api_settings(ExternalApiSettings {
             enabled: true,
@@ -306,7 +306,7 @@ async fn streaming_chat_returns_incremental_sse_and_tool_calls() {
         })
         .await
         .unwrap();
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::TextStart,
         ModelEvent::TextDelta("hello".into()),
         ModelEvent::TextEnd,
@@ -333,7 +333,7 @@ async fn streaming_chat_returns_incremental_sse_and_tool_calls() {
 
 #[tokio::test]
 async fn chat_tool_result_keeps_the_assistant_function_name() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     store
         .set_external_api_settings(ExternalApiSettings {
             enabled: true,
@@ -341,7 +341,7 @@ async fn chat_tool_result_keeps_the_assistant_function_name() {
         })
         .await
         .unwrap();
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::TextDelta("done".into()),
         ModelEvent::Done(FinishReason::Stop),
     ]);
@@ -362,7 +362,7 @@ async fn chat_tool_result_keeps_the_assistant_function_name() {
         .0,
         StatusCode::OK
     );
-    let requests = provider.requests();
+    let requests = protocol.requests();
     let ProjectedContent::ToolResult(result) = &requests[0].history[2].content else {
         panic!("expected tool result");
     };
@@ -371,7 +371,7 @@ async fn chat_tool_result_keeps_the_assistant_function_name() {
 
 #[tokio::test]
 async fn responses_and_messages_stream_with_protocol_end_events() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     store
         .set_external_api_settings(ExternalApiSettings {
             enabled: true,
@@ -391,7 +391,7 @@ async fn responses_and_messages_stream_with_protocol_end_events() {
             "message_stop",
         ),
     ] {
-        provider.push(vec![
+        protocol.push(vec![
             ModelEvent::TextDelta("world".into()),
             ModelEvent::Done(FinishReason::Stop),
         ]);
@@ -403,7 +403,7 @@ async fn responses_and_messages_stream_with_protocol_end_events() {
 
 #[tokio::test]
 async fn responses_stream_emits_complete_text_and_tool_item_lifecycles() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     store
         .set_external_api_settings(ExternalApiSettings {
             enabled: true,
@@ -411,7 +411,7 @@ async fn responses_stream_emits_complete_text_and_tool_item_lifecycles() {
         })
         .await
         .unwrap();
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::TextStart,
         ModelEvent::TextDelta("hello".into()),
         ModelEvent::TextEnd,
@@ -463,7 +463,7 @@ async fn responses_stream_emits_complete_text_and_tool_item_lifecycles() {
 
 #[tokio::test]
 async fn messages_stream_closes_each_content_block_before_stopping() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     store
         .set_external_api_settings(ExternalApiSettings {
             enabled: true,
@@ -471,7 +471,7 @@ async fn messages_stream_closes_each_content_block_before_stopping() {
         })
         .await
         .unwrap();
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::TextStart,
         ModelEvent::TextDelta("hello".into()),
         ModelEvent::TextEnd,
@@ -513,7 +513,7 @@ async fn messages_stream_closes_each_content_block_before_stopping() {
 
 #[tokio::test]
 async fn all_protocols_preserve_cached_usage_in_streaming_and_complete_responses() {
-    let (router, provider, store, _directory) = setup().await;
+    let (router, protocol, store, _directory) = setup().await;
     store
         .set_external_api_settings(ExternalApiSettings {
             enabled: true,
@@ -554,7 +554,7 @@ async fn all_protocols_preserve_cached_usage_in_streaming_and_complete_responses
         ),
     ] {
         for stream in [false, true] {
-            provider.push(vec![
+            protocol.push(vec![
                 ModelEvent::TextDelta("world".into()),
                 ModelEvent::Usage(usage),
                 ModelEvent::Done(FinishReason::Stop),
@@ -617,11 +617,17 @@ async fn all_entry_and_upstream_protocol_pairs_preserve_cache_usage() {
         })
         .await
         .unwrap();
-    let runtime = PluginRuntime::managed().unwrap();
-    let plugins =
-        PluginRegistry::managed(store.clone(), runtime, "0.1.0".into(), headroom(&store)).unwrap();
-    let fake = fake_provider::FakeProvider::default();
-    let inner = byok::router(store.clone(), plugins.clone(), Arc::new(fake.clone()), None);
+    let runtime = ProviderRuntime::managed().unwrap();
+    let providers =
+        ProviderRegistry::managed(store.clone(), runtime, "0.1.0".into(), headroom(&store))
+            .unwrap();
+    let fake = fake_protocol::FakeProtocol::default();
+    let inner = byok::router(
+        store.clone(),
+        providers.clone(),
+        Arc::new(fake.clone()),
+        None,
+    );
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
     let server = tokio::spawn(async move { axum::serve(listener, inner).await.unwrap() });
@@ -647,9 +653,9 @@ async fn all_entry_and_upstream_protocol_pairs_preserve_cache_usage() {
         model.api_key = "secret".into();
         store.create_model(&model).await.unwrap();
     }
-    let provider = ProviderRouter::new(
+    let protocol = ProtocolRouter::new(
         store.clone(),
-        plugins.clone(),
+        providers.clone(),
         NetworkClients::new(store.clone()),
         headroom(&store),
         Duration::from_secs(10),
@@ -657,8 +663,8 @@ async fn all_entry_and_upstream_protocol_pairs_preserve_cache_usage() {
     );
     let outer = byok::router(
         store.clone(),
-        plugins,
-        Arc::new(provider),
+        providers,
+        Arc::new(protocol),
         Some(byok::NativeForwarder::new(
             store.clone(),
             NetworkClients::new(store.clone()),
@@ -776,9 +782,10 @@ async fn matching_http_protocols_forward_native_requests_and_responses() {
         })
         .await
         .unwrap();
-    let runtime = PluginRuntime::managed().unwrap();
-    let plugins =
-        PluginRegistry::managed(store.clone(), runtime, "0.1.0".into(), headroom(&store)).unwrap();
+    let runtime = ProviderRuntime::managed().unwrap();
+    let providers =
+        ProviderRegistry::managed(store.clone(), runtime, "0.1.0".into(), headroom(&store))
+            .unwrap();
     let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel::<(HeaderMap, Value)>();
     let upstream = Router::new().route(
         "/{*path}",
@@ -849,8 +856,8 @@ async fn matching_http_protocols_forward_native_requests_and_responses() {
             let (status, body) = send(
                 byok::router(
                     store.clone(),
-                    plugins.clone(),
-                    Arc::new(fake_provider::FakeProvider::default()),
+                    providers.clone(),
+                    Arc::new(fake_protocol::FakeProtocol::default()),
                     Some(byok::NativeForwarder::new(
                         store.clone(),
                         NetworkClients::new(store.clone()),
@@ -891,8 +898,8 @@ async fn matching_http_protocols_forward_native_requests_and_responses() {
     let (status, body) = send(
         byok::router(
             store.clone(),
-            plugins,
-            Arc::new(fake_provider::FakeProvider::default()),
+            providers,
+            Arc::new(fake_protocol::FakeProtocol::default()),
             Some(byok::NativeForwarder::new(
                 store.clone(),
                 NetworkClients::new(store.clone()),

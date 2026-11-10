@@ -21,7 +21,7 @@ pub struct NetworkClients {
 struct ClientCache {
     default: Option<reqwest::Client>,
     cursor: Option<reqwest::Client>,
-    provider: Option<(Duration, reqwest::Client)>,
+    protocol: Option<(Duration, reqwest::Client)>,
 }
 
 impl NetworkClients {
@@ -61,12 +61,12 @@ impl NetworkClients {
         Ok(client)
     }
 
-    pub async fn provider_client(&self, timeout: Duration) -> Result<reqwest::Client> {
+    pub async fn protocol_client(&self, timeout: Duration) -> Result<reqwest::Client> {
         if let Some((_, client)) = self
             .cache
             .read()
             .await
-            .provider
+            .protocol
             .as_ref()
             .filter(|(cached_timeout, _)| *cached_timeout == timeout)
         {
@@ -74,7 +74,7 @@ impl NetworkClients {
         }
         let mut cache = self.cache.write().await;
         if let Some((_, client)) = cache
-            .provider
+            .protocol
             .as_ref()
             .filter(|(cached_timeout, _)| *cached_timeout == timeout)
         {
@@ -84,7 +84,7 @@ impl NetworkClients {
             .await?
             .timeout(timeout)
             .build()?;
-        cache.provider = Some((timeout, client.clone()));
+        cache.protocol = Some((timeout, client.clone()));
         Ok(client)
     }
 

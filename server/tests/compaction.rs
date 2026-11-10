@@ -1,6 +1,6 @@
 //! Verifies explicit and automatic context compaction behavior.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -50,9 +50,9 @@ async fn summarize_replaces_model_history_and_preserves_cursor_history() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("old answer", 4_000, 12));
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("old answer", 4_000, 12));
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "summary-call".into(),
         },
@@ -69,7 +69,7 @@ async fn summarize_replaces_model_history_and_preserves_cursor_history() {
         }),
         ModelEvent::Done(FinishReason::Stop),
     ]);
-    provider.push(text_response("new answer", 900, 5));
+    protocol.push(text_response("new answer", 900, 5));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -78,7 +78,7 @@ async fn summarize_replaces_model_history_and_preserves_cursor_history() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -167,7 +167,7 @@ async fn summarize_replaces_model_history_and_preserves_cursor_history() {
         .unwrap()
         .root_prompt_messages_json
         .starts_with(&compacted_state.root_prompt_messages_json));
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 3);
     assert!(requests[1].prompt.tools.is_empty());
     assert!(requests[1]
@@ -226,10 +226,10 @@ async fn automatic_compaction_preflights_provider_input_and_records_rebuilt_toke
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response(&"x ".repeat(200_000), 150_000, 1_000));
-    provider.push(text_response("automatic durable summary", 120_000, 20));
-    provider.push(text_response("continued after compaction", 20_000, 20));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response(&"x ".repeat(200_000), 150_000, 1_000));
+    protocol.push(text_response("automatic durable summary", 120_000, 20));
+    protocol.push(text_response("continued after compaction", 20_000, 20));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -238,7 +238,7 @@ async fn automatic_compaction_preflights_provider_input_and_records_rebuilt_toke
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -290,7 +290,7 @@ async fn automatic_compaction_preflights_provider_input_and_records_rebuilt_toke
         .expect("compacted checkpoint must record rebuilt context tokens");
     assert!(compacted_tokens < 90_000);
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 3);
     assert!(!requests[0].prompt.tools.is_empty());
     assert!(requests[1].prompt.tools.is_empty());
@@ -368,9 +368,9 @@ async fn incremental_preflight_uses_conversation_anchor_across_model_switch() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("old answer", 103_904, 12));
-    provider.push(text_response("new answer", 104_000, 12));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("old answer", 103_904, 12));
+    protocol.push(text_response("new answer", 104_000, 12));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -379,7 +379,7 @@ async fn incremental_preflight_uses_conversation_anchor_across_model_switch() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -410,7 +410,7 @@ async fn incremental_preflight_uses_conversation_anchor_across_model_switch() {
 
     assert_eq!(second.summary_started, 0);
     assert_eq!(second.summary_completed, 0);
-    assert_eq!(provider.requests().len(), 2);
+    assert_eq!(protocol.requests().len(), 2);
 }
 
 #[tokio::test]
@@ -443,7 +443,7 @@ async fn irreducibly_oversized_current_input_fails_before_provider_dispatch() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
+    let protocol = fake_protocol::FakeProtocol::default();
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -452,7 +452,7 @@ async fn irreducibly_oversized_current_input_fails_before_provider_dispatch() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -469,7 +469,7 @@ async fn irreducibly_oversized_current_input_fails_before_provider_dispatch() {
     )
     .await;
 
-    assert!(provider.requests().is_empty());
+    assert!(protocol.requests().is_empty());
     assert_eq!(output.summary_started, 0);
     assert_eq!(output.summary_completed, 0);
 }
@@ -503,23 +503,23 @@ fn windowed_model(model_id: &str, context_window_tokens: Option<u64>) -> ModelCo
 
 #[tokio::test]
 async fn provider_overflow_refusal_compacts_and_retries_once() {
-    // The estimate cleared the compaction check, but the provider counted
+    // The estimate cleared the compaction check, but the protocol counted
     // more and refused. The refusal is the trigger the estimate missed.
     let (_directory, store) = fixtures::temp_store().await;
     let model = store
         .create_model(&windowed_model("refusal-model", Some(1_000_000)))
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("first answer", 4_000, 12));
-    provider.push_error(cursor_server::Error::Provider(
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("first answer", 4_000, 12));
+    protocol.push_error(cursor_server::Error::Provider(
         "Anthropic 400 Bad Request: {\"type\":\"error\",\"error\":{\"type\":\
          \"invalid_request_error\",\"message\":\"prompt is too long: 1002148 tokens > \
          1000000 maximum\"}}"
             .into(),
     ));
-    provider.push(text_response("durable summary", 3_000, 20));
-    provider.push(text_response("answer after compaction", 500, 20));
+    protocol.push(text_response("durable summary", 3_000, 20));
+    protocol.push(text_response("answer after compaction", 500, 20));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -528,7 +528,7 @@ async fn provider_overflow_refusal_compacts_and_retries_once() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -560,7 +560,7 @@ async fn provider_overflow_refusal_compacts_and_retries_once() {
     assert_eq!(second.summary_started, 1);
     assert_eq!(second.summary_completed, 1);
     assert_eq!(second.turn_ended, 1);
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(
         requests.len(),
         4,
@@ -588,15 +588,15 @@ async fn provider_overflow_refusal_compacts_and_retries_once() {
 async fn assistant_terminated_history_is_sent_with_a_user_tail() {
     // Cursor can resume a conversation whose committed history already ends
     // with the assistant. Anthropic refuses that as a prefill, so the run
-    // appends a provider-visible continuation without persisting it.
+    // appends a protocol-visible continuation without persisting it.
     let (_directory, store) = fixtures::temp_store().await;
     let model = store
         .create_model(&windowed_model("tail-model", None))
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("first answer", 400, 12));
-    provider.push(text_response("resumed answer", 450, 12));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("first answer", 400, 12));
+    protocol.push(text_response("resumed answer", 450, 12));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -605,7 +605,7 @@ async fn assistant_terminated_history_is_sent_with_a_user_tail() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -634,7 +634,7 @@ async fn assistant_terminated_history_is_sent_with_a_user_tail() {
     .await;
     assert_eq!(resumed.turn_ended, 1);
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 2);
     let tail = requests[1].history.last().unwrap();
     assert_eq!(tail.role, Role::User);
@@ -656,7 +656,7 @@ async fn assistant_terminated_history_is_sent_with_a_user_tail() {
         stored
             .iter()
             .all(|message| message.message_id != "runtime:continue"),
-        "the continuation tail is provider-visible only and never persisted"
+        "the continuation tail is protocol-visible only and never persisted"
     );
 }
 

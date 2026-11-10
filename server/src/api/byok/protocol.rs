@@ -4,24 +4,24 @@ use serde_json::Value;
 use crate::{
     model::{
         ContentPart, ModelRequest, ModelSpec, ProjectedContent, ProjectedMessage, PromptSpec,
-        ProviderType, Role, ToolCallContent, ToolDefinition, ToolResultContent,
+        ProtocolType, Role, ToolCallContent, ToolDefinition, ToolResultContent,
     },
     Error, Result,
 };
 
 #[derive(Clone, Copy, Debug)]
-pub(super) enum Protocol {
+pub(super) enum ApiProtocol {
     Chat,
     Responses,
     Messages,
 }
 
-impl Protocol {
-    pub(super) fn provider_type(self) -> ProviderType {
+impl ApiProtocol {
+    pub(super) fn protocol_type(self) -> ProtocolType {
         match self {
-            Self::Chat => ProviderType::OpenAiChat,
-            Self::Responses => ProviderType::OpenAiResponses,
-            Self::Messages => ProviderType::Anthropic,
+            Self::Chat => ProtocolType::OpenAiChat,
+            Self::Responses => ProtocolType::OpenAiResponses,
+            Self::Messages => ProtocolType::Anthropic,
         }
     }
 }
@@ -32,7 +32,7 @@ pub(super) struct ParsedRequest {
     pub stream: bool,
 }
 
-pub(super) fn parse(protocol: Protocol, body: &Value) -> Result<ParsedRequest> {
+pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest> {
     let public_model_id = required_string(body, "model")?.to_owned();
     let stream = body.get("stream").and_then(Value::as_bool).unwrap_or(false);
     let mut prompt = PromptSpec {
@@ -42,7 +42,7 @@ pub(super) fn parse(protocol: Protocol, body: &Value) -> Result<ParsedRequest> {
     let mut history = Vec::new();
     let mut model = ModelSpec::new(&public_model_id);
     match protocol {
-        Protocol::Chat => {
+        ApiProtocol::Chat => {
             parse_chat_messages(body.get("messages"), &mut prompt, &mut history)?;
             parse_tools(body.get("tools"), protocol, &mut prompt)?;
             model.max_output_tokens = body
@@ -50,7 +50,7 @@ pub(super) fn parse(protocol: Protocol, body: &Value) -> Result<ParsedRequest> {
                 .or_else(|| body.get("max_tokens"))
                 .and_then(Value::as_u64);
         }
-        Protocol::Responses => {
+        ApiProtocol::Responses => {
             prompt.instructions = body
                 .get("instructions")
                 .and_then(Value::as_str)
@@ -64,7 +64,7 @@ pub(super) fn parse(protocol: Protocol, body: &Value) -> Result<ParsedRequest> {
             parse_tools(body.get("tools"), protocol, &mut prompt)?;
             model.max_output_tokens = body.get("max_output_tokens").and_then(Value::as_u64);
         }
-        Protocol::Messages => {
+        ApiProtocol::Messages => {
             prompt.instructions = text_content(body.get("system")).unwrap_or_default();
             parse_anthropic_messages(body.get("messages"), &mut history)?;
             parse_tools(body.get("tools"), protocol, &mut prompt)?;
@@ -427,7 +427,11 @@ fn parse_anthropic_messages(
     Ok(())
 }
 
-fn parse_tools(value: Option<&Value>, protocol: Protocol, prompt: &mut PromptSpec) -> Result<()> {
+fn parse_tools(
+    value: Option<&Value>,
+    protocol: ApiProtocol,
+    prompt: &mut PromptSpec,
+) -> Result<()> {
     let Some(value) = value else {
         return Ok(());
     };
@@ -435,7 +439,7 @@ fn parse_tools(value: Option<&Value>, protocol: Protocol, prompt: &mut PromptSpe
         .as_array()
         .ok_or_else(|| Error::Protocol("tools must be an array".into()))?;
     for tool in tools {
-        let function = if matches!(protocol, Protocol::Chat) {
+        let function = if matches!(protocol, ApiProtocol::Chat) {
             tool.get("function").unwrap_or(tool)
         } else {
             tool

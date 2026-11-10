@@ -1,4 +1,4 @@
-//! Discovers plugin manifests and evaluates serializable TypeScript definitions.
+//! Discovers provider manifests and evaluates serializable TypeScript definitions.
 use std::{
     collections::BTreeMap,
     fs,
@@ -8,9 +8,9 @@ use std::{
 use base64::{engine::general_purpose::STANDARD, Engine};
 
 use super::{
-    definition::PluginDefinitionLoader,
-    descriptor::PluginModuleDefinition,
-    manifest::{validate_id, PluginManifest},
+    definition::ProviderDefinitionLoader,
+    descriptor::ProviderModuleDefinition,
+    manifest::{validate_id, ProviderManifest},
 };
 use crate::{config, Error, Result};
 
@@ -18,22 +18,22 @@ const MANIFEST_FILE_NAME: &str = "plugin.json";
 const MAX_ICON_BYTES: u64 = 1024 * 1024;
 
 #[derive(Clone)]
-pub struct PluginCatalog {
+pub struct ProviderCatalog {
     roots: Vec<PathBuf>,
-    definition_loader: PluginDefinitionLoader,
+    definition_loader: ProviderDefinitionLoader,
     app_version: String,
 }
 
 #[derive(Clone)]
-pub(crate) struct PluginEntry {
+pub(crate) struct ProviderEntry {
     pub directory: PathBuf,
     pub entry: PathBuf,
-    pub manifest: PluginManifest,
-    pub definition: PluginModuleDefinition,
+    pub manifest: ProviderManifest,
+    pub definition: ProviderModuleDefinition,
     pub icon: String,
 }
 
-impl PluginCatalog {
+impl ProviderCatalog {
     pub fn managed(app_version: String) -> Result<Self> {
         let installed = config::managed_data_dir()?.join("plugins/installed");
         fs::create_dir_all(&installed)?;
@@ -42,9 +42,9 @@ impl PluginCatalog {
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(&installed, fs::Permissions::from_mode(0o700))?;
         }
-        // Built-in plugins are preinstalled into installed by version; no writes when the version matches.
+        // Built-in providers are preinstalled into installed by version; no writes when the version matches.
         super::builtin::install(&installed)?;
-        // Scan order is priority: in debug the source directory comes first so built-in plugin edits take effect hot;
+        // Scan order is priority: in debug the source directory comes first so built-in provider edits take effect hot;
         // release builds only have the installed root.
         #[cfg(debug_assertions)]
         let roots = vec![
@@ -55,28 +55,28 @@ impl PluginCatalog {
         let roots = vec![installed];
         Ok(Self {
             roots,
-            definition_loader: PluginDefinitionLoader::managed()?,
+            definition_loader: ProviderDefinitionLoader::managed()?,
             app_version,
         })
     }
 
-    pub(crate) fn loader(&self) -> &PluginDefinitionLoader {
+    pub(crate) fn loader(&self) -> &ProviderDefinitionLoader {
         &self.definition_loader
     }
 
-    pub(crate) async fn entries(&self, executable: &Path) -> Vec<PluginEntry> {
-        let mut plugins = BTreeMap::new();
+    pub(crate) async fn entries(&self, executable: &Path) -> Vec<ProviderEntry> {
+        let mut providers = BTreeMap::new();
         for root in &self.roots {
             let mut directories = match child_directories(root) {
                 Ok(value) => value,
                 Err(error) => {
-                    tracing::warn!(path = %root.display(), %error, "failed to scan plugin directory");
+                    tracing::warn!(path = %root.display(), %error, "failed to scan provider directory");
                     continue;
                 }
             };
             directories.sort();
             for directory in directories {
-                match load_plugin(
+                match load_provider(
                     &directory,
                     &self.definition_loader,
                     executable,
@@ -85,23 +85,23 @@ impl PluginCatalog {
                 .await
                 {
                     Ok(entry) => {
-                        if plugins.contains_key(&entry.manifest.id) {
-                            tracing::warn!(plugin = %entry.manifest.id, path = %directory.display(), "ignoring duplicate plugin");
+                        if providers.contains_key(&entry.manifest.id) {
+                            tracing::warn!(provider = %entry.manifest.id, path = %directory.display(), "ignoring duplicate provider");
                         } else {
-                            plugins.insert(entry.manifest.id.clone(), entry);
+                            providers.insert(entry.manifest.id.clone(), entry);
                         }
                     }
                     Err(error) => {
-                        tracing::warn!(path = %directory.display(), %error, "ignoring invalid plugin")
+                        tracing::warn!(path = %directory.display(), %error, "ignoring invalid provider")
                     }
                 }
             }
         }
-        plugins.into_values().collect()
+        providers.into_values().collect()
     }
 
-    pub(crate) fn manifests(&self) -> Vec<(PluginManifest, String)> {
-        let mut plugins = BTreeMap::new();
+    pub(crate) fn manifests(&self) -> Vec<(ProviderManifest, String)> {
+        let mut providers = BTreeMap::new();
         for root in &self.roots {
             let Ok(mut directories) = child_directories(root) else {
                 continue;
@@ -109,7 +109,7 @@ impl PluginCatalog {
             directories.sort();
             for directory in directories {
                 let loaded = (|| -> Result<_> {
-                    let manifest: PluginManifest =
+                    let manifest: ProviderManifest =
                         serde_json::from_slice(&fs::read(directory.join(MANIFEST_FILE_NAME))?)?;
                     manifest.validate(&directory)?;
                     require_app_version(&manifest, &self.app_version)?;
@@ -117,13 +117,13 @@ impl PluginCatalog {
                     Ok((manifest, icon))
                 })();
                 if let Ok((manifest, icon)) = loaded {
-                    plugins
+                    providers
                         .entry(manifest.id.clone())
                         .or_insert((manifest, icon));
                 }
             }
         }
-        plugins.into_values().collect()
+        providers.into_values().collect()
     }
 }
 
@@ -141,8 +141,8 @@ fn child_directories(root: &Path) -> Result<Vec<PathBuf>> {
     Ok(directories)
 }
 
-/// Refuses to load when the app is too old, honoring the plugin's minAppVersion declaration.
-fn require_app_version(manifest: &PluginManifest, app_version: &str) -> Result<()> {
+/// Refuses to load when the app is too old, honoring the provider's minAppVersion declaration.
+fn require_app_version(manifest: &ProviderManifest, app_version: &str) -> Result<()> {
     let Some(minimum) = &manifest.min_app_version else {
         return Ok(());
     };
@@ -150,18 +150,18 @@ fn require_app_version(manifest: &PluginManifest, app_version: &str) -> Result<(
         return Ok(());
     }
     Err(Error::Config(format!(
-        "plugin '{}' requires app version {minimum} or newer (current {app_version})",
+        "provider '{}' requires app version {minimum} or newer (current {app_version})",
         manifest.id
     )))
 }
 
-async fn load_plugin(
+async fn load_provider(
     directory: &Path,
-    loader: &PluginDefinitionLoader,
+    loader: &ProviderDefinitionLoader,
     executable: &Path,
     app_version: &str,
-) -> Result<PluginEntry> {
-    let manifest: PluginManifest =
+) -> Result<ProviderEntry> {
+    let manifest: ProviderManifest =
         serde_json::from_slice(&fs::read(directory.join(MANIFEST_FILE_NAME))?)?;
     manifest.validate(directory)?;
     require_app_version(&manifest, app_version)?;
@@ -169,7 +169,7 @@ async fn load_plugin(
     let entry = directory.join(&manifest.entry).canonicalize()?;
     let definition = loader.load(executable, directory, &entry).await?;
     validate_definition(&manifest.id, &definition)?;
-    Ok(PluginEntry {
+    Ok(ProviderEntry {
         directory: directory.to_path_buf(),
         entry,
         manifest,
@@ -196,72 +196,72 @@ fn validate_localized_text(value: &serde_json::Value, label: &str) -> Result<()>
     }
 }
 
-fn validate_definition(plugin_id: &str, definition: &PluginModuleDefinition) -> Result<()> {
+fn validate_definition(provider_id: &str, definition: &ProviderModuleDefinition) -> Result<()> {
     if definition.providers.is_empty() {
         return Err(Error::Config(format!(
-            "plugin '{plugin_id}' must define at least one provider"
+            "provider '{provider_id}' must define at least one channel"
         )));
     }
-    let mut provider_ids = std::collections::HashSet::new();
-    for provider in &definition.providers {
-        validate_id(&provider.id, "plugin provider id")?;
+    let mut channel_ids = std::collections::HashSet::new();
+    for channel in &definition.providers {
+        validate_id(&channel.id, "channel id")?;
         validate_localized_text(
-            &provider.display_name,
+            &channel.display_name,
             &format!(
-                "plugin '{plugin_id}' provider '{}' displayName",
-                provider.id
+                "provider '{provider_id}' channel '{}' displayName",
+                channel.id
             ),
         )?;
-        if provider.provider_type.trim().is_empty() {
+        if channel.brand.trim().is_empty() {
             return Err(Error::Config(format!(
-                "plugin '{plugin_id}' provider '{}' requires providerType",
-                provider.id
+                "provider '{provider_id}' channel '{}' requires providerType",
+                channel.id
             )));
         }
-        if !provider_ids.insert(provider.id.clone()) {
+        if !channel_ids.insert(channel.id.clone()) {
             return Err(Error::Config(format!(
-                "plugin '{plugin_id}' contains duplicate provider '{}'",
-                provider.id
+                "provider '{provider_id}' contains duplicate channel '{}'",
+                channel.id
             )));
         }
-        if let Some(resource_type) = &provider.resource_type {
+        if let Some(resource_type) = &channel.resource_type {
             if !definition
                 .resources
                 .iter()
                 .any(|resource| &resource.resource_type == resource_type)
             {
                 return Err(Error::Config(format!(
-                    "plugin '{plugin_id}' provider '{}' consumes undeclared resource '{resource_type}'",
-                    provider.id
+                    "provider '{provider_id}' channel '{}' consumes undeclared resource '{resource_type}'",
+                    channel.id
                 )));
             }
         }
     }
     let mut resource_types = std::collections::HashSet::new();
     for resource in &definition.resources {
-        validate_id(&resource.resource_type, "plugin resource type")?;
+        validate_id(&resource.resource_type, "provider resource type")?;
         validate_localized_text(
             &resource.display_name,
             &format!(
-                "plugin '{plugin_id}' resource '{}' displayName",
+                "provider '{provider_id}' resource '{}' displayName",
                 resource.resource_type
             ),
         )?;
         if !resource_types.insert(resource.resource_type.clone()) {
             return Err(Error::Config(format!(
-                "plugin '{plugin_id}' contains duplicate resource type '{}'",
+                "provider '{provider_id}' contains duplicate resource type '{}'",
                 resource.resource_type
             )));
         }
         for method in &resource.add {
-            validate_id(&method.id, "plugin add method id")?;
+            validate_id(&method.id, "provider add method id")?;
             if !matches!(
                 method.method_type.as_str(),
                 super::descriptor::OAUTH2_ADD_METHOD
                     | super::descriptor::OAUTH2_AUTHORIZATION_CODE_ADD_METHOD
             ) {
                 return Err(Error::Config(format!(
-                    "plugin '{plugin_id}' add method '{}' uses unsupported type '{}'",
+                    "provider '{provider_id}' add method '{}' uses unsupported type '{}'",
                     method.id, method.method_type
                 )));
             }
@@ -269,14 +269,14 @@ fn validate_definition(plugin_id: &str, definition: &PluginModuleDefinition) -> 
                 && method.callback.is_some()
             {
                 return Err(Error::Config(format!(
-                    "plugin '{plugin_id}' device OAuth method '{}' cannot declare callback settings",
+                    "provider '{provider_id}' device OAuth method '{}' cannot declare callback settings",
                     method.id
                 )));
             }
             if let Some(callback) = &method.callback {
                 if callback.port == Some(0) {
                     return Err(Error::Config(format!(
-                        "plugin '{plugin_id}' OAuth callback port must be greater than zero"
+                        "provider '{provider_id}' OAuth callback port must be greater than zero"
                     )));
                 }
                 if let Some(path) = callback.path.as_deref() {
@@ -287,7 +287,7 @@ fn validate_definition(plugin_id: &str, definition: &PluginModuleDefinition) -> 
                         || path.contains("//")
                     {
                         return Err(Error::Config(format!(
-                            "plugin '{plugin_id}' contains invalid OAuth callback path '{path}'"
+                            "provider '{provider_id}' contains invalid OAuth callback path '{path}'"
                         )));
                     }
                 }
@@ -302,12 +302,12 @@ fn icon_data_url(directory: &Path, relative: &str) -> Result<String> {
     let path = directory.join(relative).canonicalize()?;
     if !path.starts_with(&root) {
         return Err(Error::Config(format!(
-            "plugin icon escapes its directory: {relative}"
+            "provider icon escapes its directory: {relative}"
         )));
     }
     if fs::metadata(&path)?.len() > MAX_ICON_BYTES {
         return Err(Error::Config(format!(
-            "plugin icon exceeds {MAX_ICON_BYTES} bytes: {relative}"
+            "provider icon exceeds {MAX_ICON_BYTES} bytes: {relative}"
         )));
     }
     let extension = path
@@ -321,7 +321,7 @@ fn icon_data_url(directory: &Path, relative: &str) -> Result<String> {
         "webp" => "image/webp",
         _ => {
             return Err(Error::Config(format!(
-                "unsupported plugin icon: {relative}"
+                "unsupported provider icon: {relative}"
             )))
         }
     };
@@ -338,9 +338,9 @@ mod tests {
     fn repository_examples_have_valid_static_manifests() {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("plugins/build-in");
         let sdk = tempfile::tempdir().unwrap();
-        let catalog = PluginCatalog {
+        let catalog = ProviderCatalog {
             roots: vec![root],
-            definition_loader: PluginDefinitionLoader::for_test(sdk.path()).unwrap(),
+            definition_loader: ProviderDefinitionLoader::for_test(sdk.path()).unwrap(),
             app_version: env!("CARGO_PKG_VERSION").into(),
         };
         assert!(!catalog.manifests().is_empty());

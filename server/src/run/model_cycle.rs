@@ -6,8 +6,8 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    model::{normalize_tool_name, ProviderReplayState, ToolCall, Usage},
-    protocol::{FinishReason, ModelEvent, ProviderStream},
+    model::{normalize_tool_name, ProtocolReplayState, ToolCall, Usage},
+    protocol::{FinishReason, ModelEvent, ProtocolStream},
 };
 
 use super::{RunEvent, RunFailure};
@@ -17,7 +17,7 @@ pub struct ModelCycleResult {
     pub model_call_id: String,
     pub text: String,
     pub reasoning: String,
-    pub replay_state: Option<ProviderReplayState>,
+    pub replay_state: Option<ProtocolReplayState>,
     pub calls: Vec<ToolCall>,
     pub usage: Option<Usage>,
     pub finish_reason: FinishReason,
@@ -38,7 +38,7 @@ struct OpenTool {
 }
 
 pub async fn consume_model_cycle(
-    mut stream: ProviderStream,
+    mut stream: ProtocolStream,
     client: &mpsc::Sender<RunEvent>,
     cancellation: &CancellationToken,
 ) -> std::result::Result<ModelCycleResult, Box<ModelCycleFailure>> {
@@ -89,7 +89,7 @@ pub async fn consume_model_cycle(
         };
         if finish.is_some() {
             return Err(failure(
-                RunFailure::Protocol("provider emitted an event after Done".into()),
+                RunFailure::Protocol("protocol emitted an event after Done".into()),
                 text,
                 reasoning,
                 usage,
@@ -98,16 +98,16 @@ pub async fn consume_model_cycle(
         let result = match event {
             ModelEvent::Start { model_call_id: id } => {
                 if model_call_id.replace(id).is_some() {
-                    Err("provider emitted duplicate Start")
+                    Err("protocol emitted duplicate Start")
                 } else {
                     Ok(())
                 }
             }
             ModelEvent::TextStart => {
                 if model_call_id.is_none() {
-                    Err("provider emitted content before Start")
+                    Err("protocol emitted content before Start")
                 } else if text_open {
-                    Err("provider emitted duplicate TextStart")
+                    Err("protocol emitted duplicate TextStart")
                 } else {
                     text_open = true;
                     send(client, cancellation, RunEvent::TextStart).await
@@ -115,7 +115,7 @@ pub async fn consume_model_cycle(
             }
             ModelEvent::TextDelta(delta) => {
                 if !text_open {
-                    Err("provider emitted TextDelta before TextStart")
+                    Err("protocol emitted TextDelta before TextStart")
                 } else {
                     text.push_str(&delta);
                     send(client, cancellation, RunEvent::TextDelta(delta)).await
@@ -123,7 +123,7 @@ pub async fn consume_model_cycle(
             }
             ModelEvent::TextEnd => {
                 if !text_open {
-                    Err("provider emitted TextEnd before TextStart")
+                    Err("protocol emitted TextEnd before TextStart")
                 } else {
                     text_open = false;
                     send(client, cancellation, RunEvent::TextEnd).await
@@ -131,16 +131,16 @@ pub async fn consume_model_cycle(
             }
             ModelEvent::ThinkingStart => {
                 if model_call_id.is_none() {
-                    Err("provider emitted content before Start")
+                    Err("protocol emitted content before Start")
                 } else if thinking_started.replace(Instant::now()).is_some() {
-                    Err("provider emitted duplicate ThinkingStart")
+                    Err("protocol emitted duplicate ThinkingStart")
                 } else {
                     send(client, cancellation, RunEvent::ThinkingStart).await
                 }
             }
             ModelEvent::ThinkingDelta(delta) => {
                 if thinking_started.is_none() {
-                    Err("provider emitted ThinkingDelta before ThinkingStart")
+                    Err("protocol emitted ThinkingDelta before ThinkingStart")
                 } else {
                     reasoning.push_str(&delta);
                     send(client, cancellation, RunEvent::ThinkingDelta(delta)).await
@@ -157,7 +157,7 @@ pub async fn consume_model_cycle(
                     )
                     .await
                 } else {
-                    Err("provider emitted ThinkingEnd before ThinkingStart")
+                    Err("protocol emitted ThinkingEnd before ThinkingStart")
                 }
             }
             ModelEvent::ToolCallStart {
@@ -168,7 +168,7 @@ pub async fn consume_model_cycle(
                 let name = normalize_tool_name(&name);
                 let Some(model_call_id) = model_call_id.as_ref() else {
                     return Err(failure(
-                        RunFailure::Protocol("provider emitted content before Start".into()),
+                        RunFailure::Protocol("protocol emitted content before Start".into()),
                         text,
                         reasoning,
                         usage,
@@ -216,8 +216,8 @@ pub async fn consume_model_cycle(
                     )
                     .await
                 }
-                Some(_) => Err("provider emitted tool arguments after ToolCallEnd"),
-                None => Err("provider emitted tool arguments for an unknown index"),
+                Some(_) => Err("protocol emitted tool arguments after ToolCallEnd"),
+                None => Err("protocol emitted tool arguments for an unknown index"),
             },
             ModelEvent::ToolCallEnd { index } => match tools.get_mut(&index) {
                 Some(tool) if !tool.ended => {
@@ -248,19 +248,19 @@ pub async fn consume_model_cycle(
                     tool.ended = true;
                     send(client, cancellation, RunEvent::ToolCallEnd { index }).await
                 }
-                Some(_) => Err("provider emitted duplicate ToolCallEnd"),
+                Some(_) => Err("protocol emitted duplicate ToolCallEnd"),
                 None => Err("provider ended an unknown tool index"),
             },
-            ModelEvent::ProviderReplayState(state) => {
+            ModelEvent::ProtocolReplayState(state) => {
                 if replay_state.replace(state).is_some() {
-                    Err("provider emitted duplicate ProviderReplayState")
+                    Err("protocol emitted duplicate ProtocolReplayState")
                 } else {
                     Ok(())
                 }
             }
             ModelEvent::Usage(value) => {
                 if usage.replace(value).is_some() {
-                    Err("provider emitted duplicate Usage")
+                    Err("protocol emitted duplicate Usage")
                 } else if send(client, cancellation, RunEvent::Usage(value))
                     .await
                     .is_err()
@@ -277,12 +277,12 @@ pub async fn consume_model_cycle(
             }
             ModelEvent::Done(reason) => {
                 if model_call_id.is_none() {
-                    Err("provider emitted content before Start")
+                    Err("protocol emitted content before Start")
                 } else if text_open
                     || thinking_started.is_some()
                     || tools.values().any(|tool| !tool.ended)
                 {
-                    Err("provider emitted Done with an open content block")
+                    Err("protocol emitted Done with an open content block")
                 } else {
                     finish = Some(reason);
                     Ok(())

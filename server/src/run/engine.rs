@@ -9,7 +9,7 @@ use crate::{
         CanonicalMessage, MessageContent, Origin, PreparedRun, Role, RunAction, ToolRoundAssistant,
         ToolRoundId, Usage,
     },
-    protocol::Provider,
+    protocol::Protocol,
     store::{ContextUsageAnchor, RunStatus, Store},
 };
 
@@ -22,18 +22,18 @@ use super::{
 
 pub struct RunEngine {
     store: Store,
-    provider: Arc<dyn Provider>,
+    protocol: Arc<dyn Protocol>,
 }
 
-/// Provider-visible tail appended when the committed history ends with the
+/// protocol-visible tail appended when the committed history ends with the
 /// assistant, which happens when Cursor resumes a turn that had already
 /// finished (for example after a cancelled follow-up).
 const CONTINUE_MESSAGE_ID: &str = "runtime:continue";
 const CONTINUE_INSTRUCTION: &str = "Continue from where you left off.";
 
 impl RunEngine {
-    pub fn new(store: Store, provider: Arc<dyn Provider>) -> Self {
-        Self { store, provider }
+    pub fn new(store: Store, protocol: Arc<dyn Protocol>) -> Self {
+        Self { store, protocol }
     }
 
     #[tracing::instrument(
@@ -177,7 +177,7 @@ impl RunEngine {
             };
         }
 
-        // A provider refusal for an over-limit prompt triggers one compaction
+        // A protocol refusal for an over-limit prompt triggers one compaction
         // per run. A second refusal after compacting means the current input
         // itself does not fit, and compacting again would only destroy history.
         let mut overflow_compacted = false;
@@ -237,7 +237,7 @@ impl RunEngine {
                 return (RunOutcome::Failed(error.into()), usage);
             }
             // The usage anchor counts persisted messages only; a transient
-            // tail is provider-visible but never committed.
+            // tail is protocol-visible but never committed.
             let anchored_messages = history.len();
             let history = if prepared.action == RunAction::Compact {
                 super::history::user_terminated(
@@ -271,7 +271,7 @@ impl RunEngine {
                 let cycle_cancellation = cancellation.child_token();
                 let cycle_events = client.events.clone();
                 let cycle = consume_model_cycle(
-                    self.provider.stream(invocation, cycle_cancellation.clone()),
+                    self.protocol.stream(invocation, cycle_cancellation.clone()),
                     &cycle_events,
                     &cycle_cancellation,
                 );
@@ -385,8 +385,8 @@ impl RunEngine {
                         }
                         // The estimate that cleared the compaction check can
                         // still land over the real limit: it trails the
-                        // provider's own count by whatever the request adds
-                        // after the anchor was taken. The provider is the
+                        // protocol's own count by whatever the request adds
+                        // after the anchor was taken. The protocol is the
                         // authority, so treat its refusal as the trigger the
                         // estimate missed. Without this a conversation that
                         // crosses the line is wedged: every retry rebuilds the
@@ -399,7 +399,7 @@ impl RunEngine {
                             tracing::warn!(
                                 provider_call_index,
                                 checkpoint_id = checkpoint.0,
-                                "provider rejected the prompt as over-limit; compacting and retrying"
+                                "protocol rejected the prompt as over-limit; compacting and retrying"
                             );
                             overflow_compacted = true;
                             checkpoint = match super::messages::append_batches(
@@ -824,7 +824,7 @@ impl RunEngine {
         let mut break_messages = None;
         let cycle = {
             let cycle = consume_model_cycle(
-                self.provider.stream(invocation, cycle_cancellation.clone()),
+                self.protocol.stream(invocation, cycle_cancellation.clone()),
                 &silent_events,
                 &cycle_cancellation,
             );

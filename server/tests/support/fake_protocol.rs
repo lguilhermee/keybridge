@@ -1,4 +1,4 @@
-//! Provides deterministic provider streams for integration tests.
+//! Provides deterministic protocol streams for integration tests.
 #![allow(dead_code)]
 
 use std::{
@@ -8,7 +8,7 @@ use std::{
 
 use cursor_server::{
     model::{ModelInvocation, ModelRequest},
-    protocol::{ModelEvent, Provider, ProviderStream},
+    protocol::{ModelEvent, Protocol, ProtocolStream},
     Error,
 };
 use futures_util::{stream, StreamExt};
@@ -24,12 +24,12 @@ enum FakeResponse {
 }
 
 #[derive(Clone, Default)]
-pub struct FakeProvider {
+pub struct FakeProtocol {
     responses: Arc<Mutex<VecDeque<FakeResponse>>>,
     requests: Arc<Mutex<Vec<ModelRequest>>>,
 }
 
-impl FakeProvider {
+impl FakeProtocol {
     pub fn push(&self, events: Vec<ModelEvent>) {
         self.push_results(events.into_iter().map(Ok).collect());
     }
@@ -67,12 +67,12 @@ impl FakeProvider {
     }
 }
 
-impl Provider for FakeProvider {
+impl Protocol for FakeProtocol {
     fn stream(
         &self,
         invocation: ModelInvocation,
         _cancellation: CancellationToken,
-    ) -> ProviderStream {
+    ) -> ProtocolStream {
         self.requests.lock().unwrap().push(invocation.request);
         let events = self
             .responses

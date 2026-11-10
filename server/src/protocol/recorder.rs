@@ -1,4 +1,4 @@
-//! Records provider requests, responses, usage, and timing.
+//! Records protocol requests, responses, usage, and timing.
 use std::{
     sync::{
         atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering},
@@ -375,7 +375,7 @@ fn error_kind(error: &crate::Error) -> &'static str {
 #[cfg(test)]
 mod tests {
     use crate::model::{
-        ModelConfigInput, ModelType, NewLlmCall, ProviderType, OPENAI_CHAT_ENDPOINT,
+        ModelConfigInput, ModelType, NewLlmCall, ProtocolType, OPENAI_CHAT_ENDPOINT,
     };
 
     use super::*;
@@ -424,9 +424,9 @@ mod tests {
                 conversation_id: "conversation".into(),
                 provider_call_index: 0,
                 model_hash: model.model_hash,
-                provider_type: ProviderType::OpenAiChat,
-                provider_url: "https://example.com".into(),
-                request_type: ProviderType::OpenAiChat,
+                protocol_type: ProtocolType::OpenAiChat,
+                endpoint_url: "https://example.com".into(),
+                request_type: ProtocolType::OpenAiChat,
                 request_url: "https://example.com/v1/chat/completions".into(),
                 model_id: "test-model".into(),
                 display_name: "Test Model".into(),

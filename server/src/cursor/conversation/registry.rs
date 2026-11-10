@@ -9,7 +9,7 @@ use crate::{
         checkpoint::SubagentCompletions, prompting::PromptCompiler, transport::TransportHandle,
     },
     model::{ConversationId, RunId},
-    protocol::Provider,
+    protocol::Protocol,
     run::{CommandResult, RunHandle},
     search::WebCache,
     store::Store,
@@ -25,7 +25,7 @@ pub struct ConversationRegistry {
 #[derive(Clone)]
 pub(crate) struct ConversationDependencies {
     pub store: Store,
-    pub provider: Arc<dyn Provider>,
+    pub protocol: Arc<dyn Protocol>,
     pub compiler: PromptCompiler,
     pub web_cache: WebCache,
     /// The local rules service's md storage directory; merged into the request context at compile time.
@@ -49,7 +49,7 @@ struct ActiveRun {
 impl ConversationRegistry {
     pub fn new(
         store: Store,
-        provider: Arc<dyn Provider>,
+        protocol: Arc<dyn Protocol>,
         compiler: PromptCompiler,
         web_cache: WebCache,
         local_rules_dir: Option<std::path::PathBuf>,
@@ -62,7 +62,7 @@ impl ConversationRegistry {
                 changed: Notify::new(),
                 dependencies: ConversationDependencies {
                     store,
-                    provider,
+                    protocol,
                     compiler,
                     web_cache,
                     local_rules_dir,

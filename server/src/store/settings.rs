@@ -166,7 +166,7 @@ impl<'de> Deserialize<'de> for CommitPromptLocale {
 ///
 /// Empty `model_id` means direct connection: forward the original Cursor RPC unchanged.
 /// A non-empty value is the stable identifier of a configured built-in or
-/// plugin model, and the request is generated locally through that model.
+/// provider model, and the request is generated locally through that model.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
 pub struct CommitSettings {
     #[serde(default)]

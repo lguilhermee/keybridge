@@ -80,8 +80,8 @@ impl Store {
         .bind(&call.conversation_id)
         .bind(call.provider_call_index)
         .bind(&call.model_hash)
-        .bind(call.provider_type.as_str())
-        .bind(&call.provider_url)
+        .bind(call.protocol_type.as_str())
+        .bind(&call.endpoint_url)
         .bind(call.request_type.as_str())
         .bind(&call.request_url)
         .bind(&call.model_id)
@@ -367,8 +367,8 @@ fn summary_from_row(row: sqlx::sqlite::SqliteRow) -> Result<LlmCallSummary> {
         conversation_id: row.try_get("conversation_id")?,
         provider_call_index: row.try_get("provider_call_index")?,
         model_hash: row.try_get("model_hash")?,
-        provider_type: row.try_get("provider_type")?,
-        provider_url: row.try_get("provider_url")?,
+        protocol_type: row.try_get("provider_type")?,
+        endpoint_url: row.try_get("provider_url")?,
         request_type: row.try_get("request_type")?,
         request_url: row.try_get("request_url")?,
         model_id: row.try_get("model_id")?,
@@ -413,11 +413,11 @@ fn summary_from_row(row: sqlx::sqlite::SqliteRow) -> Result<LlmCallSummary> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::ProviderType;
+    use crate::model::ProtocolType;
 
-    /// Plugin models are not in model_configs; call records must still be written and filterable by their stable ID.
+    /// Provider models are not in model_configs; call records must still be written and filterable by their stable ID.
     #[tokio::test]
-    async fn plugin_calls_record_without_a_model_config_row() {
+    async fn provider_calls_record_without_a_model_config_row() {
         let directory = tempfile::tempdir().unwrap();
         let store = Store::connect(&format!(
             "sqlite://{}",
@@ -425,17 +425,17 @@ mod tests {
         ))
         .await
         .unwrap();
-        let plugin_model = "plugin:dev.example/codex/gpt-test";
+        let provider_model = "plugin:dev.example/codex/gpt-test";
         store
             .start_llm_call(&NewLlmCall {
                 call_id: "plugin-call".into(),
                 run_id: "run".into(),
                 conversation_id: "conversation".into(),
                 provider_call_index: 0,
-                model_hash: plugin_model.into(),
-                provider_type: ProviderType::Plugin,
-                provider_url: "plugin://dev.example/codex".into(),
-                request_type: ProviderType::Plugin,
+                model_hash: provider_model.into(),
+                protocol_type: ProtocolType::Provider,
+                endpoint_url: "plugin://dev.example/codex".into(),
+                request_type: ProtocolType::Provider,
                 request_url: "plugin://dev.example/codex".into(),
                 model_id: "gpt-test".into(),
                 display_name: "GPT Test".into(),
@@ -455,7 +455,7 @@ mod tests {
             .overview(
                 None,
                 None,
-                Some(&format!("[\"{plugin_model}\"]")),
+                Some(&format!("[\"{provider_model}\"]")),
                 None,
                 None,
             )
@@ -487,9 +487,9 @@ mod tests {
                     conversation_id: "conversation".into(),
                     provider_call_index: 0,
                     model_hash: model_id.into(),
-                    provider_type: ProviderType::Plugin,
-                    provider_url: "plugin://test".into(),
-                    request_type: ProviderType::Plugin,
+                    protocol_type: ProtocolType::Provider,
+                    endpoint_url: "plugin://test".into(),
+                    request_type: ProtocolType::Provider,
                     request_url: "plugin://test".into(),
                     model_id: model_id.into(),
                     display_name: model_id.into(),

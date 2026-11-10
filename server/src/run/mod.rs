@@ -1,4 +1,4 @@
-//! Exposes the provider-independent Agent Run loop.
+//! Exposes the protocol-independent Agent Run loop.
 
 mod command;
 mod compaction;

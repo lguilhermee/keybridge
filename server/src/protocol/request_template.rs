@@ -1,4 +1,4 @@
-//! Renders per-invocation placeholders in user-configured provider request values.
+//! Renders per-invocation placeholders in user-configured protocol request values.
 
 const SESSION_ID_PLACEHOLDER: &str = "{{SessionId}}";
 

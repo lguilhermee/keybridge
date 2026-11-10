@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use serde_json::{json, Value};
 
-use crate::{provider::PluginRegistry, store::Store, Result};
+use crate::{provider::ProviderRegistry, store::Store, Result};
 
 #[derive(Clone)]
 pub(super) struct ListedModel {
@@ -11,7 +11,7 @@ pub(super) struct ListedModel {
     pub display_name: String,
 }
 
-pub(super) async fn list(store: &Store, plugins: &PluginRegistry) -> Result<Vec<ListedModel>> {
+pub(super) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<Vec<ListedModel>> {
     let mut models = Vec::new();
     let mut ids = HashSet::new();
     let mut configured = store.models().await?;
@@ -42,10 +42,10 @@ pub(super) async fn list(store: &Store, plugins: &PluginRegistry) -> Result<Vec<
             });
         }
     }
-    for model in plugins.configured_models().await {
+    for model in providers.configured_models().await {
         let public_id = format!(
             "plugin:{}:{}/{}",
-            model.plugin_id, model.provider_id, model.model_id
+            model.provider_id, model.channel_id, model.model_id
         );
         if ids.insert(public_id.clone()) {
             models.push(ListedModel {

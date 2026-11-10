@@ -1,4 +1,4 @@
-//! Owns filesystem plugin discovery, sandboxed workers, and plugin providers.
+//! Owns filesystem provider discovery, sandboxed workers, and provider channels.
 mod asset;
 mod builtin;
 mod catalog;
@@ -16,11 +16,13 @@ mod wire;
 mod worker;
 
 pub use descriptor::{
-    parse_model_id, PluginDescriptor, PluginModelDescriptor, PluginProviderDescriptor,
-    PluginResourceDescriptor, PluginResourceView, ADAPTER_ID_PREFIX,
+    parse_model_id, ChannelDescriptor, ProviderDescriptor, ProviderModelDescriptor,
+    ProviderResourceDescriptor, ProviderResourceView, ADAPTER_ID_PREFIX,
 };
-pub use registry::{ImportResponse, OAuthBeginResponse, OAuthPollResponse, PluginRegistry};
-pub use runtime::{PluginRuntime, PluginRuntimePhase, PluginRuntimeState, PluginRuntimeStatus};
+pub use registry::{ImportResponse, OAuthBeginResponse, OAuthPollResponse, ProviderRegistry};
+pub use runtime::{
+    ProviderRuntime, ProviderRuntimePhase, ProviderRuntimeState, ProviderRuntimeStatus,
+};
 
 /// Prevents the Deno child process from popping a console window on Windows (CREATE_NO_WINDOW).
 #[cfg(windows)]

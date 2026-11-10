@@ -1,10 +1,10 @@
-//! Owns core-side persistence of plugin resources and model catalogs.
+//! Owns core-side persistence of provider resources and model catalogs.
 use serde::{Deserialize, Serialize};
 
-use super::data::PluginDataStore;
+use super::data::ProviderDataStore;
 use crate::{Error, Result};
 
-/// Resource runtime state understood by the core; plugins can only change it via draft/patch/report.
+/// Resource runtime state understood by the core; providers can only change it via draft/patch/report.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum ResourceState {
@@ -32,7 +32,7 @@ impl ResourceState {
     }
 }
 
-/// One plugin resource persisted by the core. `private_data` is only returned to the plugin.
+/// One provider resource persisted by the core. `private_data` is only returned to the provider.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ResourceRecord {
     pub id: String,
@@ -44,7 +44,7 @@ pub struct ResourceRecord {
 }
 
 impl ResourceRecord {
-    /// The snapshot shape handed to the plugin (the SDK's ResourceSnapshot).
+    /// The snapshot shape handed to the provider (the SDK's ResourceSnapshot).
     pub fn snapshot(&self, resource_type: &str) -> serde_json::Value {
         serde_json::json!({
             "id": self.id,
@@ -74,7 +74,7 @@ fn state_json(state: &ResourceState) -> serde_json::Value {
     }
 }
 
-/// A new resource returned by the plugin (the SDK's ResourceDraft).
+/// A new resource returned by the provider (the SDK's ResourceDraft).
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourceDraft {
@@ -84,7 +84,7 @@ pub struct ResourceDraft {
     pub state: Option<ResourceStateInput>,
 }
 
-/// A partial update for one resource from the plugin (the SDK's ResourcePatch).
+/// A partial update for one resource from the provider (the SDK's ResourcePatch).
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourcePatch {
@@ -127,7 +127,7 @@ impl From<ResourceStateInput> for ResourceState {
     }
 }
 
-/// One model discovered by the plugin (the SDK's ModelDefinition), which the core swaps wholesale into the catalog.
+/// One model discovered by the provider (the SDK's ModelDefinition), which the core swaps wholesale into the catalog.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct StoredModel {
     pub id: String,
@@ -152,18 +152,18 @@ impl StoredModel {
     pub fn from_definition(value: &serde_json::Value) -> Result<Self> {
         let object = value
             .as_object()
-            .ok_or_else(|| Error::Protocol("plugin model definition must be an object".into()))?;
+            .ok_or_else(|| Error::Protocol("provider model definition must be an object".into()))?;
         let id = object
             .get("id")
             .and_then(serde_json::Value::as_str)
             .filter(|id| !id.trim().is_empty())
-            .ok_or_else(|| Error::Protocol("plugin model definition requires id".into()))?;
+            .ok_or_else(|| Error::Protocol("provider model definition requires id".into()))?;
         let display_name = object
             .get("displayName")
             .and_then(serde_json::Value::as_str)
             .filter(|name| !name.trim().is_empty())
             .ok_or_else(|| {
-                Error::Protocol("plugin model definition requires displayName".into())
+                Error::Protocol("provider model definition requires displayName".into())
             })?;
         let capabilities = object
             .get("capabilities")
@@ -193,7 +193,7 @@ impl StoredModel {
         })
     }
 
-    /// The model snapshot handed to the plugin (the SDK's ModelSnapshot).
+    /// The model snapshot handed to the provider (the SDK's ModelSnapshot).
     pub fn snapshot(&self) -> serde_json::Value {
         serde_json::json!({
             "id": self.id,
@@ -206,10 +206,10 @@ impl StoredModel {
     }
 }
 
-/// Core storage for resources and the model catalog, built on top of plugin-private JSON files.
+/// Core storage for resources and the model catalog, built on top of provider-private JSON files.
 #[derive(Clone)]
-pub struct PluginStateStore {
-    data: PluginDataStore,
+pub struct ProviderStateStore {
+    data: ProviderDataStore,
 }
 
 pub struct UpsertOutcome {
@@ -217,19 +217,19 @@ pub struct UpsertOutcome {
     pub updated: usize,
 }
 
-impl PluginStateStore {
-    pub fn new(data: PluginDataStore) -> Self {
+impl ProviderStateStore {
+    pub fn new(data: ProviderDataStore) -> Self {
         Self { data }
     }
 
     pub async fn resources(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
     ) -> Result<Vec<ResourceRecord>> {
         let value = self
             .data
-            .read(plugin_id, &resource_key(resource_type))
+            .read(provider_id, &resource_key(resource_type))
             .await?;
         if value.is_null() {
             return Ok(Vec::new());
@@ -239,11 +239,11 @@ impl PluginStateStore {
 
     pub async fn upsert_resources(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         drafts: Vec<ResourceDraft>,
     ) -> Result<UpsertOutcome> {
-        let mut records = self.resources(plugin_id, resource_type).await?;
+        let mut records = self.resources(provider_id, resource_type).await?;
         let now = now_ms();
         let mut outcome = UpsertOutcome {
             added: 0,
@@ -251,7 +251,9 @@ impl PluginStateStore {
         };
         for draft in drafts {
             if draft.key.trim().is_empty() {
-                return Err(Error::Protocol("plugin resource draft requires key".into()));
+                return Err(Error::Protocol(
+                    "provider resource draft requires key".into(),
+                ));
             }
             let state = draft
                 .state
@@ -276,23 +278,23 @@ impl PluginStateStore {
                 }
             }
         }
-        self.save_resources(plugin_id, resource_type, &records)
+        self.save_resources(provider_id, resource_type, &records)
             .await?;
         Ok(outcome)
     }
 
     pub async fn apply_patch(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
         patch: ResourcePatch,
     ) -> Result<()> {
-        let mut records = self.resources(plugin_id, resource_type).await?;
+        let mut records = self.resources(provider_id, resource_type).await?;
         let record = records
             .iter_mut()
             .find(|record| record.id == resource_id)
-            .ok_or_else(|| Error::RunNotFound(format!("plugin resource {resource_id}")))?;
+            .ok_or_else(|| Error::RunNotFound(format!("provider resource {resource_id}")))?;
         if let Some(private_data) = patch.private_data {
             record.private_data = private_data;
         }
@@ -300,29 +302,29 @@ impl PluginStateStore {
             record.state = state.into();
         }
         record.updated_at_ms = now_ms();
-        self.save_resources(plugin_id, resource_type, &records)
+        self.save_resources(provider_id, resource_type, &records)
             .await
     }
 
     pub async fn remove_resource(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         resource_id: &str,
     ) -> Result<ResourceRecord> {
-        let mut records = self.resources(plugin_id, resource_type).await?;
+        let mut records = self.resources(provider_id, resource_type).await?;
         let index = records
             .iter()
             .position(|record| record.id == resource_id)
-            .ok_or_else(|| Error::RunNotFound(format!("plugin resource {resource_id}")))?;
+            .ok_or_else(|| Error::RunNotFound(format!("provider resource {resource_id}")))?;
         let removed = records.remove(index);
-        self.save_resources(plugin_id, resource_type, &records)
+        self.save_resources(provider_id, resource_type, &records)
             .await?;
         Ok(removed)
     }
 
-    pub async fn models(&self, plugin_id: &str, provider_id: &str) -> Result<Vec<StoredModel>> {
-        let value = self.data.read(plugin_id, &model_key(provider_id)).await?;
+    pub async fn models(&self, provider_id: &str, channel_id: &str) -> Result<Vec<StoredModel>> {
+        let value = self.data.read(provider_id, &model_key(channel_id)).await?;
         if value.is_null() {
             return Ok(Vec::new());
         }
@@ -331,11 +333,11 @@ impl PluginStateStore {
 
     pub async fn replace_models(
         &self,
-        plugin_id: &str,
         provider_id: &str,
+        channel_id: &str,
         models: &[StoredModel],
     ) -> Result<()> {
-        let previous = self.models(plugin_id, provider_id).await?;
+        let previous = self.models(provider_id, channel_id).await?;
         let models = models
             .iter()
             .cloned()
@@ -348,8 +350,8 @@ impl PluginStateStore {
             .collect::<Vec<_>>();
         self.data
             .update(
-                plugin_id,
-                &model_key(provider_id),
+                provider_id,
+                &model_key(channel_id),
                 &serde_json::to_value(models)?,
             )
             .await
@@ -357,39 +359,39 @@ impl PluginStateStore {
 
     pub async fn set_model_enabled(
         &self,
-        plugin_id: &str,
         provider_id: &str,
+        channel_id: &str,
         model_id: &str,
         enabled: bool,
     ) -> Result<()> {
-        let mut models = self.models(plugin_id, provider_id).await?;
+        let mut models = self.models(provider_id, channel_id).await?;
         let model = models
             .iter_mut()
             .find(|model| model.id == model_id)
-            .ok_or_else(|| Error::RunNotFound(format!("plugin model {model_id}")))?;
+            .ok_or_else(|| Error::RunNotFound(format!("provider model {model_id}")))?;
         model.enabled = enabled;
         self.data
             .update(
-                plugin_id,
-                &model_key(provider_id),
+                provider_id,
+                &model_key(channel_id),
                 &serde_json::to_value(models)?,
             )
             .await
     }
 
-    pub async fn clear(&self, plugin_id: &str) -> Result<()> {
-        self.data.clear(plugin_id).await
+    pub async fn clear(&self, provider_id: &str) -> Result<()> {
+        self.data.clear(provider_id).await
     }
 
     async fn save_resources(
         &self,
-        plugin_id: &str,
+        provider_id: &str,
         resource_type: &str,
         records: &[ResourceRecord],
     ) -> Result<()> {
         self.data
             .update(
-                plugin_id,
+                provider_id,
                 &resource_key(resource_type),
                 &serde_json::to_value(records)?,
             )
@@ -408,18 +410,18 @@ fn resource_key(resource_type: &str) -> String {
     format!("resources-{resource_type}")
 }
 
-fn model_key(provider_id: &str) -> String {
-    format!("models-{provider_id}")
+fn model_key(channel_id: &str) -> String {
+    format!("models-{channel_id}")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn store() -> (tempfile::TempDir, PluginStateStore) {
+    fn store() -> (tempfile::TempDir, ProviderStateStore) {
         let root = tempfile::tempdir().unwrap();
-        let data = PluginDataStore::for_test(root.path().join("data")).unwrap();
-        (root, PluginStateStore::new(data))
+        let data = ProviderDataStore::for_test(root.path().join("data")).unwrap();
+        (root, ProviderStateStore::new(data))
     }
 
     #[tokio::test]

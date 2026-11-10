@@ -1,4 +1,4 @@
-//! Defines serializable plugin capability definitions and desktop descriptors.
+//! Defines serializable provider capability definitions and desktop descriptors.
 use serde::{Deserialize, Serialize};
 
 use super::state::{ResourceRecord, ResourceState, StoredModel};
@@ -6,23 +6,24 @@ use super::state::{ResourceRecord, ResourceState, StoredModel};
 /// Capability summary produced by collect.ts; contains no executable content.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct PluginModuleDefinition {
-    pub providers: Vec<ProviderDefinition>,
+pub struct ProviderModuleDefinition {
+    pub providers: Vec<ChannelDefinition>,
     #[serde(default)]
     pub resources: Vec<ResourceDefinition>,
 }
 
-/// Display text provided by the plugin: a plain string or a locale -> text map; the core passes it through and the frontend resolves it.
+/// Display text provided by the provider: a plain string or a locale -> text map; the core passes it through and the frontend resolves it.
 pub type LocalizedText = serde_json::Value;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct ProviderDefinition {
+pub struct ChannelDefinition {
     pub id: String,
     pub display_name: LocalizedText,
     #[serde(default)]
     pub description: LocalizedText,
-    pub provider_type: String,
+    #[serde(rename = "providerType")]
+    pub brand: String,
     #[serde(default)]
     pub resource_type: Option<String>,
     pub has_models: bool,
@@ -94,48 +95,54 @@ pub struct ImportDefinition {
 pub const OAUTH2_ADD_METHOD: &str = "oauth2.0";
 pub const OAUTH2_AUTHORIZATION_CODE_ADD_METHOD: &str = "oauth2.authorization-code";
 
-/// The plugin as seen by the desktop.
+/// The provider as seen by the desktop.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PluginDescriptor {
+pub struct ProviderDescriptor {
     pub id: String,
     pub name: String,
     pub version: String,
     pub author: Option<String>,
     pub icon: String,
-    pub providers: Vec<PluginProviderDescriptor>,
-    pub resources: Vec<PluginResourceDescriptor>,
+    pub providers: Vec<ChannelDescriptor>,
+    pub resources: Vec<ProviderResourceDescriptor>,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PluginProviderDescriptor {
+pub struct ChannelDescriptor {
     pub id: String,
-    pub plugin_id: String,
+    #[serde(rename = "pluginId")]
+    pub provider_id: String,
     pub display_name: LocalizedText,
     pub description: LocalizedText,
-    pub provider_type: String,
+    #[serde(rename = "providerType")]
+    pub brand: String,
     pub resource_type: Option<String>,
     pub has_models: bool,
     /// Invocation prerequisites satisfied: a non-empty model catalog and at least one resource when required.
     pub configured: bool,
-    pub models: Vec<PluginModelDescriptor>,
+    pub models: Vec<ProviderModelDescriptor>,
 }
 
-/// A plugin model Cursor can call directly.
+/// A provider model Cursor can call directly.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PluginModelDescriptor {
-    /// Stable model ID: `plugin:<plugin>/<provider>/<model>`.
+pub struct ProviderModelDescriptor {
+    /// Stable model ID: `plugin:<provider>/<channel>/<model>`.
     pub id: String,
-    pub plugin_id: String,
-    pub plugin_name: String,
+    #[serde(rename = "pluginId")]
     pub provider_id: String,
+    #[serde(rename = "pluginName")]
+    pub provider_name: String,
+    #[serde(rename = "providerId")]
+    pub channel_id: String,
     pub model_id: String,
     pub display_name: String,
     pub description: Option<String>,
     pub icon: String,
-    pub provider_type: String,
+    #[serde(rename = "providerType")]
+    pub brand: String,
     pub max_output_tokens: Option<u64>,
     pub images: bool,
     pub enabled: bool,
@@ -143,7 +150,7 @@ pub struct PluginModelDescriptor {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PluginResourceDescriptor {
+pub struct ProviderResourceDescriptor {
     #[serde(rename = "type")]
     pub resource_type: String,
     pub display_name: LocalizedText,
@@ -152,13 +159,13 @@ pub struct PluginResourceDescriptor {
     pub actions: Vec<ResourceActionDefinition>,
     pub can_refresh: bool,
     pub can_remove: bool,
-    pub resources: Vec<PluginResourceView>,
+    pub resources: Vec<ProviderResourceView>,
 }
 
 /// External projection of one resource; credentials stay in core storage and never enter this structure.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PluginResourceView {
+pub struct ProviderResourceView {
     pub id: String,
     pub state: ResourceState,
     pub display_name: String,
@@ -178,7 +185,7 @@ pub struct ResourceMetric {
     pub reset_at_ms: Option<i64>,
 }
 
-/// The plugin's display projection for a resource (the return value of resource.present).
+/// The provider's display projection for a resource (the return value of resource.present).
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourcePresentation {
@@ -189,7 +196,7 @@ pub struct ResourcePresentation {
     pub metrics: Vec<ResourceMetric>,
 }
 
-/// Safe details returned by a plugin resource operation; the patch is only applied inside the core and never sent back to the desktop.
+/// Safe details returned by a provider resource operation; the patch is only applied inside the core and never sent back to the desktop.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourceActionResult {
@@ -225,7 +232,7 @@ pub struct ResourceActionField {
     pub value: String,
 }
 
-/// Resource operation result returned to the desktop, explicitly excluding the plugin-private patch.
+/// Resource operation result returned to the desktop, explicitly excluding the provider-private patch.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResourceActionResponse {
@@ -244,7 +251,7 @@ impl From<ResourceActionResult> for ResourceActionResponse {
     }
 }
 
-impl PluginResourceView {
+impl ProviderResourceView {
     pub fn from_record(record: &ResourceRecord, presentation: ResourcePresentation) -> Self {
         Self {
             id: record.id.clone(),
@@ -259,40 +266,40 @@ impl PluginResourceView {
 
 pub const ADAPTER_ID_PREFIX: &str = "plugin:";
 
-pub fn model_id(plugin_id: &str, provider_id: &str, model_id: &str) -> String {
-    format!("{ADAPTER_ID_PREFIX}{plugin_id}/{provider_id}/{model_id}")
+pub fn model_id(provider_id: &str, channel_id: &str, model_id: &str) -> String {
+    format!("{ADAPTER_ID_PREFIX}{provider_id}/{channel_id}/{model_id}")
 }
 
 /// Parses a stable model ID; the upstream model segment may contain `/`.
 pub fn parse_model_id(value: &str) -> Option<(&str, &str, &str)> {
     let rest = value.strip_prefix(ADAPTER_ID_PREFIX)?;
-    let (plugin_id, rest) = rest.split_once('/')?;
-    let (provider_id, model_id) = rest.split_once('/')?;
-    (!plugin_id.is_empty() && !provider_id.is_empty() && !model_id.is_empty()).then_some((
-        plugin_id,
+    let (provider_id, rest) = rest.split_once('/')?;
+    let (channel_id, model_id) = rest.split_once('/')?;
+    (!provider_id.is_empty() && !channel_id.is_empty() && !model_id.is_empty()).then_some((
         provider_id,
+        channel_id,
         model_id,
     ))
 }
 
-impl PluginModelDescriptor {
+impl ProviderModelDescriptor {
     pub fn new(
-        plugin_id: &str,
-        plugin_name: &str,
+        provider_id: &str,
+        provider_name: &str,
         icon: &str,
-        provider: &ProviderDefinition,
+        channel: &ChannelDefinition,
         model: &StoredModel,
     ) -> Self {
         Self {
-            id: model_id(plugin_id, &provider.id, &model.id),
-            plugin_id: plugin_id.to_owned(),
-            plugin_name: plugin_name.to_owned(),
-            provider_id: provider.id.clone(),
+            id: model_id(provider_id, &channel.id, &model.id),
+            provider_id: provider_id.to_owned(),
+            provider_name: provider_name.to_owned(),
+            channel_id: channel.id.clone(),
             model_id: model.id.clone(),
             display_name: model.display_name.clone(),
             description: model.description.clone(),
             icon: icon.to_owned(),
-            provider_type: provider.provider_type.clone(),
+            brand: channel.brand.clone(),
             max_output_tokens: model.max_output_tokens,
             images: model.images,
             enabled: model.enabled,

@@ -1,4 +1,4 @@
-//! Decides when to compact provider-visible context and builds a stable fallback summary.
+//! Decides when to compact protocol-visible context and builds a stable fallback summary.
 
 use std::collections::HashSet;
 
@@ -14,9 +14,9 @@ const FALLBACK_CHARS: usize = 12_000;
 
 /// Fraction of the context window kept free, as a divisor: 10 = 10%.
 ///
-/// The estimate runs behind the provider: the anchor is what the provider
+/// The estimate runs behind the protocol: the anchor is what the provider
 /// charged for the *previous* call, and the next request re-sends request
-/// context and carries provider-side overhead the message-tail estimate does
+/// context and carries protocol-side overhead the message-tail estimate does
 /// not model. A real conversation measured 948K estimated against 1,017,628
 /// actual, a 7% shortfall that landed it over a 1M window while the check said
 /// there was room. A proportional reserve absorbs that drift and scales with
@@ -34,7 +34,7 @@ pub(super) fn input_budget(prepared: &PreparedRun) -> Option<u64> {
     prepared.model.context_window_tokens.map(context_budget)
 }
 
-/// Whether a provider failure means the prompt did not fit.
+/// Whether a protocol failure means the prompt did not fit.
 ///
 /// Providers report this as a plain 400 with prose, so there is nothing
 /// structured to match on. Anthropic says "prompt is too long"; OpenAI-style
@@ -52,7 +52,7 @@ pub(super) fn is_context_overflow(message: &str) -> bool {
 ///
 /// Two properties matter, and replaying the raw history guarantees neither:
 ///
-/// 1. The history must end with a user message. Otherwise providers read the
+/// 1. The history must end with a user message. Otherwise protocols read the
 ///    request as an assistant prefill and refuse it outright: Anthropic answers
 ///    "This model does not support assistant message prefill. The conversation
 ///    must end with a user message."
@@ -297,7 +297,7 @@ mod tests {
     }
 
     #[test]
-    fn provider_refusals_that_mean_the_prompt_did_not_fit_are_recognized() {
+    fn protocol_refusals_that_mean_the_prompt_did_not_fit_are_recognized() {
         assert!(is_context_overflow(
             "provider error: Anthropic 400 Bad Request: {\"type\":\"error\",\"error\":\
              {\"type\":\"invalid_request_error\",\"message\":\"prompt is too long: \
@@ -420,7 +420,7 @@ mod tests {
     }
 
     #[test]
-    fn provider_usage_anchor_only_estimates_messages_added_after_last_request() {
+    fn protocol_usage_anchor_only_estimates_messages_added_after_last_request() {
         let messages = vec![
             CanonicalMessage::text("old", Role::User, Origin::Runtime, "x".repeat(400_000)),
             CanonicalMessage::text("new", Role::User, Origin::Runtime, "short follow-up"),
@@ -444,7 +444,7 @@ mod tests {
     }
 
     #[test]
-    fn provider_usage_anchor_triggers_after_new_messages_cross_budget() {
+    fn protocol_usage_anchor_triggers_after_new_messages_cross_budget() {
         let messages = vec![
             CanonicalMessage::text("old", Role::User, Origin::Runtime, "old"),
             CanonicalMessage::text("new", Role::User, Origin::Runtime, "x".repeat(80_000)),

@@ -110,7 +110,7 @@ pub(crate) fn format_token_count(tokens: u64) -> String {
 mod tests {
     use super::*;
     use crate::model::{
-        ProviderReplayState, Role, ToolCallContent, ToolDefinition, ToolResultContent,
+        ProtocolReplayState, Role, ToolCallContent, ToolDefinition, ToolResultContent,
     };
 
     fn prompt() -> PromptSpec {
@@ -221,8 +221,8 @@ mod tests {
             },
         };
         let without_replay = assistant(None);
-        let with_replay = assistant(Some(ProviderReplayState {
-            provider_kind: "anthropic".into(),
+        let with_replay = assistant(Some(ProtocolReplayState {
+            protocol_kind: "anthropic".into(),
             value: serde_json::json!({
                 "blocks": [{
                     "type": "thinking",

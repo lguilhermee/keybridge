@@ -212,10 +212,10 @@ fn decode_assistant(value: &Value, internal_id: &str) -> Result<MessageContent> 
     })
 }
 
-fn decode_replay_state(signature: &str) -> Result<crate::model::ProviderReplayState> {
+fn decode_replay_state(signature: &str) -> Result<crate::model::ProtocolReplayState> {
     let Some(encoded) = signature.strip_prefix(REPLAY_ENVELOPE_PREFIX) else {
-        return Ok(crate::model::ProviderReplayState {
-            provider_kind: "cursor_opaque".into(),
+        return Ok(crate::model::ProtocolReplayState {
+            protocol_kind: "cursor_opaque".into(),
             value: Value::String(signature.into()),
         });
     };

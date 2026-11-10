@@ -1,6 +1,6 @@
 //! Verifies Tool dispatch, completion gating, and result continuation.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -854,12 +854,12 @@ async fn one_run_can_auto_compact_again_after_more_tool_output() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(tool_call_response("repeat-call-1"));
-    provider.push(text_events("first summary"));
-    provider.push(tool_call_response("repeat-call-2"));
-    provider.push(text_events("second summary"));
-    provider.push(text_events("done"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(tool_call_response("repeat-call-1"));
+    protocol.push(text_events("first summary"));
+    protocol.push(tool_call_response("repeat-call-2"));
+    protocol.push(text_events("second summary"));
+    protocol.push(text_events("done"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -868,7 +868,7 @@ async fn one_run_can_auto_compact_again_after_more_tool_output() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -970,7 +970,7 @@ async fn one_run_can_auto_compact_again_after_more_tool_output() {
         }
     }
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     let shapes = requests
         .iter()
         .map(|request| {
@@ -988,7 +988,7 @@ async fn one_run_can_auto_compact_again_after_more_tool_output() {
             )
         })
         .collect::<Vec<_>>();
-    assert_eq!(requests.len(), 5, "provider requests: {shapes:?}");
+    assert_eq!(requests.len(), 5, "protocol requests: {shapes:?}");
     assert!(!requests[0].prompt.tools.is_empty());
     assert!(requests[1].prompt.tools.is_empty());
     assert!(!requests[2].prompt.tools.is_empty());
@@ -999,8 +999,8 @@ async fn one_run_can_auto_compact_again_after_more_tool_output() {
 #[tokio::test]
 async fn provider_tool_use_waits_for_client_result_then_calls_provider_again() {
     let (directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "ignored".into(),
         },
@@ -1016,7 +1016,7 @@ async fn provider_tool_use_waits_for_client_result_then_calls_provider_again() {
         ModelEvent::ToolCallEnd { index: 0 },
         ModelEvent::Done(FinishReason::ToolUse),
     ]);
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "ignored".into(),
         },
@@ -1033,7 +1033,7 @@ async fn provider_tool_use_waits_for_client_result_then_calls_provider_again() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("tool-request").await.unwrap();
@@ -1154,7 +1154,7 @@ async fn provider_tool_use_waits_for_client_result_then_calls_provider_again() {
     }
     assert!(saw_exec);
     assert!(saw_typed_completion);
-    assert_eq!(provider.requests().len(), 2);
+    assert_eq!(protocol.requests().len(), 2);
     let database = sqlx::SqlitePool::connect(&format!(
         "sqlite://{}",
         directory.path().join("test.db").display()
@@ -1253,7 +1253,7 @@ fn client_run_for_model(
     }
 }
 
-/// A provider that reuses a tool call id across two rounds of the same run
+/// A protocol that reuses a tool call id across two rounds of the same run
 /// must not wedge the run. `ToolDispatcher::start_batch` skips any call whose
 /// id is already in `ToolBatchState::completed`, and that set is never cleared
 /// for the lifetime of the run, so the skipped call produced no completion and
@@ -1261,9 +1261,9 @@ fn client_run_for_model(
 #[tokio::test]
 async fn duplicate_tool_call_id_across_rounds_does_not_wedge_the_run() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
+    let protocol = fake_protocol::FakeProtocol::default();
     for _ in 0..2 {
-        provider.push(vec![
+        protocol.push(vec![
             ModelEvent::Start {
                 model_call_id: "ignored".into(),
             },
@@ -1280,7 +1280,7 @@ async fn duplicate_tool_call_id_across_rounds_does_not_wedge_the_run() {
             ModelEvent::Done(FinishReason::ToolUse),
         ]);
     }
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "ignored".into(),
         },
@@ -1297,7 +1297,7 @@ async fn duplicate_tool_call_id_across_rounds_does_not_wedge_the_run() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("tool-request").await.unwrap();
@@ -1393,9 +1393,9 @@ async fn duplicate_tool_call_id_across_rounds_does_not_wedge_the_run() {
         }
     }
     // Both rounds have to reach the client, and the run has to get far enough
-    // to ask the provider a third time and finish.
+    // to ask the protocol a third time and finish.
     assert_eq!(execs, 2);
-    assert_eq!(provider.requests().len(), 3);
+    assert_eq!(protocol.requests().len(), 3);
 }
 
 fn client_run() -> pb::AgentClientMessage {

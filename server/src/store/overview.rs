@@ -228,7 +228,7 @@ fn saturating_sum(values: &[i64]) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{NewLlmCall, ProviderType, Usage};
+    use crate::model::{NewLlmCall, ProtocolType, Usage};
 
     async fn store() -> (tempfile::TempDir, Store) {
         let directory = tempfile::tempdir().unwrap();
@@ -241,7 +241,7 @@ mod tests {
         (directory, store)
     }
 
-    async fn record(store: &Store, call_id: &str, request_type: ProviderType, usage: Usage) {
+    async fn record(store: &Store, call_id: &str, request_type: ProtocolType, usage: Usage) {
         store
             .start_llm_call(&NewLlmCall {
                 call_id: call_id.into(),
@@ -249,8 +249,8 @@ mod tests {
                 conversation_id: "conversation".into(),
                 provider_call_index: 0,
                 model_hash: "model".into(),
-                provider_type: request_type,
-                provider_url: "https://example.test".into(),
+                protocol_type: request_type,
+                endpoint_url: "https://example.test".into(),
                 request_type,
                 request_url: "https://example.test".into(),
                 model_id: "model".into(),
@@ -276,7 +276,7 @@ mod tests {
         record(
             &store,
             "plugin",
-            ProviderType::Plugin,
+            ProtocolType::Provider,
             Usage {
                 input_tokens: Some(10),
                 context_input_tokens: Some(60),
@@ -291,7 +291,7 @@ mod tests {
         record(
             &store,
             "openai",
-            ProviderType::OpenAiChat,
+            ProtocolType::OpenAiChat,
             Usage {
                 input_tokens: Some(60),
                 context_input_tokens: Some(100),
@@ -367,8 +367,8 @@ mod tests {
             input_tokens: Some(input),
             ..Default::default()
         };
-        record(&store, "late-evening", ProviderType::Anthropic, usage(1)).await;
-        record(&store, "after-midnight", ProviderType::Anthropic, usage(2)).await;
+        record(&store, "late-evening", ProtocolType::Anthropic, usage(1)).await;
+        record(&store, "after-midnight", ProtocolType::Anthropic, usage(2)).await;
         for (call_id, created_at) in [
             ("late-evening", ms("2026-01-11T02:30:00Z")),
             ("after-midnight", ms("2026-01-11T03:30:00Z")),

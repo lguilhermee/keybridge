@@ -1,4 +1,4 @@
-//! Runs one long-lived, sandboxed Deno process per active plugin.
+//! Runs one long-lived, sandboxed Deno process per active provider.
 use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
@@ -20,8 +20,8 @@ use tokio::{
 use tokio_util::sync::CancellationToken;
 
 use super::{
-    catalog::PluginEntry,
-    definition::{file_url, PluginDefinitionLoader},
+    catalog::ProviderEntry,
+    definition::{file_url, ProviderDefinitionLoader},
     protocol::{HostMessage, WorkerMessage},
 };
 use crate::{protocol::CallRecorder, store::Store, Error, Result};
@@ -41,16 +41,16 @@ type Pending = Arc<Mutex<HashMap<String, mpsc::UnboundedSender<WorkerStreamItem>
 type StreamLines = Arc<Mutex<mpsc::Receiver<Result<String>>>>;
 
 #[derive(Clone)]
-pub struct PluginWorker {
-    inner: Arc<PluginWorkerInner>,
+pub struct ProviderWorker {
+    inner: Arc<ProviderWorkerInner>,
 }
 
-struct PluginWorkerInner {
-    plugin_id: String,
+struct ProviderWorkerInner {
+    provider_id: String,
     executable: PathBuf,
     directory: PathBuf,
     entry: PathBuf,
-    loader: PluginDefinitionLoader,
+    loader: ProviderDefinitionLoader,
     host: HostContext,
     process: Mutex<Option<WorkerProcess>>,
     pending: Pending,
@@ -67,13 +67,13 @@ struct InvocationState {
     recorder_claimed: AtomicBool,
 }
 
-/// Plugin network request: two outbound shapes - standard reqwest or BoringSSL fingerprint emulation (wreq).
-enum PluginRequest {
+/// Provider network request: two outbound shapes - standard reqwest or BoringSSL fingerprint emulation (wreq).
+enum ProviderRequest {
     Standard(reqwest::RequestBuilder),
     Emulated(wreq::RequestBuilder),
 }
 
-impl PluginRequest {
+impl ProviderRequest {
     fn timeout(self, timeout: Duration) -> Self {
         match self {
             Self::Standard(request) => Self::Standard(request.timeout(timeout)),
@@ -122,7 +122,7 @@ impl InvocationState {
 
 #[derive(Clone)]
 struct HostContext {
-    plugin_id: String,
+    provider_id: String,
     network_hosts: Arc<HashSet<String>>,
     emulated_hosts: Arc<HashSet<String>>,
     store: Store,
@@ -131,21 +131,21 @@ struct HostContext {
     streams: Arc<Mutex<HashMap<String, StreamLines>>>,
 }
 
-impl PluginWorker {
+impl ProviderWorker {
     pub fn new(
-        plugin: &PluginEntry,
+        provider: &ProviderEntry,
         executable: PathBuf,
-        loader: PluginDefinitionLoader,
+        loader: ProviderDefinitionLoader,
         store: Store,
         headroom: crate::headroom::HeadroomRuntime,
     ) -> Self {
-        let plugin_id = plugin.manifest.id.clone();
+        let provider_id = provider.manifest.id.clone();
         Self {
-            inner: Arc::new(PluginWorkerInner {
+            inner: Arc::new(ProviderWorkerInner {
                 host: HostContext {
-                    plugin_id: plugin_id.clone(),
+                    provider_id: provider_id.clone(),
                     network_hosts: Arc::new(
-                        plugin
+                        provider
                             .manifest
                             .permissions
                             .network
@@ -154,7 +154,7 @@ impl PluginWorker {
                             .collect(),
                     ),
                     emulated_hosts: Arc::new(
-                        plugin
+                        provider
                             .manifest
                             .permissions
                             .tls_emulation
@@ -167,10 +167,10 @@ impl PluginWorker {
                     invocations: Arc::new(Mutex::new(HashMap::new())),
                     streams: Arc::new(Mutex::new(HashMap::new())),
                 },
-                plugin_id,
+                provider_id,
                 executable,
-                directory: plugin.directory.clone(),
-                entry: plugin.entry.clone(),
+                directory: provider.directory.clone(),
+                entry: provider.entry.clone(),
                 loader,
                 process: Mutex::new(None),
                 pending: Arc::new(Mutex::new(HashMap::new())),
@@ -195,16 +195,16 @@ impl PluginWorker {
                 }
             }
             Err(Error::Provider(format!(
-                "plugin '{}' worker stopped",
-                self.inner.plugin_id
+                "provider '{}' worker stopped",
+                self.inner.provider_id
             )))
         })
         .await;
         match result {
             Ok(result) => result,
             Err(_) => Err(Error::Provider(format!(
-                "plugin '{}' invocation timed out",
-                self.inner.plugin_id
+                "provider '{}' invocation timed out",
+                self.inner.provider_id
             ))),
         }
     }
@@ -278,7 +278,7 @@ impl PluginWorker {
         if let Some(mut process) = self.inner.process.lock().await.take() {
             let _ = process.child.kill().await;
         }
-        fail_pending(&self.inner.pending, "plugin worker stopped").await;
+        fail_pending(&self.inner.pending, "provider worker stopped").await;
     }
 
     async fn cleanup(&self, id: &str) {
@@ -293,7 +293,7 @@ impl PluginWorker {
                 .child
                 .try_wait()
                 .map_err(|error| {
-                    Error::Config(format!("cannot check plugin worker status: {error}"))
+                    Error::Config(format!("cannot check provider worker status: {error}"))
                 })?
                 .is_some(),
             None => true,
@@ -303,7 +303,7 @@ impl PluginWorker {
         }
         Ok(process
             .as_ref()
-            .expect("plugin worker was started")
+            .expect("provider worker was started")
             .stdin
             .clone())
     }
@@ -340,36 +340,36 @@ impl PluginWorker {
             .kill_on_drop(true);
         let mut child = command.spawn().map_err(|error| {
             Error::Config(format!(
-                "cannot start plugin worker {}: {error}",
+                "cannot start provider worker {}: {error}",
                 self.inner.executable.display()
             ))
         })?;
         let stdin =
             Arc::new(Mutex::new(child.stdin.take().ok_or_else(|| {
-                Error::Config("cannot open plugin worker stdin".into())
+                Error::Config("cannot open provider worker stdin".into())
             })?));
         let stdout = child
             .stdout
             .take()
-            .ok_or_else(|| Error::Config("cannot open plugin worker stdout".into()))?;
+            .ok_or_else(|| Error::Config("cannot open provider worker stdout".into()))?;
         let stderr = child
             .stderr
             .take()
-            .ok_or_else(|| Error::Config("cannot open plugin worker stderr".into()))?;
+            .ok_or_else(|| Error::Config("cannot open provider worker stderr".into()))?;
         spawn_stdout_reader(
-            self.inner.plugin_id.clone(),
+            self.inner.provider_id.clone(),
             stdout,
             stdin.clone(),
             self.inner.pending.clone(),
             self.inner.host.clone(),
         );
-        spawn_stderr_reader(self.inner.plugin_id.clone(), stderr);
+        spawn_stderr_reader(self.inner.provider_id.clone(), stderr);
         Ok(WorkerProcess { child, stdin })
     }
 }
 
 fn spawn_stdout_reader(
-    plugin_id: String,
+    provider_id: String,
     stdout: tokio::process::ChildStdout,
     stdin: Arc<Mutex<ChildStdin>>,
     pending: Pending,
@@ -381,7 +381,7 @@ fn spawn_stdout_reader(
             let message = match serde_json::from_str::<WorkerMessage>(&line) {
                 Ok(message) => message,
                 Err(error) => {
-                    tracing::warn!(plugin = %plugin_id, %error, "plugin worker wrote an invalid message");
+                    tracing::warn!(provider = %provider_id, %error, "provider worker wrote an invalid message");
                     continue;
                 }
             };
@@ -389,9 +389,9 @@ fn spawn_stdout_reader(
                 WorkerMessage::Result { id, result, error } => {
                     if let Some(sender) = pending.lock().await.remove(&id) {
                         let value = match error {
-                            Some(error) => {
-                                Err(Error::Provider(format!("plugin '{plugin_id}': {error}")))
-                            }
+                            Some(error) => Err(Error::Provider(format!(
+                                "provider '{provider_id}': {error}"
+                            ))),
                             None => Ok(result),
                         };
                         let _ = sender.send(WorkerStreamItem::Result(value));
@@ -439,15 +439,15 @@ fn spawn_stdout_reader(
                 }
             }
         }
-        fail_pending(&pending, &format!("plugin '{plugin_id}' worker exited")).await;
+        fail_pending(&pending, &format!("provider '{provider_id}' worker exited")).await;
     });
 }
 
-fn spawn_stderr_reader(plugin_id: String, stderr: tokio::process::ChildStderr) {
+fn spawn_stderr_reader(provider_id: String, stderr: tokio::process::ChildStderr) {
     tokio::spawn(async move {
         let mut lines = BufReader::new(stderr).lines();
         while let Ok(Some(line)) = lines.next_line().await {
-            tracing::warn!(plugin = %plugin_id, message = %line, "plugin worker stderr");
+            tracing::warn!(provider = %provider_id, message = %line, "provider worker stderr");
         }
     });
 }
@@ -459,11 +459,11 @@ async fn write_message(stdin: &Arc<Mutex<ChildStdin>>, message: &HostMessage<'_>
     stdin
         .write_all(&bytes)
         .await
-        .map_err(|error| Error::Config(format!("cannot write to plugin worker: {error}")))?;
+        .map_err(|error| Error::Config(format!("cannot write to provider worker: {error}")))?;
     stdin
         .flush()
         .await
-        .map_err(|error| Error::Config(format!("cannot flush plugin worker stdin: {error}")))?;
+        .map_err(|error| Error::Config(format!("cannot flush provider worker stdin: {error}")))?;
     Ok(())
 }
 
@@ -482,7 +482,7 @@ fn recorded_network_request(
     if let Some(headers) = params.get("headers").and_then(serde_json::Value::as_object) {
         for (name, value) in headers {
             let value = value.as_str().ok_or_else(|| {
-                Error::Config(format!("plugin HTTP header '{name}' must be a string"))
+                Error::Config(format!("provider HTTP header '{name}' must be a string"))
             })?;
             if !crate::model::is_sensitive_header(name) {
                 recorded_headers.insert(name.clone(), value.into());
@@ -506,29 +506,29 @@ fn recorded_network_request(
 fn network_request_body(params: &serde_json::Value) -> Result<Option<Vec<u8>>> {
     match (params.get("body"), params.get("bodyBase64")) {
         (Some(_), Some(_)) => Err(Error::Config(
-            "plugin request cannot contain both body and bodyBase64".into(),
+            "provider request cannot contain both body and bodyBase64".into(),
         )),
         (Some(body), None) => Ok(Some(
             body.as_str()
-                .ok_or_else(|| Error::Config("plugin body must be a string".into()))?
+                .ok_or_else(|| Error::Config("provider body must be a string".into()))?
                 .as_bytes()
                 .to_vec(),
         )),
         (None, Some(body)) => {
             let encoded = body
                 .as_str()
-                .ok_or_else(|| Error::Config("plugin bodyBase64 must be a string".into()))?;
+                .ok_or_else(|| Error::Config("provider bodyBase64 must be a string".into()))?;
             if encoded.len() as u64 > MAX_NETWORK_RESPONSE_BYTES * 4 / 3 + 4 {
                 return Err(Error::Config(
-                    "plugin binary request is larger than allowed".into(),
+                    "provider binary request is larger than allowed".into(),
                 ));
             }
             let decoded = STANDARD
                 .decode(encoded)
-                .map_err(|_| Error::Config("plugin bodyBase64 is invalid".into()))?;
+                .map_err(|_| Error::Config("provider bodyBase64 is invalid".into()))?;
             if decoded.len() as u64 > MAX_NETWORK_RESPONSE_BYTES {
                 return Err(Error::Config(
-                    "plugin binary request is larger than allowed".into(),
+                    "provider binary request is larger than allowed".into(),
                 ));
             }
             Ok(Some(decoded))
@@ -556,7 +556,7 @@ impl HostContext {
                 Ok(serde_json::Value::Null)
             }
             _ => Err(Error::Protocol(format!(
-                "unsupported plugin host method: {method}"
+                "unsupported provider host method: {method}"
             ))),
         }
     }
@@ -565,23 +565,23 @@ impl HostContext {
         &self,
         request_id: &str,
         params: &serde_json::Value,
-    ) -> Result<(PluginRequest, CancellationToken, Option<CallRecorder>)> {
+    ) -> Result<(ProviderRequest, CancellationToken, Option<CallRecorder>)> {
         let raw_url = required_string(params, "url")?;
         let url = url::Url::parse(raw_url)
-            .map_err(|error| Error::Config(format!("invalid plugin network URL: {error}")))?;
+            .map_err(|error| Error::Config(format!("invalid provider network URL: {error}")))?;
         if url.scheme() != "https" || !url.username().is_empty() || url.password().is_some() {
             return Err(Error::Config(
-                "plugin network URL must be HTTPS without credentials".into(),
+                "provider network URL must be HTTPS without credentials".into(),
             ));
         }
         let host = url
             .host_str()
-            .ok_or_else(|| Error::Config("plugin network URL has no host".into()))?
+            .ok_or_else(|| Error::Config("provider network URL has no host".into()))?
             .to_ascii_lowercase();
         if !self.network_hosts.contains(&host) {
             return Err(Error::Config(format!(
-                "plugin '{}' cannot access host '{host}'",
-                self.plugin_id
+                "provider '{}' cannot access host '{host}'",
+                self.provider_id
             )));
         }
         let method = params
@@ -589,22 +589,22 @@ impl HostContext {
             .and_then(serde_json::Value::as_str)
             .unwrap_or("GET")
             .parse::<reqwest::Method>()
-            .map_err(|error| Error::Config(format!("invalid plugin HTTP method: {error}")))?;
+            .map_err(|error| Error::Config(format!("invalid provider HTTP method: {error}")))?;
         let mut headers = reqwest::header::HeaderMap::new();
         if let Some(values) = params.get("headers").and_then(serde_json::Value::as_object) {
             for (name, value) in values {
                 let value = value.as_str().ok_or_else(|| {
-                    Error::Config(format!("plugin HTTP header '{name}' must be a string"))
+                    Error::Config(format!("provider HTTP header '{name}' must be a string"))
                 })?;
                 headers.append(
                     reqwest::header::HeaderName::from_bytes(name.as_bytes()).map_err(|error| {
-                        Error::Config(format!("invalid plugin HTTP header '{name}': {error}"))
+                        Error::Config(format!("invalid provider HTTP header '{name}': {error}"))
                     })?,
                     value
                         .parse::<reqwest::header::HeaderValue>()
                         .map_err(|error| {
                             Error::Config(format!(
-                                "invalid plugin HTTP header '{name}' value: {error}"
+                                "invalid provider HTTP header '{name}' value: {error}"
                             ))
                         })?,
                 );
@@ -628,7 +628,7 @@ impl HostContext {
             if let Some(body) = body {
                 request = request.body(body);
             }
-            PluginRequest::Emulated(request)
+            ProviderRequest::Emulated(request)
         } else {
             let client = crate::network::client_builder(&self.store)
                 .await?
@@ -642,7 +642,7 @@ impl HostContext {
             if let Some(body) = body {
                 request = request.body(body);
             }
-            PluginRequest::Standard(request)
+            ProviderRequest::Standard(request)
         };
         let cancellation = invocation
             .as_ref()
@@ -716,7 +716,7 @@ impl HostContext {
             .is_some_and(|size| size > MAX_NETWORK_RESPONSE_BYTES)
         {
             return Err(Error::Provider(
-                "plugin network response is larger than allowed".into(),
+                "provider network response is larger than allowed".into(),
             ));
         }
         let headers = header_map(&response);
@@ -726,7 +726,7 @@ impl HostContext {
         };
         if body.len() as u64 > MAX_NETWORK_RESPONSE_BYTES {
             return Err(Error::Provider(
-                "plugin network response is larger than allowed".into(),
+                "provider network response is larger than allowed".into(),
             ));
         }
         if let Some(recorder) = &recorder {
@@ -785,7 +785,7 @@ impl HostContext {
             .await
             .get(stream_id)
             .cloned()
-            .ok_or_else(|| Error::Protocol(format!("unknown plugin stream: {stream_id}")))?;
+            .ok_or_else(|| Error::Protocol(format!("unknown provider stream: {stream_id}")))?;
         let mut receiver = lines_handle.lock().await;
         let mut lines = Vec::new();
         match receiver.recv().await {
@@ -834,11 +834,11 @@ fn required_string<'a>(params: &'a serde_json::Value, key: &str) -> Result<&'a s
     params
         .get(key)
         .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| Error::Protocol(format!("plugin host call requires string '{key}'")))
+        .ok_or_else(|| Error::Protocol(format!("provider host call requires string '{key}'")))
 }
 
 /// Own the HTTP body across every queue send so Stop also drops a stream
-/// whose plugin stopped reading while its output queue was full.
+/// whose provider stopped reading while its output queue was full.
 async fn forward_network_stream(
     response: reqwest::Response,
     sender: mpsc::Sender<Result<String>>,
@@ -868,7 +868,7 @@ async fn forward_network_stream(
             if total > MAX_STREAM_BYTES {
                 let _ = sender
                     .send(Err(Error::Provider(
-                        "plugin network stream is larger than allowed".into(),
+                        "provider network stream is larger than allowed".into(),
                     )))
                     .await;
                 return;
@@ -919,7 +919,7 @@ async fn forward_network_stream(
 #[cfg(test)]
 mod tests {
     #[tokio::test]
-    async fn stop_closes_plugin_http_body_even_when_the_output_queue_is_full() {
+    async fn stop_closes_provider_http_body_even_when_the_output_queue_is_full() {
         use super::*;
         let (network, network_rx) =
             mpsc::channel::<std::result::Result<bytes::Bytes, std::io::Error>>(1);
@@ -928,7 +928,7 @@ mod tests {
         let response = reqwest::Response::from(axum::http::Response::new(body));
         let (output, _output_rx) = mpsc::channel(1);
         let cancellation = CancellationToken::new();
-        // A single network chunk contains more lines than the plugin can accept.
+        // A single network chunk contains more lines than the provider can accept.
         network
             .send(Ok(bytes::Bytes::from_static(b"first\nsecond\nthird\n")))
             .await
@@ -941,14 +941,14 @@ mod tests {
 
         tokio::time::timeout(Duration::from_secs(1), pump)
             .await
-            .expect("Stop left the plugin HTTP body alive behind a full queue");
+            .expect("Stop left the provider HTTP body alive behind a full queue");
         assert!(
             network.is_closed(),
             "the provider connection must be dropped"
         );
     }
     use crate::{
-        model::{NewLlmCall, ProviderType},
+        model::{NewLlmCall, ProtocolType},
         protocol::{CallRecorder, FinishReason},
         store::Store,
     };
@@ -972,9 +972,9 @@ mod tests {
                 conversation_id: "conversation".into(),
                 provider_call_index: 0,
                 model_hash: "plugin:test/provider/model".into(),
-                provider_type: ProviderType::Plugin,
-                provider_url: "plugin://test/provider".into(),
-                request_type: ProviderType::Plugin,
+                protocol_type: ProtocolType::Provider,
+                endpoint_url: "plugin://test/provider".into(),
+                request_type: ProtocolType::Provider,
                 request_url: "plugin://test/provider".into(),
                 model_id: "model".into(),
                 display_name: "Model".into(),
@@ -1016,7 +1016,7 @@ mod tests {
             }),
         );
         HostContext {
-            plugin_id: "test".into(),
+            provider_id: "test".into(),
             network_hosts: Arc::new(HashSet::from(["example.com".into()])),
             emulated_hosts: Arc::new(HashSet::new()),
             store: store.clone(),
@@ -1030,7 +1030,7 @@ mod tests {
     }
 
     #[test]
-    fn recorded_plugin_request_omits_sensitive_headers() {
+    fn recorded_provider_request_omits_sensitive_headers() {
         let (headers, body) = recorded_network_request(&network_params()).unwrap();
 
         assert_eq!(
@@ -1058,8 +1058,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn detailed_plugin_network_recording_persists_request_and_raw_response() {
-        let (_directory, store, recorder) = recorder(true, "detailed-plugin").await;
+    async fn detailed_provider_network_recording_persists_request_and_raw_response() {
+        let (_directory, store, recorder) = recorder(true, "detailed-provider").await;
         let host = host_with_recorder(store.clone(), recorder.clone()).await;
         let params = network_params();
         let (_, _, first_recorder) = host.request("invocation", &params).await.unwrap();
@@ -1077,7 +1077,7 @@ mod tests {
         recorder.completed(FinishReason::Stop).await.unwrap();
 
         let request = store
-            .llm_call_request("detailed-plugin")
+            .llm_call_request("detailed-provider")
             .await
             .unwrap()
             .unwrap();
@@ -1089,7 +1089,7 @@ mod tests {
             })
         );
         assert_eq!(request.body, body);
-        let chunks = store.llm_call_chunks("detailed-plugin").await.unwrap();
+        let chunks = store.llm_call_chunks("detailed-provider").await.unwrap();
         let expected_response = "data: {\"type\":\"response.created\"}\n\ndata: [DONE]\n\n";
         assert_eq!(chunks.len(), 2);
         assert_eq!(
@@ -1099,7 +1099,7 @@ mod tests {
                 .collect::<String>(),
             expected_response
         );
-        let summary = store.llm_call("detailed-plugin").await.unwrap().unwrap();
+        let summary = store.llm_call("detailed-provider").await.unwrap().unwrap();
         assert_eq!(summary.http_status, Some(200));
         assert_eq!(summary.stream_event_count, 2);
         assert_eq!(summary.response_bytes, expected_response.len() as i64);
@@ -1107,8 +1107,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn standard_plugin_network_recording_keeps_metrics_without_payloads() {
-        let (_directory, store, recorder) = recorder(false, "standard-plugin").await;
+    async fn standard_provider_network_recording_keeps_metrics_without_payloads() {
+        let (_directory, store, recorder) = recorder(false, "standard-provider").await;
         let host = host_with_recorder(store.clone(), recorder.clone()).await;
         let params = network_params();
         let (_, body) = recorded_network_request(&params).unwrap();
@@ -1122,16 +1122,16 @@ mod tests {
         recorder.completed(FinishReason::Stop).await.unwrap();
 
         assert!(store
-            .llm_call_request("standard-plugin")
+            .llm_call_request("standard-provider")
             .await
             .unwrap()
             .is_none());
         assert!(store
-            .llm_call_chunks("standard-plugin")
+            .llm_call_chunks("standard-provider")
             .await
             .unwrap()
             .is_empty());
-        let summary = store.llm_call("standard-plugin").await.unwrap().unwrap();
+        let summary = store.llm_call("standard-provider").await.unwrap().unwrap();
         assert_eq!(summary.http_status, Some(204));
         assert_eq!(summary.request_bytes, Some(request_bytes));
         assert_eq!(summary.response_bytes, response.len() as i64);

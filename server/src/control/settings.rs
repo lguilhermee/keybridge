@@ -127,7 +127,7 @@ pub async fn update_desktop(
 
 /// Settings view for commit message generation. Empty `model_id` means direct
 /// (forward the original Cursor RPC). A non-empty value is a configured
-/// built-in or plugin model identifier. Empty `prompt` means "use the built-in default".
+/// built-in or provider model identifier. Empty `prompt` means "use the built-in default".
 #[derive(Serialize)]
 pub struct CommitSettingsView {
     pub model_id: String,

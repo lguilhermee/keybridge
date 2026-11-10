@@ -250,8 +250,8 @@ fn wire_content(content: &ProjectedContent, model: &str) -> Result<Value> {
     })
 }
 
-fn encode_replay_state(replay_state: &crate::model::ProviderReplayState) -> Result<String> {
-    if replay_state.provider_kind == "cursor_opaque" {
+fn encode_replay_state(replay_state: &crate::model::ProtocolReplayState) -> Result<String> {
+    if replay_state.protocol_kind == "cursor_opaque" {
         return replay_state
             .value
             .as_str()

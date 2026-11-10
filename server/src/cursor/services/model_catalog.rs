@@ -11,7 +11,7 @@ use crate::{
     api::cursor::proxy::{self, CursorProxy},
     cursor::{protocol::proto::agent::v1 as agent, transport::TransportRegistry},
     model::{format_token_count, parse_token_count, ModelConfig},
-    provider::PluginModelDescriptor,
+    provider::ProviderModelDescriptor,
     Error, Result,
 };
 
@@ -252,22 +252,22 @@ pub async fn available_models(
     request: Request<Body>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let plugin_models = match registry.plugins() {
-        Some(plugins) => plugins.configured_models().await,
+    let provider_models = match registry.providers() {
+        Some(providers) => providers.configured_models().await,
         None => Vec::new(),
     };
     tracing::info!(
         model_count = models.len(),
-        plugin_model_count = plugin_models.len(),
+        provider_model_count = provider_models.len(),
         "appending BYOK models to Cursor AvailableModels"
     );
     let mut available_models = models.iter().map(available_model).collect::<Vec<_>>();
-    available_models.extend(plugin_models.iter().map(available_plugin_model));
+    available_models.extend(provider_models.iter().map(available_provider_model));
     let local = AvailableModelsAddition {
         model_names: models
             .iter()
             .map(|model| model.model_hash.clone())
-            .chain(plugin_models.iter().map(|model| model.id.clone()))
+            .chain(provider_models.iter().map(|model| model.id.clone()))
             .collect(),
         models: available_models,
     }
@@ -287,20 +287,20 @@ pub async fn usable_models(
     request: Request<Body>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let plugin_models = match registry.plugins() {
-        Some(plugins) => plugins.configured_models().await,
+    let provider_models = match registry.providers() {
+        Some(providers) => providers.configured_models().await,
         None => Vec::new(),
     };
     tracing::info!(
         model_count = models.len(),
-        plugin_model_count = plugin_models.len(),
+        provider_model_count = provider_models.len(),
         "appending BYOK models to Cursor GetUsableModels"
     );
     let local = UsableModelsAddition {
         models: models
             .iter()
             .map(usable_model)
-            .chain(plugin_models.iter().map(usable_plugin_model))
+            .chain(provider_models.iter().map(usable_provider_model))
             .collect(),
     }
     .encode_to_vec();
@@ -317,10 +317,10 @@ pub async fn default_model_for_cli(
     State(registry): State<TransportRegistry>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let plugin_models = configured_plugin_models(&registry).await;
+    let provider_models = configured_provider_models(&registry).await;
     Ok(local_response(
         agent::GetDefaultModelForCliResponse {
-            model: default_model_details(&models, &plugin_models),
+            model: default_model_details(&models, &provider_models),
         }
         .encode_to_vec(),
     ))
@@ -328,9 +328,9 @@ pub async fn default_model_for_cli(
 
 pub async fn default_model(State(registry): State<TransportRegistry>) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let plugin_models = configured_plugin_models(&registry).await;
+    let provider_models = configured_provider_models(&registry).await;
     Ok(local_response(
-        default_model_response(&models, &plugin_models).encode_to_vec(),
+        default_model_response(&models, &provider_models).encode_to_vec(),
     ))
 }
 
@@ -338,45 +338,45 @@ pub async fn default_model_nudge(
     State(registry): State<TransportRegistry>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let plugin_models = configured_plugin_models(&registry).await;
+    let provider_models = configured_provider_models(&registry).await;
     Ok(local_response(
-        default_model_nudge_response(&models, &plugin_models).encode_to_vec(),
+        default_model_nudge_response(&models, &provider_models).encode_to_vec(),
     ))
 }
 
-async fn configured_plugin_models(registry: &TransportRegistry) -> Vec<PluginModelDescriptor> {
-    match registry.plugins() {
-        Some(plugins) => plugins.configured_models().await,
+async fn configured_provider_models(registry: &TransportRegistry) -> Vec<ProviderModelDescriptor> {
+    match registry.providers() {
+        Some(providers) => providers.configured_models().await,
         None => Vec::new(),
     }
 }
 
 fn default_model_details(
     models: &[ModelConfig],
-    plugin_models: &[PluginModelDescriptor],
+    provider_models: &[ProviderModelDescriptor],
 ) -> Option<agent::ModelDetails> {
     models
         .first()
         .map(usable_model)
-        .or_else(|| plugin_models.first().map(usable_plugin_model))
+        .or_else(|| provider_models.first().map(usable_provider_model))
 }
 
 fn default_model_id<'a>(
     models: &'a [ModelConfig],
-    plugin_models: &'a [PluginModelDescriptor],
+    provider_models: &'a [ProviderModelDescriptor],
 ) -> &'a str {
     models
         .first()
         .map(|model| model.model_hash.as_str())
-        .or_else(|| plugin_models.first().map(|model| model.id.as_str()))
+        .or_else(|| provider_models.first().map(|model| model.id.as_str()))
         .unwrap_or_default()
 }
 
 fn default_model_response(
     models: &[ModelConfig],
-    plugin_models: &[PluginModelDescriptor],
+    provider_models: &[ProviderModelDescriptor],
 ) -> DefaultModelResponse {
-    let model = default_model_id(models, plugin_models).to_owned();
+    let model = default_model_id(models, provider_models).to_owned();
     DefaultModelResponse {
         thinking_model: model.clone(),
         model,
@@ -387,7 +387,7 @@ fn default_model_response(
 
 fn default_model_nudge_response(
     models: &[ModelConfig],
-    plugin_models: &[PluginModelDescriptor],
+    provider_models: &[ProviderModelDescriptor],
 ) -> DefaultModelNudgeDataResponse {
     DefaultModelNudgeDataResponse {
         nudge_date: "0".into(),
@@ -395,7 +395,7 @@ fn default_model_nudge_response(
         models_with_no_default_switch: models
             .iter()
             .map(|model| model.model_hash.clone())
-            .chain(plugin_models.iter().map(|model| model.id.clone()))
+            .chain(provider_models.iter().map(|model| model.id.clone()))
             .collect(),
         conversion_model_override: String::new(),
     }
@@ -690,11 +690,11 @@ fn model_tooltip(model: &ModelConfig) -> TooltipData {
     }
 }
 
-fn available_plugin_model(model: &PluginModelDescriptor) -> AvailableModel {
+fn available_provider_model(model: &ProviderModelDescriptor) -> AvailableModel {
     let tooltip = TooltipData {
         markdown_content: model.description.clone(),
     };
-    // Effort and context tiers are provided uniformly by the host, matching built-in models; plugins no longer declare them.
+    // Effort and context tiers are provided uniformly by the host, matching built-in models; providers no longer declare them.
     let contexts = context_options(None);
     let variants = model_variants(&model.id, &model.display_name, &tooltip, &contexts, true);
     let legacy_slugs = variants
@@ -723,13 +723,13 @@ fn available_plugin_model(model: &PluginModelDescriptor) -> AvailableModel {
         variants,
         legacy_slugs,
         named_model_section_index: Some(1),
-        vendor_name: Some(model.provider_type.clone()),
+        vendor_name: Some(model.brand.clone()),
         vendor: Some(AvailableModelVendor {
             id: 6,
-            display_name: model.provider_type.clone(),
+            display_name: model.brand.clone(),
         }),
         model_picker_badges: vec![ModelPickerBadge {
-            label: model.plugin_name.clone(),
+            label: model.provider_name.clone(),
             variant: 1,
             dismiss_on_selection: false,
         }],
@@ -743,7 +743,7 @@ fn cli_local_model_credentials() -> agent::model_details::Credentials {
     })
 }
 
-fn usable_plugin_model(model: &PluginModelDescriptor) -> agent::ModelDetails {
+fn usable_provider_model(model: &ProviderModelDescriptor) -> agent::ModelDetails {
     agent::ModelDetails {
         model_id: model.id.clone(),
         display_model_id: model.id.clone(),
@@ -818,17 +818,17 @@ mod tests {
     }
 
     #[test]
-    fn cli_plugin_model_details_use_local_routing_credentials() {
-        let details = usable_plugin_model(&PluginModelDescriptor {
+    fn cli_provider_model_details_use_local_routing_credentials() {
+        let details = usable_provider_model(&ProviderModelDescriptor {
             id: "plugin:test/provider/model".into(),
-            plugin_id: "plugin:test".into(),
-            plugin_name: "Test Plugin".into(),
-            provider_id: "provider".into(),
+            provider_id: "plugin:test".into(),
+            provider_name: "Test Provider".into(),
+            channel_id: "provider".into(),
             model_id: "model".into(),
-            display_name: "Plugin Model".into(),
+            display_name: "Provider Model".into(),
             description: None,
             icon: String::new(),
-            provider_type: "test".into(),
+            brand: "test".into(),
             max_output_tokens: None,
             images: false,
             enabled: true,

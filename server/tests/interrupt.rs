@@ -1,6 +1,6 @@
 //! Verifies BreakMessages, cancellation, shutdown, and Finalizing races.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -26,8 +26,8 @@ async fn finalizing_rejects_late_messages_for_the_next_run() {
     let (_directory, store) = fixtures::temp_store().await;
     let conversation_id = ConversationId::new("finalizing-conversation");
     let base_checkpoint_id = store.ensure_conversation(&conversation_id).await.unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "final-call".into(),
         },
@@ -55,7 +55,7 @@ async fn finalizing_rejects_late_messages_for_the_next_run() {
     let (port, mut session, handle) = run::channel(prepared.run_id.clone(), 32);
     let cancellation = handle.cancellation();
     let task = tokio::spawn(async move {
-        RunEngine::new(store, Arc::new(provider))
+        RunEngine::new(store, Arc::new(protocol))
             .run(prepared, port, cancellation)
             .await
     });
@@ -95,9 +95,9 @@ async fn break_messages_emits_one_cycle_boundary_before_the_runtime_commit() {
     let (_directory, store) = fixtures::temp_store().await;
     let conversation_id = ConversationId::new("cycle-boundary-conversation");
     let base_checkpoint_id = store.ensure_conversation(&conversation_id).await.unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push_pending();
-    provider.push(text_response("continued"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_pending();
+    protocol.push(text_response("continued"));
     let prepared = PreparedRun {
         run_id: RunId::new("cycle-boundary-run"),
         cursor_request_id: None,
@@ -117,14 +117,14 @@ async fn break_messages_emits_one_cycle_boundary_before_the_runtime_commit() {
     let (port, mut session, handle) = run::channel(prepared.run_id.clone(), 32);
     let cancellation = handle.cancellation();
     let engine_store = store.clone();
-    let engine_provider = provider.clone();
+    let engine_provider = protocol.clone();
     let engine = tokio::spawn(async move {
         RunEngine::new(engine_store, Arc::new(engine_provider))
             .run(prepared, port, cancellation)
             .await
     });
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(1);
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
             "first model cycle did not start"
@@ -252,7 +252,7 @@ async fn registry_shutdown_cancels_runs_and_closes_run_sse_outputs() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(fake_provider::FakeProvider::default()),
+        Arc::new(fake_protocol::FakeProtocol::default()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("active-run").await.unwrap();
@@ -282,7 +282,7 @@ async fn client_heartbeat_returns_a_server_protocol_heartbeat() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(fake_provider::FakeProvider::default()),
+        Arc::new(fake_protocol::FakeProtocol::default()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("heartbeat-run").await.unwrap();
@@ -326,8 +326,8 @@ async fn client_heartbeat_returns_a_server_protocol_heartbeat() {
 #[tokio::test]
 async fn runtime_cancel_action_aborts_active_exec_before_clean_end_stream() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "ignored".into(),
         },
@@ -351,7 +351,7 @@ async fn runtime_cancel_action_aborts_active_exec_before_clean_end_stream() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider),
+        Arc::new(protocol),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("cancel-request").await.unwrap();
@@ -458,8 +458,8 @@ async fn runtime_cancel_action_during_prepare_still_cancels_the_run() {
     // handle exists. The cancel must abort the pending generation and end the
     // stream cleanly instead of letting the turn run to completion.
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("must never be sent"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("must never be sent"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -468,7 +468,7 @@ async fn runtime_cancel_action_during_prepare_still_cancels_the_run() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("prepare-cancel").await.unwrap();
@@ -562,8 +562,8 @@ async fn runtime_cancel_action_during_prepare_still_cancels_the_run() {
         acknowledge_kv(&handle, &mut append_seqno, &frame).await;
     }
     assert!(
-        provider.requests().is_empty(),
-        "a Run cancelled during prepare must never reach the provider"
+        protocol.requests().is_empty(),
+        "a Run cancelled during prepare must never reach the protocol"
     );
     assert_eq!(output.recv().await, None);
 }
@@ -571,8 +571,8 @@ async fn runtime_cancel_action_during_prepare_still_cancels_the_run() {
 #[tokio::test]
 async fn stop_after_turn_ended_closes_the_continuation_instead_of_ignoring_stop() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("finished"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("finished"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -581,7 +581,7 @@ async fn stop_after_turn_ended_closes_the_continuation_instead_of_ignoring_stop(
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("stop-finished").await.unwrap();
@@ -626,15 +626,15 @@ async fn stop_after_turn_ended_closes_the_continuation_instead_of_ignoring_stop(
     })
     .await
     .expect("Stop was ignored after the model finished");
-    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(protocol.requests().len(), 1);
 }
 
 #[tokio::test]
 async fn discord_message_on_open_transport_cannot_clear_a_pause() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("first turn"));
-    provider.push(text_response("must not run"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("first turn"));
+    protocol.push(text_response("must not run"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -643,7 +643,7 @@ async fn discord_message_on_open_transport_cannot_clear_a_pause() {
     .unwrap();
     let registry = TransportRegistry::new(
         store.clone(),
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -691,15 +691,15 @@ async fn discord_message_on_open_transport_cannot_clear_a_pause() {
     seqno += 1;
     drain_successfully(&handle, &mut output, &mut seqno).await;
     assert!(store.conversation_paused(&conversation_id).await.unwrap());
-    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(protocol.requests().len(), 1);
 }
 
 #[tokio::test]
 async fn queued_user_message_after_turn_ended_starts_the_next_turn() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(text_response("first turn"));
-    provider.push(text_response("queued turn"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(text_response("first turn"));
+    protocol.push(text_response("queued turn"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -708,7 +708,7 @@ async fn queued_user_message_after_turn_ended_starts_the_next_turn() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("queued-after-turn").await.unwrap();
@@ -762,12 +762,12 @@ async fn queued_user_message_after_turn_ended_starts_the_next_turn() {
     }
 
     assert!(text.contains("queued turn"));
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 2);
     assert_eq!(
         &requests[1].history[..requests[0].history.len()],
         requests[0].history.as_slice(),
-        "queued continuation must preserve the first provider request as a prefix"
+        "queued continuation must preserve the first protocol request as a prefix"
     );
     let history = serde_json::to_string(&requests[1].history).unwrap();
     assert!(history.contains("queued follow-up"));
@@ -776,9 +776,9 @@ async fn queued_user_message_after_turn_ended_starts_the_next_turn() {
 #[tokio::test]
 async fn runtime_user_message_action_interrupts_and_continues_with_new_message() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push_pending();
-    provider.push(text_response("continued after user interruption"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_pending();
+    protocol.push(text_response("continued after user interruption"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -787,7 +787,7 @@ async fn runtime_user_message_action_interrupts_and_continues_with_new_message()
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -808,10 +808,10 @@ async fn runtime_user_message_action_interrupts_and_continues_with_new_message()
 
     let mut append_seqno = 1;
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
-            "provider did not start"
+            "protocol did not start"
         );
         if let Ok(Some(frame)) =
             tokio::time::timeout(std::time::Duration::from_millis(20), output.recv()).await
@@ -852,8 +852,8 @@ async fn runtime_user_message_action_interrupts_and_continues_with_new_message()
         acknowledge_kv(&handle, &mut append_seqno, &frame).await;
     }
     assert!(saw_continued);
-    assert_eq!(provider.requests().len(), 2);
-    let history = serde_json::to_string(&provider.requests()[1].history).unwrap();
+    assert_eq!(protocol.requests().len(), 2);
+    let history = serde_json::to_string(&protocol.requests()[1].history).unwrap();
     assert!(history.contains("queued follow-up"));
 }
 
@@ -865,9 +865,9 @@ async fn runtime_user_message_reports_delivered_and_appended() {
     // never saw Delivered/UserMessageAppended and every later tool round was
     // detached (a hang). This asserts the full delivery sequence.
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push_pending();
-    provider.push(text_response("continued after user interruption"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_pending();
+    protocol.push(text_response("continued after user interruption"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -876,7 +876,7 @@ async fn runtime_user_message_reports_delivered_and_appended() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -897,10 +897,10 @@ async fn runtime_user_message_reports_delivered_and_appended() {
 
     let mut append_seqno = 1;
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
-            "provider did not start"
+            "protocol did not start"
         );
         if let Ok(Some(frame)) =
             tokio::time::timeout(std::time::Duration::from_millis(20), output.recv()).await
@@ -979,9 +979,9 @@ async fn tool_call_with_empty_arguments_does_not_fail_the_run() {
     // as JSON must yield an empty object (as the model cycle already does), not
     // fail the run with `EOF while parsing a value`.
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(tool_response("call-1", "UpdateCurrentStep", ""));
-    provider.push(text_response("done after empty-argument tool"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(tool_response("call-1", "UpdateCurrentStep", ""));
+    protocol.push(text_response("done after empty-argument tool"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -990,7 +990,7 @@ async fn tool_call_with_empty_arguments_does_not_fail_the_run() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("empty-args-request").await.unwrap();
@@ -1032,15 +1032,15 @@ async fn tool_call_with_empty_arguments_does_not_fail_the_run() {
         acknowledge_kv(&handle, &mut append_seqno, &frame).await;
     }
     assert!(saw_done);
-    assert_eq!(provider.requests().len(), 2);
+    assert_eq!(protocol.requests().len(), 2);
 }
 
 #[tokio::test]
 async fn injected_user_context_restarts_only_the_active_model_cycle() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push_pending();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_pending();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "continued".into(),
         },
@@ -1057,7 +1057,7 @@ async fn injected_user_context_restarts_only_the_active_model_cycle() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("inject-request").await.unwrap();
@@ -1072,10 +1072,10 @@ async fn injected_user_context_restarts_only_the_active_model_cycle() {
 
     let mut append_seqno = 1;
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
-            "provider did not start"
+            "protocol did not start"
         );
         if let Ok(Some(frame)) =
             tokio::time::timeout(std::time::Duration::from_millis(20), output.recv()).await
@@ -1137,7 +1137,7 @@ async fn injected_user_context_restarts_only_the_active_model_cycle() {
         acknowledge_kv(&handle, &mut append_seqno, &frame).await;
     }
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 2);
     let continued_history = serde_json::to_string(&requests[1].history).unwrap();
     assert!(continued_history.contains("injected follow-up"));
@@ -1155,9 +1155,9 @@ async fn injected_user_context_restarts_only_the_active_model_cycle() {
 #[tokio::test]
 async fn injected_user_context_aborts_pending_tools_and_ignores_late_results() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(tool_response("call-1", "Read", "{\"path\":\"/tmp/a\"}"));
-    let release = provider.push_gated(text_response("continued after tool interruption"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(tool_response("call-1", "Read", "{\"path\":\"/tmp/a\"}"));
+    let release = protocol.push_gated(text_response("continued after tool interruption"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -1166,7 +1166,7 @@ async fn injected_user_context_aborts_pending_tools_and_ignores_late_results() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -1201,7 +1201,7 @@ async fn injected_user_context_aborts_pending_tools_and_ignores_late_results() {
 
     let mut saw_abort = false;
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().len() < 2 || !saw_abort {
+    while protocol.requests().len() < 2 || !saw_abort {
         assert!(
             tokio::time::Instant::now() < deadline,
             "root model did not restart after tool interruption"
@@ -1237,7 +1237,7 @@ async fn injected_user_context_aborts_pending_tools_and_ignores_late_results() {
 
     drain_successfully(&handle, &mut output, &mut append_seqno).await;
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(
         requests[0].history,
         requests[1].history[..requests[0].history.len()]
@@ -1245,18 +1245,18 @@ async fn injected_user_context_aborts_pending_tools_and_ignores_late_results() {
     let history = serde_json::to_string(&requests[1].history).unwrap();
     let interrupted = history
         .find("Tool execution was interrupted by a newer user message.")
-        .expect("interrupted tool result missing from provider history");
+        .expect("interrupted tool result missing from protocol history");
     let injected = history
         .find("injected follow-up")
-        .expect("injected message missing from provider history");
+        .expect("injected message missing from protocol history");
     assert!(interrupted < injected);
 }
 
 #[tokio::test]
 async fn injected_user_context_detaches_subagents_without_cancelling_them() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(tool_response(
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(tool_response(
         "task-call",
         "Task",
         &serde_json::json!({
@@ -1267,7 +1267,7 @@ async fn injected_user_context_detaches_subagents_without_cancelling_them() {
         })
         .to_string(),
     ));
-    let release = provider.push_gated(text_response("continued while subagent runs"));
+    let release = protocol.push_gated(text_response("continued while subagent runs"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -1276,7 +1276,7 @@ async fn injected_user_context_detaches_subagents_without_cancelling_them() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -1310,7 +1310,7 @@ async fn injected_user_context_detaches_subagents_without_cancelling_them() {
     append_seqno += 1;
 
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().len() < 2 {
+    while protocol.requests().len() < 2 {
         assert!(
             tokio::time::Instant::now() < deadline,
             "root model did not restart while subagent remained active"
@@ -1345,7 +1345,7 @@ async fn injected_user_context_detaches_subagents_without_cancelling_them() {
 
     drain_successfully(&handle, &mut output, &mut append_seqno).await;
 
-    let history = serde_json::to_string(&provider.requests()[1].history).unwrap();
+    let history = serde_json::to_string(&protocol.requests()[1].history).unwrap();
     assert!(history.contains("Tool execution was interrupted by a newer user message."));
     assert!(history.contains("injected follow-up"));
 }
@@ -1380,11 +1380,11 @@ async fn injected_user_context_interrupts_automatic_compaction() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
+    let protocol = fake_protocol::FakeProtocol::default();
     let seed_answer = "x ".repeat(200_000);
-    provider.push(text_response(&seed_answer));
-    provider.push_pending();
-    provider.push(text_response("continued after compacting injection"));
+    protocol.push(text_response(&seed_answer));
+    protocol.push_pending();
+    protocol.push(text_response("continued after compacting injection"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -1393,7 +1393,7 @@ async fn injected_user_context_interrupts_automatic_compaction() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
 
@@ -1448,7 +1448,7 @@ async fn injected_user_context_interrupts_automatic_compaction() {
 
     let mut append_seqno = 1;
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().len() < 2 {
+    while protocol.requests().len() < 2 {
         assert!(
             tokio::time::Instant::now() < deadline,
             "automatic compaction did not start"
@@ -1491,7 +1491,7 @@ async fn injected_user_context_interrupts_automatic_compaction() {
         acknowledge_kv(&handle, &mut append_seqno, &frame).await;
     }
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 3);
     assert!(
         requests[1]
@@ -1514,8 +1514,8 @@ async fn injected_user_context_interrupts_automatic_compaction() {
 #[tokio::test]
 async fn stale_context_injection_is_rejected_without_failing_the_active_run() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    let release = provider.push_gated(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    let release = protocol.push_gated(vec![
         ModelEvent::Start {
             model_call_id: "active-cycle".into(),
         },
@@ -1532,7 +1532,7 @@ async fn stale_context_injection_is_rejected_without_failing_the_active_run() {
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("active-request").await.unwrap();
@@ -1550,10 +1550,10 @@ async fn stale_context_injection_is_rejected_without_failing_the_active_run() {
 
     let mut append_seqno = 1;
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
-            "provider did not start"
+            "protocol did not start"
         );
         if let Ok(Some(frame)) =
             tokio::time::timeout(std::time::Duration::from_millis(20), output.recv()).await
@@ -1626,14 +1626,14 @@ async fn stale_context_injection_is_rejected_without_failing_the_active_run() {
 
     assert!(released, "stale injection was not rejected");
     assert_eq!(rejection_count, 1);
-    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(protocol.requests().len(), 1);
 }
 
 #[tokio::test]
 async fn unsupported_runtime_action_is_ignored_without_failing_the_active_run() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    let release = provider.push_gated(text_response("active run completed"));
+    let protocol = fake_protocol::FakeProtocol::default();
+    let release = protocol.push_gated(text_response("active run completed"));
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -1642,7 +1642,7 @@ async fn unsupported_runtime_action_is_ignored_without_failing_the_active_run() 
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -1663,10 +1663,10 @@ async fn unsupported_runtime_action_is_ignored_without_failing_the_active_run() 
 
     let mut append_seqno = 1;
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-    while provider.requests().is_empty() {
+    while protocol.requests().is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
-            "provider did not start"
+            "protocol did not start"
         );
         if let Ok(Some(frame)) =
             tokio::time::timeout(std::time::Duration::from_millis(20), output.recv()).await
@@ -1687,14 +1687,14 @@ async fn unsupported_runtime_action_is_ignored_without_failing_the_active_run() 
     release.notify_one();
 
     drain_successfully(&handle, &mut output, &mut append_seqno).await;
-    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(protocol.requests().len(), 1);
 }
 
 #[tokio::test]
 async fn cancel_subagent_action_aborts_the_target_task_and_keeps_the_parent_running() {
     let (_directory, store) = fixtures::temp_store().await;
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "task-cycle".into(),
         },
@@ -1716,7 +1716,7 @@ async fn cancel_subagent_action_aborts_the_target_task_and_keeps_the_parent_runn
         ModelEvent::ToolCallEnd { index: 0 },
         ModelEvent::Done(FinishReason::ToolUse),
     ]);
-    provider.push(vec![
+    protocol.push(vec![
         ModelEvent::Start {
             model_call_id: "continued".into(),
         },
@@ -1733,7 +1733,7 @@ async fn cancel_subagent_action_aborts_the_target_task_and_keeps_the_parent_runn
     .unwrap();
     let registry = TransportRegistry::new(
         store,
-        Arc::new(provider.clone()),
+        Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry
@@ -1866,7 +1866,7 @@ async fn cancel_subagent_action_aborts_the_target_task_and_keeps_the_parent_runn
     }
 
     assert!(saw_continued);
-    assert_eq!(provider.requests().len(), 2);
+    assert_eq!(protocol.requests().len(), 2);
 }
 
 fn client_run() -> pb::AgentClientMessage {

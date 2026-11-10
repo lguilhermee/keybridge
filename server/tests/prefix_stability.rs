@@ -1,4 +1,4 @@
-//! Verifies append-only provider history and stable prompt prefixes.
+//! Verifies append-only protocol history and stable prompt prefixes.
 #[path = "support/fixtures.rs"]
 mod fixtures;
 

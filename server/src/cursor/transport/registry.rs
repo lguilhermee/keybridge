@@ -15,8 +15,8 @@ use crate::{
         conversation::ConversationRegistry, prompting::PromptCompiler,
         services::observability::CursorTraceService,
     },
-    provider::PluginRegistry,
-    protocol::Provider,
+    protocol::Protocol,
+    provider::ProviderRegistry,
     search::WebCache,
     store::Store,
     Result,
@@ -37,7 +37,7 @@ struct RegistryInner {
     store: Store,
     traces: CursorTraceService,
     web_cache: WebCache,
-    plugins: Option<PluginRegistry>,
+    providers: Option<ProviderRegistry>,
     conversations: ConversationRegistry,
 }
 
@@ -54,29 +54,29 @@ pub enum TransportRoute {
 }
 
 impl TransportRegistry {
-    pub fn new(store: Store, provider: Arc<dyn Provider>, compiler: PromptCompiler) -> Self {
-        Self::with_web_cache(store, provider, compiler, WebCache::default())
+    pub fn new(store: Store, protocol: Arc<dyn Protocol>, compiler: PromptCompiler) -> Self {
+        Self::with_web_cache(store, protocol, compiler, WebCache::default())
     }
 
     pub fn with_web_cache(
         store: Store,
-        provider: Arc<dyn Provider>,
+        protocol: Arc<dyn Protocol>,
         compiler: PromptCompiler,
         web_cache: WebCache,
     ) -> Self {
-        Self::build(store, provider, compiler, web_cache, None, None)
+        Self::build(store, protocol, compiler, web_cache, None, None)
     }
 
     /// Constructor carrying the local rules directory; its md rules are merged into the request context at compile time.
     pub fn with_local_rules(
         store: Store,
-        provider: Arc<dyn Provider>,
+        protocol: Arc<dyn Protocol>,
         compiler: PromptCompiler,
         local_rules_dir: std::path::PathBuf,
     ) -> Self {
         Self::build(
             store,
-            provider,
+            protocol,
             compiler,
             WebCache::default(),
             None,
@@ -84,30 +84,30 @@ impl TransportRegistry {
         )
     }
 
-    pub fn with_plugins(
+    pub fn with_providers(
         store: Store,
-        provider: Arc<dyn Provider>,
+        protocol: Arc<dyn Protocol>,
         compiler: PromptCompiler,
         web_cache: WebCache,
-        plugins: PluginRegistry,
+        providers: ProviderRegistry,
         local_rules_dir: std::path::PathBuf,
     ) -> Self {
         Self::build(
             store,
-            provider,
+            protocol,
             compiler,
             web_cache,
-            Some(plugins),
+            Some(providers),
             Some(local_rules_dir),
         )
     }
 
     fn build(
         store: Store,
-        provider: Arc<dyn Provider>,
+        protocol: Arc<dyn Protocol>,
         compiler: PromptCompiler,
         web_cache: WebCache,
-        plugins: Option<PluginRegistry>,
+        providers: Option<ProviderRegistry>,
         local_rules_dir: Option<std::path::PathBuf>,
     ) -> Self {
         Self {
@@ -119,14 +119,14 @@ impl TransportRegistry {
                 traces: CursorTraceService::new(store.clone()),
                 conversations: ConversationRegistry::new(
                     store.clone(),
-                    provider,
+                    protocol,
                     compiler,
                     web_cache.clone(),
                     local_rules_dir,
                 ),
                 store,
                 web_cache,
-                plugins,
+                providers,
             }),
         }
     }
@@ -146,8 +146,8 @@ impl TransportRegistry {
         &self.inner.web_cache
     }
 
-    pub fn plugins(&self) -> Option<&PluginRegistry> {
-        self.inner.plugins.as_ref()
+    pub fn providers(&self) -> Option<&ProviderRegistry> {
+        self.inner.providers.as_ref()
     }
 
     pub fn conversations(&self) -> &ConversationRegistry {

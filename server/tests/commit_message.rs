@@ -1,6 +1,6 @@
 //! Verifies the local WriteGitCommitMessage engine end to end on the wire.
-#[path = "support/fake_provider.rs"]
-mod fake_provider;
+#[path = "support/fake_protocol.rs"]
+mod fake_protocol;
 #[path = "support/fixtures.rs"]
 mod fixtures;
 
@@ -26,7 +26,7 @@ use tower::ServiceExt;
 
 async fn commit_router(
     store: cursor_server::store::Store,
-    provider: fake_provider::FakeProvider,
+    protocol: fake_protocol::FakeProtocol,
 ) -> axum::Router {
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -35,7 +35,7 @@ async fn commit_router(
     )
     .unwrap();
     let clients = NetworkClients::new(store.clone());
-    let registry = TransportRegistry::new(store, Arc::new(provider), PromptCompiler::new(assets));
+    let registry = TransportRegistry::new(store, Arc::new(protocol), PromptCompiler::new(assets));
     cursor::router(registry, clients).unwrap()
 }
 
@@ -105,14 +105,14 @@ async fn commit_message_is_generated_through_configured_model() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::TextStart,
         ModelEvent::TextDelta("```\nCommit message: feat: add commit engine\n```".into()),
         ModelEvent::TextEnd,
         ModelEvent::Done(FinishReason::Stop),
     ]);
-    let router = commit_router(store, provider.clone()).await;
+    let router = commit_router(store, protocol.clone()).await;
 
     let response = post_commit_message(router, diff_request("diff --git a/engine.rs")).await;
 
@@ -121,7 +121,7 @@ async fn commit_message_is_generated_through_configured_model() {
     let decoded: ai::WriteGitCommitMessageResponse = prost::Message::decode(&body[..]).unwrap();
     assert_eq!(decoded.commit_message, "feat: add commit engine");
 
-    let requests = provider.requests();
+    let requests = protocol.requests();
     assert_eq!(requests.len(), 1);
     assert_eq!(
         requests[0].prompt.instructions,
@@ -152,12 +152,12 @@ async fn custom_prompt_and_model_from_commit_settings_are_used() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
         ModelEvent::TextDelta("chore: clean up old code".into()),
         ModelEvent::Done(FinishReason::Stop),
     ]);
-    let router = commit_router(store, provider.clone()).await;
+    let router = commit_router(store, protocol.clone()).await;
 
     let response = post_commit_message(router, diff_request("diff --git a/old.rs")).await;
 
@@ -166,7 +166,7 @@ async fn custom_prompt_and_model_from_commit_settings_are_used() {
     let decoded: ai::WriteGitCommitMessageResponse = prost::Message::decode(&body[..]).unwrap();
     assert_eq!(decoded.commit_message, "chore: clean up old code");
     assert_eq!(
-        provider.requests()[0].prompt.instructions,
+        protocol.requests()[0].prompt.instructions,
         "custom commit prompt"
     );
 }
@@ -186,8 +186,8 @@ async fn empty_diffs_are_rejected_when_generating() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    let router = commit_router(store, provider).await;
+    let protocol = fake_protocol::FakeProtocol::default();
+    let router = commit_router(store, protocol).await;
 
     let response = post_commit_message(router, ai::WriteGitCommitMessageRequest::default()).await;
 
@@ -212,13 +212,13 @@ async fn tool_call_events_are_rejected() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    provider.push(vec![ModelEvent::ToolCallStart {
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![ModelEvent::ToolCallStart {
         index: 0,
         call_id: "call-1".into(),
         name: "shell".into(),
     }]);
-    let router = commit_router(store, provider).await;
+    let router = commit_router(store, protocol).await;
 
     let response = post_commit_message(router, diff_request("diff --git a/x.rs")).await;
 
@@ -239,8 +239,8 @@ async fn unconfigured_model_is_rejected() {
         })
         .await
         .unwrap();
-    let provider = fake_provider::FakeProvider::default();
-    let router = commit_router(store, provider).await;
+    let protocol = fake_protocol::FakeProtocol::default();
+    let router = commit_router(store, protocol).await;
 
     let response = post_commit_message(router, diff_request("diff --git a/x.rs")).await;
 

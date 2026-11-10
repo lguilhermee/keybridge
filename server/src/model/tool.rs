@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::ProviderReplayState;
+use super::ProtocolReplayState;
 
 pub fn normalize_tool_name(name: &str) -> String {
     let normalized = name
@@ -60,5 +60,5 @@ pub struct ToolRoundAssistant {
     pub text: String,
     pub thinking: String,
     pub model_call_id: String,
-    pub replay_state: Option<ProviderReplayState>,
+    pub replay_state: Option<ProtocolReplayState>,
 }

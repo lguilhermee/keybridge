@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::{Error, Result};
 
 use super::{
-    normalize_tool_name, CanonicalMessage, ContentPart, MessageContent, ProviderReplayState, Role,
+    normalize_tool_name, CanonicalMessage, ContentPart, MessageContent, ProtocolReplayState, Role,
     ToolCallContent, ToolResultContent,
 };
 
@@ -16,7 +16,7 @@ pub enum ProjectedContent {
     Assistant {
         text: String,
         thinking: String,
-        replay_state: Option<ProviderReplayState>,
+        replay_state: Option<ProtocolReplayState>,
         calls: Vec<ToolCallContent>,
     },
     ToolResult(ToolResultContent),
