@@ -658,6 +658,75 @@ Deno.test("Provider maps account quota exhaustion into bounded cooling", async (
   equal(result.patch?.state?.status, "cooling");
 });
 
+Deno.test("A request refused by the model's content policy ends as a refusal", async () => {
+  const refused = {
+    code: "invalid_argument",
+    message:
+      "This request was refused by Anthropic's content policy. Please retry with a different model.",
+  };
+  const input = {
+    model: { id: "m", displayName: "Model" },
+    resource: {
+      id: "r",
+      type: "devin-account",
+      key: "account",
+      privateData: {
+        token: "devin-session-token$test",
+        apiKey: null,
+        displayName: "Account",
+      },
+      state: { status: "ready" as const },
+    },
+    request: request(),
+  };
+  const done = {
+    type: "done",
+    reason: "refusal",
+    category: null,
+    explanation: refused.message,
+  };
+  const responses = [
+    // Refused after part of the reply was streamed.
+    {
+      status: 200,
+      body: join(encodeFrame({ deltaText: "Partial" }), endFrame({ error: refused })),
+      expected: [
+        { type: "text-start" },
+        { type: "text-delta", text: "Partial" },
+        { type: "text-end" },
+        done,
+      ],
+    },
+    // Refused before any output, as an HTTP error.
+    {
+      status: 400,
+      body: new TextEncoder().encode(JSON.stringify(refused)),
+      expected: [done],
+    },
+  ];
+  for (const { status, body, expected } of responses) {
+    const events: ModelEvent[] = [];
+    const context: ProviderContext = {
+      signal: new AbortController().signal,
+      network: {
+        fetch: () => Promise.reject(new Error("fetch is not used")),
+        stream: () => Promise.reject(new Error("SSE is not used")),
+        streamBytes: async () => ({ status, headers: {}, chunks: chunks(body, 7) }),
+      },
+    };
+    const result = await devinChannel.invoke(
+      input,
+      { emit: (event) => events.push(event) },
+      context,
+    );
+    equal(result.status, "completed");
+    equal(events.filter((event) => event.type !== "usage"), expected);
+  }
+
+  // Other rejections of the request stay provider errors.
+  equal(new ConnectError("permission_denied", "blocked by our content policy.").isRefusal, false);
+});
+
 Deno.test("Devin browser OAuth, GetUserStatus quota, and rate-limit reset parsing match devin2api", async () => {
   const begun = await devinBrowserOAuth.begin(
     {

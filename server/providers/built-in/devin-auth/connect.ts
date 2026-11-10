@@ -20,8 +20,17 @@ export function metadata(token: string): Record<string, string> {
 }
 
 export class ConnectError extends Error {
-  constructor(public code: string, message: string) {
-    super(`Devin ${code}: ${message}`);
+  constructor(public code: string, public detail: string) {
+    super(`Devin ${code}: ${detail}`);
+  }
+
+  /**
+   * The model's vendor refused the request ("This request was refused by
+   * Anthropic's content policy"). Upstream sends that as an error, not as a
+   * refusal in the stream.
+   */
+  get isRefusal(): boolean {
+    return /\brefused by .+ content policy\b/i.test(this.detail);
   }
 }
 

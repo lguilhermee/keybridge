@@ -10,7 +10,7 @@ use crate::{
     protocol::{FinishReason, ModelEvent, ProtocolStream},
 };
 
-use super::{RunEvent, RunFailure};
+use super::{refusal_reply::ReplyHold, RunEvent, RunFailure};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModelCycleResult {
@@ -50,15 +50,20 @@ struct OpenTool {
     ended: bool,
 }
 
+/// `watch_refusals` holds the reply's text back until it is known whether the
+/// model refuses in its own words; a refusing reply then fails the call as a
+/// refusal without being shown.
 pub async fn consume_model_cycle(
     mut stream: ProtocolStream,
     client: &mpsc::Sender<RunEvent>,
     cancellation: &CancellationToken,
+    watch_refusals: bool,
 ) -> std::result::Result<ModelCycleResult, Box<ModelCycleFailure>> {
     let mut model_call_id = None;
     let mut text = String::new();
     let mut reasoning = String::new();
     let mut text_open = false;
+    let mut hold = ReplyHold::new(watch_refusals);
     let mut thinking_started = None::<Instant>;
     let mut tools = BTreeMap::<usize, OpenTool>::new();
     let mut call_ids = std::collections::HashSet::new();
@@ -73,7 +78,11 @@ pub async fn consume_model_cycle(
             biased;
             next = stream.next() => next,
             _ = cancellation.cancelled() => {
-                interrupt_cycle(client, text_open, thinking_started.take());
+                interrupt_cycle(
+                    client,
+                    text_open && !hold.has_held_text(),
+                    thinking_started.take(),
+                );
                 return Err(failure(
                     RunFailure::Client("run was cancelled".into()),
                     text,
@@ -83,7 +92,11 @@ pub async fn consume_model_cycle(
             }
         };
         if cancellation.is_cancelled() {
-            interrupt_cycle(client, text_open, thinking_started.take());
+            interrupt_cycle(
+                client,
+                text_open && !hold.has_held_text(),
+                thinking_started.take(),
+            );
             return Err(failure(
                 RunFailure::Client("run was cancelled".into()),
                 text,
@@ -123,7 +136,8 @@ pub async fn consume_model_cycle(
                     Err("protocol emitted duplicate TextStart")
                 } else {
                     text_open = true;
-                    send(client, cancellation, RunEvent::TextStart).await
+                    let events = hold.text(RunEvent::TextStart, &text);
+                    send_all(client, cancellation, events).await
                 }
             }
             ModelEvent::TextDelta(delta) => {
@@ -131,7 +145,8 @@ pub async fn consume_model_cycle(
                     Err("protocol emitted TextDelta before TextStart")
                 } else {
                     text.push_str(&delta);
-                    send(client, cancellation, RunEvent::TextDelta(delta)).await
+                    let events = hold.text(RunEvent::TextDelta(delta), &text);
+                    send_all(client, cancellation, events).await
                 }
             }
             ModelEvent::TextEnd => {
@@ -139,7 +154,8 @@ pub async fn consume_model_cycle(
                     Err("protocol emitted TextEnd before TextStart")
                 } else {
                     text_open = false;
-                    send(client, cancellation, RunEvent::TextEnd).await
+                    let events = hold.text(RunEvent::TextEnd, &text);
+                    send_all(client, cancellation, events).await
                 }
             }
             ModelEvent::ThinkingStart => {
@@ -148,7 +164,9 @@ pub async fn consume_model_cycle(
                 } else if thinking_started.replace(Instant::now()).is_some() {
                     Err("protocol emitted duplicate ThinkingStart")
                 } else {
-                    send(client, cancellation, RunEvent::ThinkingStart).await
+                    let mut events = hold.thinking();
+                    events.push(RunEvent::ThinkingStart);
+                    send_all(client, cancellation, events).await
                 }
             }
             ModelEvent::ThinkingDelta(delta) => {
@@ -205,17 +223,15 @@ pub async fn consume_model_cycle(
                             },
                             ended: false,
                         });
-                        send(
-                            client,
-                            cancellation,
-                            RunEvent::ToolCallStart {
-                                index,
-                                call_id,
-                                name,
-                                model_call_id: model_call_id.clone(),
-                            },
-                        )
-                        .await
+                        // A reply that calls tools is not a refusal.
+                        let mut events = hold.release();
+                        events.push(RunEvent::ToolCallStart {
+                            index,
+                            call_id,
+                            name,
+                            model_call_id: model_call_id.clone(),
+                        });
+                        send_all(client, cancellation, events).await
                     }
                 }
             }
@@ -304,7 +320,11 @@ pub async fn consume_model_cycle(
         };
         if let Err(message) = result {
             if cancellation.is_cancelled() {
-                interrupt_cycle(client, text_open, thinking_started.take());
+                interrupt_cycle(
+                    client,
+                    text_open && !hold.has_held_text(),
+                    thinking_started.take(),
+                );
                 return Err(failure(
                     RunFailure::Client("run was cancelled".into()),
                     text,
@@ -337,6 +357,26 @@ pub async fn consume_model_cycle(
     if let FinishReason::Refusal(refusal) = &finish_reason {
         return Err(failure(
             RunFailure::Refusal(refusal.to_string()),
+            text,
+            reasoning,
+            usage,
+        ));
+    }
+    // The reply refused in its own words; none of it was shown.
+    if hold.is_refusing() && finish_reason == FinishReason::Stop {
+        return Err(failure(
+            RunFailure::Refusal("declined the request in its reply".into()),
+            text,
+            reasoning,
+            usage,
+        ));
+    }
+    if send_all(client, cancellation, hold.release())
+        .await
+        .is_err()
+    {
+        return Err(failure(
+            RunFailure::Client("client event channel closed".into()),
             text,
             reasoning,
             usage,
@@ -388,6 +428,17 @@ async fn send(
         _ = cancellation.cancelled() => Err("run was cancelled"),
         result = client.send(event) => result.map_err(|_| "client event channel closed"),
     }
+}
+
+async fn send_all(
+    client: &mpsc::Sender<RunEvent>,
+    cancellation: &CancellationToken,
+    events: Vec<RunEvent>,
+) -> std::result::Result<(), &'static str> {
+    for event in events {
+        send(client, cancellation, event).await?;
+    }
+    Ok(())
 }
 
 fn interrupt_cycle(
@@ -490,7 +541,7 @@ mod tests {
         let cancellation = CancellationToken::new();
         cancellation.cancel();
 
-        let failure = consume_model_cycle(stream, &sender, &cancellation)
+        let failure = consume_model_cycle(stream, &sender, &cancellation, false)
             .await
             .unwrap_err();
 
@@ -510,7 +561,7 @@ mod tests {
         ]));
         let (sender, mut receiver) = mpsc::channel(1);
         let cancellation = CancellationToken::new();
-        let cycle = consume_model_cycle(stream, &sender, &cancellation);
+        let cycle = consume_model_cycle(stream, &sender, &cancellation, false);
         tokio::pin!(cycle);
         assert!(futures_util::poll!(&mut cycle).is_pending());
         assert_eq!(receiver.len(), 1);
@@ -546,7 +597,7 @@ mod tests {
         ]));
         let (sender, mut receiver) = mpsc::channel(8);
 
-        let failure = consume_model_cycle(stream, &sender, &CancellationToken::new())
+        let failure = consume_model_cycle(stream, &sender, &CancellationToken::new(), false)
             .await
             .unwrap_err();
 
@@ -561,6 +612,104 @@ mod tests {
         assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextStart)));
         assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextDelta(_))));
         assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextEnd)));
+    }
+
+    fn reply(text: &str, finish: FinishReason) -> ProtocolStream {
+        Box::pin(tokio_stream::iter(vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "reply".into(),
+            }),
+            Ok(ModelEvent::ThinkingStart),
+            Ok(ModelEvent::ThinkingDelta("thinking".into())),
+            Ok(ModelEvent::ThinkingEnd),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta(text.into())),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::Done(finish)),
+        ]))
+    }
+
+    #[tokio::test]
+    async fn a_watched_reply_that_refuses_fails_as_a_refusal_without_being_shown() {
+        let (sender, mut receiver) = mpsc::channel(16);
+
+        let failure = consume_model_cycle(
+            reply("I can't help build an aimbot.", FinishReason::Stop),
+            &sender,
+            &CancellationToken::new(),
+            true,
+        )
+        .await
+        .unwrap_err();
+
+        assert_eq!(failure.kind, FailureKind::Refusal);
+        while let Ok(event) = receiver.try_recv() {
+            assert!(
+                !matches!(
+                    event,
+                    RunEvent::TextStart | RunEvent::TextDelta(_) | RunEvent::TextEnd
+                ),
+                "refusal text reached the client"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn a_watched_ordinary_reply_is_delivered() {
+        let (sender, mut receiver) = mpsc::channel(16);
+
+        let result = consume_model_cycle(
+            reply("Here is the fix.", FinishReason::Stop),
+            &sender,
+            &CancellationToken::new(),
+            true,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.text, "Here is the fix.");
+        let mut delivered = String::new();
+        while let Ok(event) = receiver.try_recv() {
+            if let RunEvent::TextDelta(delta) = event {
+                delivered.push_str(&delta);
+            }
+        }
+        assert_eq!(delivered, "Here is the fix.");
+    }
+
+    #[tokio::test]
+    async fn refusal_wording_before_a_tool_call_is_delivered() {
+        let stream = Box::pin(tokio_stream::iter(vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "reply".into(),
+            }),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta(
+                "I can't help with that part, so:".into(),
+            )),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::ToolCallStart {
+                index: 0,
+                call_id: "tool-call".into(),
+                name: "read_file".into(),
+            }),
+            Ok(ModelEvent::ToolCallEnd { index: 0 }),
+            Ok(ModelEvent::Done(FinishReason::ToolUse)),
+        ]));
+        let (sender, mut receiver) = mpsc::channel(16);
+
+        let result = consume_model_cycle(stream, &sender, &CancellationToken::new(), true)
+            .await
+            .unwrap();
+
+        assert_eq!(result.calls.len(), 1);
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextStart)));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextDelta(_))));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextEnd)));
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(RunEvent::ToolCallStart { .. })
+        ));
     }
 
     #[tokio::test]
@@ -580,7 +729,7 @@ mod tests {
         let stream = Box::pin(tokio_stream::iter(events));
         let (event_tx, mut event_rx) = tokio::sync::mpsc::channel(4);
 
-        let result = consume_model_cycle(stream, &event_tx, &CancellationToken::new())
+        let result = consume_model_cycle(stream, &event_tx, &CancellationToken::new(), false)
             .await
             .unwrap();
 
@@ -599,7 +748,7 @@ mod tests {
         let cancellation = CancellationToken::new();
         let cycle_cancellation = cancellation.clone();
         let cycle = tokio::spawn(async move {
-            consume_model_cycle(stream, &event_tx, &cycle_cancellation).await
+            consume_model_cycle(stream, &event_tx, &cycle_cancellation, false).await
         });
         let usage = Usage {
             input_tokens: Some(100),

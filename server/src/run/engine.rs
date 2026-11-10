@@ -295,6 +295,7 @@ impl RunEngine {
                     self.protocol.stream(invocation, cycle_cancellation.clone()),
                     &cycle_events,
                     &cycle_cancellation,
+                    refusal.watches(&request.model.model_id),
                 );
                 tokio::pin!(cycle);
                 let cycle = loop {
@@ -894,6 +895,7 @@ impl RunEngine {
                 self.protocol.stream(invocation, cycle_cancellation.clone()),
                 &silent_events,
                 &cycle_cancellation,
+                false,
             );
             tokio::pin!(cycle);
             loop {

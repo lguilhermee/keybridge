@@ -2,7 +2,7 @@
   "apiVersion": 1,
   "id": "dev.cursorbyok.providers.devin",
   "name": "Devin",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Local development",
   "minAppVersion": "1.0.1",
   "icon": "assets/devin.svg",

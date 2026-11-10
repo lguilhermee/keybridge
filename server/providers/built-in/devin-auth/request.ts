@@ -398,6 +398,7 @@ export class ResponseDecoder {
   private finalAnswer = false;
   private hasContent = false;
   private refused = false;
+  private refusalExplanation: string | null = null;
   private replay: Record<string, JsonValue>;
   private usage: Record<string, number> = {};
 
@@ -523,6 +524,13 @@ export class ResponseDecoder {
     }
   }
 
+  /** Ends the response as a refusal that upstream reported outside the stream. */
+  refuse(explanation: string): void {
+    this.refused = true;
+    this.refusalExplanation = explanation;
+    this.finish();
+  }
+
   finish(): void {
     // A refusal outranks everything seen earlier in the stream: open blocks are
     // closed and half-requested tools are never validated or executed.
@@ -535,7 +543,12 @@ export class ResponseDecoder {
         if (tool.started) this.emit({ type: "tool-call-end", index: tool.index });
       }
       this.emitUsage();
-      this.emit({ type: "done", reason: "refusal", category: null, explanation: null });
+      this.emit({
+        type: "done",
+        reason: "refusal",
+        category: null,
+        explanation: this.refusalExplanation,
+      });
       return;
     }
     if (!this.hasContent) throw new Error("Devin returned an empty response");

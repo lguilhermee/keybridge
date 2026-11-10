@@ -12,6 +12,7 @@ mod model_cycle;
 mod model_retry;
 mod port;
 mod refusal_fallback;
+mod refusal_reply;
 mod tool_round;
 
 pub use command::*;

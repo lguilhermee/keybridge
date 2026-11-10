@@ -22,7 +22,9 @@ use crate::{
 
 use self::protocol::ApiProtocol;
 pub use direct::NativeForwarder;
-pub(crate) use models::{list as public_models, ListedModel as PublicModel};
+pub(crate) use models::{
+    configured_provider_name, list as public_models, ListedModel as PublicModel,
+};
 
 #[derive(Clone)]
 struct ApiState {

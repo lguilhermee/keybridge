@@ -65,6 +65,12 @@ impl RefusalCall<'_> {
         self.active = None;
     }
 
+    /// Whether a refusal by `model` would switch this call to the refusal
+    /// model, so its replies are read for refusals.
+    pub(super) fn watches(&self, model: &str) -> bool {
+        self.active.is_none() && self.fallbacks.contains_key(model)
+    }
+
     /// `model`, or the refusal model answering in its place.
     pub(super) fn apply(&self, mut model: ModelSpec) -> ModelSpec {
         if let Some(active) = &self.active {

@@ -90,7 +90,7 @@ async fn malformed_provider_tool_json_is_kept_as_a_tool_validation_error() {
         Ok(ModelEvent::Done(FinishReason::ToolUse)),
     ]));
     let (events, _receiver) = tokio::sync::mpsc::channel(16);
-    let result = consume_model_cycle(stream, &events, &CancellationToken::new())
+    let result = consume_model_cycle(stream, &events, &CancellationToken::new(), false)
         .await
         .expect("malformed tool JSON must not fail the model cycle");
 

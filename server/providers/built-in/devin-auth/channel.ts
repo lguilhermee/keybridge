@@ -1,4 +1,4 @@
-import type { ChannelSupport } from "cursor-byok:channel";
+import type { ChannelSupport, ModelEvent } from "cursor-byok:channel";
 import {
   base64,
   ConnectError,
@@ -36,6 +36,7 @@ export const devinChannel: ChannelSupport = {
     const model = requestModelId(input.model, input.request);
     let emitted = false;
     for (let attempt = 0; attempt < 2; attempt++) {
+      let decoder: ResponseDecoder | undefined;
       try {
         const { body, originalNames } = await buildRequest(
           input.request,
@@ -78,14 +79,11 @@ export const devinChannel: ChannelSupport = {
             [data.token, data.apiKey ?? ""],
           );
         }
-        const decoder = new ResponseDecoder(
-          model,
-          originalNames,
-          (event) => {
-            emitted = true;
-            output.emit(event);
-          },
-        );
+        const emit = (event: ModelEvent) => {
+          emitted = true;
+          output.emit(event);
+        };
+        decoder = new ResponseDecoder(model, originalNames, emit);
         for await (const frame of decodeFrames(response.chunks)) {
           decoder.push(frame);
         }
@@ -95,9 +93,19 @@ export const devinChannel: ChannelSupport = {
           ...(attempt ? { patch: { privateData: data } } : {}),
         };
       } catch (error) {
-        let message = error instanceof Error ? error.message : String(error);
-        for (const secret of [data.token, data.apiKey]) {
-          if (secret) message = message.replaceAll(secret, "[redacted]");
+        const redact = (text: string) => {
+          for (const secret of [data.token, data.apiKey]) {
+            if (secret) text = text.replaceAll(secret, "[redacted]");
+          }
+          return text;
+        };
+        let message = redact(error instanceof Error ? error.message : String(error));
+        // A refused request ends like a refusal in the stream, so the host can
+        // hand the call to the model's refusal model.
+        if (error instanceof ConnectError && error.isRefusal) {
+          decoder ??= new ResponseDecoder(model, new Map(), (event) => output.emit(event));
+          decoder.refuse(redact(error.detail));
+          return { status: "completed" };
         }
         if (error instanceof ConnectError && error.code === "unauthenticated") {
           if (!emitted && attempt === 0 && data.apiKey) {

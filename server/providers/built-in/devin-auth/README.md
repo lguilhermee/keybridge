@@ -53,9 +53,11 @@ Credentials are never bundled in source or shown in account cards.
   mentions are accepted upstream and pass through untouched.
 - Frame boundaries do not depend on HTTP chunks. Truncated streams, malformed
   tool arguments, and missing completion markers fail explicitly.
-- A refusal (`providerRefusal` or a `STOP_REASON_CONTENT_FILTER` stop) is
-  reported as the `done`/`refusal` event instead of a failure, so the host
-  keeps the text already sent and does not save the refused answer.
+- A refusal (`providerRefusal`, a `STOP_REASON_CONTENT_FILTER` stop, or a
+  Connect error saying the request "was refused by <vendor>'s content policy")
+  is reported as the `done`/`refusal` event instead of a failure, so the host
+  keeps the text already sent, does not save the refused answer, and can hand
+  the call to the model's refusal model.
 - Only an authentication rejection before output may renew and retry once.
   Interrupted generation is never replayed automatically. Rate/quota errors mark
   the account cooling for one minute; authentication expiry marks it invalid.

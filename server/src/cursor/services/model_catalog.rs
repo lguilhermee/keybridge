@@ -10,7 +10,10 @@ use bytes::{BufMut, BytesMut};
 use prost::Message;
 
 use crate::{
-    api::cursor::proxy::{self, CursorProxy},
+    api::{
+        byok::configured_provider_name,
+        cursor::proxy::{self, CursorProxy},
+    },
     cursor::{protocol::proto::agent::v1 as agent, transport::TransportRegistry},
     model::{format_token_count, parse_token_count, ComboConfig, ModelConfig},
     provider::{ModelOptions, ProviderModelDescriptor},
@@ -576,23 +579,33 @@ fn available_model(model: &ModelConfig) -> AvailableModel {
             display_name: "Cursor".into(),
         }),
         model_picker_badges: vec![ModelPickerBadge {
-            label: model
-                .group_name
-                .clone()
-                .unwrap_or_else(|| provider_host(&model.base_url)),
-            variant: 1,
+            label: badge_label(model),
+            variant: BADGE_ACCENT,
             dismiss_on_selection: false,
         }],
     }
 }
 
-/// Badge fallback label: the base_url hostname. Validated as a host-bearing HTTP(S) URL on write,
-/// so a parse failure is only a theoretical branch that returns base_url as-is.
-fn provider_host(base_url: &str) -> String {
-    reqwest::Url::parse(base_url.trim())
-        .ok()
-        .and_then(|url| url.host_str().map(str::to_lowercase))
-        .unwrap_or_else(|| base_url.trim().into())
+/// Cursor's `ModelPickerBadge.Variant.VARIANT_ACCENT` (blue).
+const BADGE_ACCENT: i32 = 1;
+
+/// Short provider tag so the badge never crowds out the model name: the group name, a known
+/// provider name ("Refuseless"), or the host's main label ("api.foo.com" -> "foo").
+fn badge_label(model: &ModelConfig) -> String {
+    let name = configured_provider_name(model);
+    if !name.contains('.') {
+        return name;
+    }
+    let labels = name
+        .split('.')
+        .filter(|label| !label.is_empty())
+        .collect::<Vec<_>>();
+    labels
+        .len()
+        .checked_sub(2)
+        .and_then(|index| labels.get(index))
+        .map(|label| (*label).to_owned())
+        .unwrap_or(name)
 }
 
 fn model_parameters(
@@ -835,7 +848,7 @@ fn available_provider_model(model: &ProviderModelDescriptor) -> AvailableModel {
         }),
         model_picker_badges: vec![ModelPickerBadge {
             label: model.provider_name.clone(),
-            variant: 1,
+            variant: BADGE_ACCENT,
             dismiss_on_selection: false,
         }],
     }
@@ -894,7 +907,7 @@ fn available_combo(combo: &ComboConfig, member_names: &HashMap<&str, &str>) -> A
         }),
         model_picker_badges: vec![ModelPickerBadge {
             label: "Combo".into(),
-            variant: 1,
+            variant: BADGE_ACCENT,
             dismiss_on_selection: false,
         }],
     }
@@ -1138,5 +1151,16 @@ mod tests {
             default.variant_string_representation.as_deref(),
             Some("provider:test/channel/family[context=200k,reasoning=low,fast=false]")
         );
+    }
+
+    #[test]
+    fn badges_use_short_provider_tags() {
+        let mut tagged = model();
+        tagged.base_url = "https://api.refuseless.com/v1".into();
+        assert_eq!(badge_label(&tagged), "Refuseless");
+        tagged.base_url = "https://api.unknown-host.dev/v1".into();
+        assert_eq!(badge_label(&tagged), "unknown-host");
+        tagged.group_name = Some("Work".into());
+        assert_eq!(badge_label(&tagged), "Work");
     }
 }

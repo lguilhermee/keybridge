@@ -82,7 +82,7 @@ fn configured_group_slug(model: &ModelConfig) -> String {
         .unwrap_or_else(|| model.base_url.trim().to_owned())
 }
 
-fn configured_provider_name(model: &ModelConfig) -> String {
+pub(crate) fn configured_provider_name(model: &ModelConfig) -> String {
     if let Some(group) = model
         .group_name
         .as_deref()
