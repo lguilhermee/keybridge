@@ -18,7 +18,7 @@
   }
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -36,18 +36,18 @@
   }
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
 
 .textButton {
   padding: 4px;
-  color: var(--vscode-textLink-foreground);
+  color: var(--oa-accent);
   background: transparent;
   border: 0;
 
-  &:hover { color: var(--vscode-textLink-activeForeground); }
+  &:hover { color: var(--oa-accent-hover); }
 }
 
 .importRow {
@@ -63,7 +63,7 @@
   }
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -74,7 +74,7 @@
 
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -91,9 +91,9 @@
     align-items: center;
     gap: 6px;
     padding: 0 11px;
-    color: var(--vscode-foreground);
-    background: var(--vscode-input-background);
-    border: 1px solid var(--vscode-input-border);
+    color: var(--oa-text);
+    background: var(--oa-surface-input);
+    border: 1px solid var(--oa-border);
     border-radius: 5px;
   }
 }
@@ -122,7 +122,7 @@
   gap: 16px;
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -136,7 +136,7 @@
   gap: 16px;
 
   span {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
   }
 }
 
@@ -159,5 +159,5 @@
 }
 
 .themeActions .selected {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--oa-accent);
 }

@@ -89,9 +89,9 @@ export function DailyTokenUsageChart({
     tooltip: {
       trigger: "axis",
       confine: true,
-      backgroundColor: "var(--vscode-editorHoverWidget-background)",
-      borderColor: "var(--vscode-editorHoverWidget-border)",
-      textStyle: { color: "var(--vscode-foreground)", fontFamily: "PingFang-Medium" },
+      backgroundColor: "var(--oa-surface-overlay)",
+      borderColor: "var(--oa-border)",
+      textStyle: { color: "var(--oa-text)", fontFamily: "PingFang-Medium" },
       extraCssText: "border-radius: 8px; box-shadow: 0 12px 32px rgb(0 0 0 / 30%); font-size: var(--daily-token-tooltip-font-size); line-height: 1.5;",
       axisPointer: {
         type: "shadow",

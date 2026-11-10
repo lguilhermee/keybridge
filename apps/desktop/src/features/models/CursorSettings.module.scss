@@ -13,7 +13,7 @@
 
 .takeoverStatus {
   min-width: 39px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   font-size: type.$font-size-xs;
   text-align: right;
   white-space: nowrap;
@@ -28,16 +28,16 @@
   button {
     height: 25px;
     padding: 0 8px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     background: transparent;
     border: 0;
-    border-right: 1px solid var(--vscode-sideBar-border);
+    border-right: 1px solid var(--oa-border);
     font-size: type.$font-size-xs;
     white-space: nowrap;
 
     &:last-child { border-right: 0; }
-    &:hover:not(:disabled) { color: var(--vscode-foreground); background: var(--vscode-list-hoverBackground); }
-    &[aria-pressed="true"] { color: var(--vscode-list-activeSelectionForeground); background: var(--vscode-list-activeSelectionBackground); }
+    &:hover:not(:disabled) { color: var(--oa-text); background: var(--oa-hover); }
+    &[aria-pressed="true"] { color: var(--oa-text); background: var(--oa-active); }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
 }
@@ -55,12 +55,12 @@
   align-items: center;
   justify-content: center;
   gap: 9px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   text-align: center;
-  border: 1px dashed var(--vscode-sideBar-border);
+  border: 1px dashed var(--oa-border);
   border-radius: var(--oa-overlay-radius);
   strong {
-    color: var(--vscode-foreground);
+    color: var(--oa-text);
     font-size: type.$font-size-base;
   }
   span {
@@ -97,20 +97,20 @@
   align-items: center;
   gap: 4px;
   padding: 4px 2px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   background: none;
   border: none;
   font-size: type.$font-size-xs;
   white-space: nowrap;
   cursor: pointer;
 
-  &:hover { color: var(--vscode-foreground); }
+  &:hover { color: var(--oa-text); }
 }
 .groupChevron {
   display: flex;
   align-items: center;
   padding: 4px 0;
-  color: var(--vscode-foreground);
+  color: var(--oa-text);
   background: none;
   border: none;
   cursor: pointer;
@@ -122,7 +122,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 2px;
-  color: var(--vscode-foreground);
+  color: var(--oa-text);
   background: none;
   border: none;
   font-size: type.$font-size-base;
@@ -145,7 +145,7 @@
   flex-wrap: wrap;
   gap: 10px 12px;
   padding: 10px 2px;
-  border-top: 1px solid var(--vscode-sideBar-border);
+  border-top: 1px solid var(--oa-border);
 }
 .modelRowName {
   min-width: 0;
@@ -161,11 +161,11 @@
     white-space: nowrap;
   }
   .modelRowNameText {
-    color: var(--vscode-foreground);
+    color: var(--oa-text);
     font-size: type.$font-size-base;
   }
   .modelRowModelId {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-2xs;
   }
 }
@@ -200,11 +200,11 @@
     white-space: nowrap;
   }
   .modelCardNameText {
-    color: var(--vscode-foreground);
+    color: var(--oa-text);
     font-size: type.$font-size-base;
   }
   .modelCardModelId {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-2xs;
   }
 }
@@ -214,8 +214,8 @@
   align-items: center;
   gap: 4px;
   padding: 3px 7px;
-  color: var(--vscode-foreground);
-  border: 1px solid var(--vscode-sideBar-border);
+  color: var(--oa-text);
+  border: 1px solid var(--oa-border);
   border-radius: 999px;
   font-size: type.$font-size-2xs;
 }
@@ -237,7 +237,7 @@
   }
 }
 .deleteButton:hover {
-  color: var(--vscode-errorForeground, #f48771);
+  color: var(--oa-danger, #f48771);
 }
 .sortHandle {
   position: absolute;
@@ -260,9 +260,9 @@
 
   &:focus-visible,
   .modelCard:hover & {
-    color: var(--vscode-foreground);
-    background: var(--vscode-list-hoverBackground);
-    border-color: var(--vscode-sideBar-border);
+    color: var(--oa-text);
+    background: var(--oa-hover);
+    border-color: var(--oa-border);
     opacity: 1;
   }
   &:active {
@@ -277,7 +277,7 @@
   opacity: 0.4;
 }
 .sortChosen {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--oa-accent);
 }
 .sortDragging {
   cursor: grabbing;
@@ -291,8 +291,8 @@
   margin: 0;
   padding: 10px;
   overflow: auto;
-  color: var(--vscode-textLink-foreground);
-  background: var(--vscode-textCodeBlock-background);
+  color: var(--oa-accent);
+  background: var(--oa-surface-code);
   border-radius: 4px;
   white-space: pre-wrap;
   user-select: text;
@@ -327,7 +327,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -342,7 +342,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }

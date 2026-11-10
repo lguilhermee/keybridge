@@ -7,9 +7,9 @@
   max-height: calc(100vh - 24px);
   overflow-y: auto;
   padding: 8px 10px;
-  color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
-  background: var(--vscode-editorHoverWidget-background);
-  border: 1px solid var(--vscode-editorHoverWidget-border);
+  color: var(--oa-text);
+  background: var(--oa-surface-overlay);
+  border: 1px solid var(--oa-border);
   border-radius: var(--oa-overlay-radius);
   box-shadow: var(--oa-tooltip-shadow);
   font-size: type.$font-size-xs;
@@ -17,7 +17,7 @@
   overflow-wrap: anywhere;
 
   scrollbar-width: thin;
-  scrollbar-color: var(--vscode-scrollbarSlider-background, rgba(0, 0, 0, 0.25)) transparent;
+  scrollbar-color: var(--oa-scrollbar, rgba(0, 0, 0, 0.25)) transparent;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -28,11 +28,11 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: var(--vscode-scrollbarSlider-background, rgba(0, 0, 0, 0.25));
+    background: var(--oa-scrollbar, rgba(0, 0, 0, 0.25));
     border-radius: 999px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: var(--vscode-scrollbarSlider-hoverBackground, rgba(0, 0, 0, 0.4));
+    background: var(--oa-scrollbar-hover, rgba(0, 0, 0, 0.4));
   }
 }

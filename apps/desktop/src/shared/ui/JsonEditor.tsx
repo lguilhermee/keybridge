@@ -92,12 +92,12 @@ function applyEditorTheme(monaco: MonacoApi) {
     inherit: true,
     rules: [],
     colors: {
-      "editor.background": themeColor(rootStyles, "--vscode-input-background", light ? "#ffffff" : "#222222"),
-      "editor.foreground": themeColor(rootStyles, "--vscode-input-foreground", light ? "#202020" : "#ffffffe6"),
-      "editorCursor.foreground": themeColor(rootStyles, "--vscode-editorCursor-foreground", light ? "#202020" : "#ffffff"),
-      "editorLineNumber.foreground": themeColor(rootStyles, "--vscode-editorLineNumber-foreground", light ? "#999999" : "#ffffff40"),
-      "editorLineNumber.activeForeground": themeColor(rootStyles, "--vscode-editorLineNumber-activeForeground", light ? "#202020" : "#ffffffe6"),
-      "editor.selectionBackground": themeColor(rootStyles, "--vscode-editor-selectionBackground", light ? "#0069cc33" : "#49b0ff33"),
+      "editor.background": themeColor(rootStyles, "--oa-surface-input", light ? "#ffffff" : "#222222"),
+      "editor.foreground": themeColor(rootStyles, "--oa-text", light ? "#202020" : "#ffffffe6"),
+      "editorCursor.foreground": themeColor(rootStyles, "--oa-caret", light ? "#202020" : "#ffffff"),
+      "editorLineNumber.foreground": themeColor(rootStyles, "--oa-text-muted", light ? "#999999" : "#ffffff40"),
+      "editorLineNumber.activeForeground": themeColor(rootStyles, "--oa-text", light ? "#202020" : "#ffffffe6"),
+      "editor.selectionBackground": themeColor(rootStyles, "--oa-selection-bg", light ? "#0069cc33" : "#49b0ff33"),
     },
   });
   monaco.editor.setTheme("cursor-byok");

@@ -5,7 +5,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: var(--vscode-foreground);
+  color: var(--oa-text);
   font-size: type.$font-size-xs;
   cursor: pointer;
   flex-shrink: 0;
@@ -19,14 +19,14 @@
   }
 
   &:has(input:focus-visible) .control {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--oa-accent);
     outline-offset: 2px;
   }
 
   &:has(input:checked) .control {
-    color: var(--vscode-button-foreground);
-    background: var(--vscode-button-background);
-    border-color: var(--vscode-button-background);
+    color: var(--oa-text-on-accent);
+    background: var(--oa-accent);
+    border-color: var(--oa-accent);
   }
 
   &:has(input:disabled) {
@@ -41,8 +41,8 @@
   flex: 0 0 16px;
   display: grid;
   place-items: center;
-  color: var(--vscode-checkbox-foreground, var(--vscode-button-foreground));
-  background: var(--vscode-checkbox-background, var(--vscode-input-background));
-  border: 1px solid var(--vscode-checkbox-border, var(--vscode-input-border));
-  border-radius: 3px;
+  color: var(--oa-text-on-accent);
+  background: var(--oa-surface-input);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-sm);
 }

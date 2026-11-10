@@ -7,7 +7,7 @@
 
 .label {
   font-size: 12px;
-  color: var(--vscode-descriptionForeground, rgba(255, 255, 255, 0.7));
+  color: var(--oa-text-secondary, rgba(255, 255, 255, 0.7));
 }
 
 .chips {
@@ -22,7 +22,7 @@
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  border: 1px solid var(--vscode-editorWidget-border, rgba(255, 255, 255, 0.16));
+  border: 1px solid var(--oa-border, rgba(255, 255, 255, 0.16));
   border-radius: 999px;
   background: transparent;
   color: inherit;
@@ -30,12 +30,12 @@
   cursor: pointer;
 
   &:hover {
-    border-color: var(--vscode-focusBorder, #49b0ff);
+    border-color: var(--oa-accent, #49b0ff);
   }
 
   &.active {
-    border-color: var(--vscode-focusBorder, #49b0ff);
-    color: var(--vscode-focusBorder, #49b0ff);
+    border-color: var(--oa-accent, #49b0ff);
+    color: var(--oa-accent, #49b0ff);
   }
 }
 

@@ -6,9 +6,9 @@
   min-width: 132px;
   overflow: hidden;
   padding: 4px;
-  background: var(--vscode-dropdown-background);
-  border: 1px solid var(--vscode-dropdown-border);
-  border-radius: 6px;
+  background: var(--oa-surface-overlay);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-md);
   box-shadow: var(--oa-dropdown-shadow);
 
   button,
@@ -19,28 +19,28 @@
     padding: 5px 8px;
     text-align: left;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--oa-radius-sm);
     font-size: type.$font-size-xs;
     white-space: nowrap;
   }
 
   button {
-    color: var(--vscode-dropdown-foreground);
+    color: var(--oa-text);
     background: transparent;
 
     &:hover:not(:disabled) {
-      background: var(--vscode-list-activeSelectionBackground);
-      color: var(--vscode-list-activeSelectionForeground);
+      background: var(--oa-active);
+      color: var(--oa-text);
     }
 
     &:disabled {
-      color: var(--vscode-descriptionForeground);
+      color: var(--oa-text-secondary);
       cursor: not-allowed;
     }
   }
 
   .textItem {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     cursor: default;
   }
 }

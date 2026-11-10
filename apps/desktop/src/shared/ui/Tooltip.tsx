@@ -1,4 +1,4 @@
-import { autoUpdate, computePosition, flip, offset, shift, size, type VirtualElement } from "@floating-ui/dom";
+import { autoUpdate, computePosition, flip, offset, shift, size, type Placement, type VirtualElement } from "@floating-ui/dom";
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import styles from "./Tooltip.module.scss";
@@ -6,7 +6,7 @@ import styles from "./Tooltip.module.scss";
 export type TooltipAnchor = VirtualElement;
 
 type TooltipContextValue = {
-  show: (anchor: TooltipAnchor, id: string | undefined, content: ReactNode) => void;
+  show: (anchor: TooltipAnchor, id: string | undefined, content: ReactNode, placement?: Placement) => void;
   hide: () => void;
 };
 
@@ -19,7 +19,7 @@ export function useTooltip() {
 }
 
 export function TooltipProvider({ children }: { children: ReactNode }) {
-  const [active, setActive] = useState<{ anchor: TooltipAnchor; id?: string; content: ReactNode } | null>(null);
+  const [active, setActive] = useState<{ anchor: TooltipAnchor; id?: string; content: ReactNode; placement: Placement } | null>(null);
   const hideTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const clearHide = () => {
     if (hideTimer.current !== null) {
@@ -28,9 +28,9 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
     }
   };
   const context = useMemo(() => ({
-    show: (anchor: TooltipAnchor, id: string | undefined, content: ReactNode) => {
+    show: (anchor: TooltipAnchor, id: string | undefined, content: ReactNode, placement: Placement = "top") => {
       clearHide();
-      setActive({ anchor, id, content });
+      setActive({ anchor, id, content, placement });
     },
     hide: () => {
       clearHide();
@@ -46,15 +46,17 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
     <Tooltip
       id={active?.id}
       anchor={active?.anchor ?? null}
+      placement={active?.placement}
       onPointerEnter={clearHide}
       onPointerLeave={context.hide}
     >{active?.content}</Tooltip>
   </TooltipContext.Provider>;
 }
 
-export function Tooltip({ id, anchor, children, onPointerEnter, onPointerLeave }: {
+export function Tooltip({ id, anchor, placement = "top", children, onPointerEnter, onPointerLeave }: {
   id?: string;
   anchor: TooltipAnchor | null;
+  placement?: Placement;
   children: ReactNode;
   onPointerEnter?: () => void;
   onPointerLeave?: () => void;
@@ -75,7 +77,7 @@ export function Tooltip({ id, anchor, children, onPointerEnter, onPointerLeave }
     setAvailableHeight(null);
     const updatePosition = () => {
       void computePosition(anchor, tooltip, {
-        placement: "top",
+        placement,
         middleware: [
           offset(8),
           flip({ padding: 12 }),
@@ -91,7 +93,7 @@ export function Tooltip({ id, anchor, children, onPointerEnter, onPointerLeave }
     };
 
     return autoUpdate(anchor, tooltip, updatePosition);
-  }, [anchor]);
+  }, [anchor, placement]);
 
   if (!anchor) return null;
 

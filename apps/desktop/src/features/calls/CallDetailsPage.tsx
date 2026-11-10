@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, type CallDetail } from "../../shared/api";
 import { CallDetails } from "./CallDetails";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { Card } from "../../shared/ui/Card";
 import styles from "./CallDetailsPage.module.scss";
 import { ScrollableContent } from "../../shared/virtual/ScrollableContent";
 
@@ -26,10 +26,10 @@ export function CallDetailsPage() {
   }, [callId]);
 
   const content = error
-    ? <TitledCard title={t("Unable to load call details")}><div style={{ padding: 16 }}>{error}</div></TitledCard>
+    ? <Card><div style={{ padding: 16 }}>{t("Unable to load call details")}: {error}</div></Card>
     : detail
       ? <CallDetails detail={detail} />
-      : <TitledCard title={t("Call details")}><div style={{ padding: 16 }}>{t("Loading call details...")}</div></TitledCard>;
+      : <Card><div style={{ padding: 16 }}>{t("Loading call details...")}</div></Card>;
 
   return <main className={styles.root}>
     <ScrollableContent className={styles.scroller} contentClassName={styles.content}>

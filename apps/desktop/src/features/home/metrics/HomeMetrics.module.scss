@@ -12,7 +12,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
-  border: 1px solid var(--vscode-sideBar-border);
+  border: 1px solid var(--oa-border);
   border-radius: var(--oa-overlay-radius);
   font-family: var(--oa-metrics-font);
 }
@@ -25,7 +25,7 @@
   padding: 16px;
 
   & + & {
-    border-left: 1px solid var(--vscode-sideBar-border);
+    border-left: 1px solid var(--oa-border);
   }
 }
 
@@ -33,7 +33,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   font-size: type.$font-size-xs;
   line-height: 1;
 }
@@ -53,7 +53,7 @@
 
   &:hover,
   &:focus-visible {
-    color: var(--vscode-foreground);
+    color: var(--oa-text);
   }
 }
 
@@ -63,7 +63,7 @@
 
 .value {
   overflow: hidden;
-  color: var(--vscode-foreground);
+  color: var(--oa-text);
   font-family: var(--oa-number-font);
   font-size: type.$font-size-xxl;
   line-height: 1;
@@ -74,7 +74,7 @@
 .secondary {
   margin-top: 12px;
   overflow: hidden;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   font-size: 12px;
   line-height: 1.4;
   text-overflow: ellipsis;

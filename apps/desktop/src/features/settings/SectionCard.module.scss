@@ -11,7 +11,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 10px;
-    border-bottom: 1px solid var(--vscode-sideBar-border);
+    border-bottom: 1px solid var(--oa-border);
   }
 
   .title {
@@ -25,8 +25,8 @@
     padding: 12px;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
-    background: var(--vscode-input-background);
-    border-radius: 6px;
+    background: var(--oa-surface-input);
+    border-radius: var(--oa-radius-md);
     font-family: var(--oa-code-font);
     font-size: type.$font-size-xs;
     line-height: 1.55;

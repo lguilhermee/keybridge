@@ -17,8 +17,8 @@
   min-height: 0;
   display: flex;
   overflow: hidden;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-sideBar-border);
+  background: var(--oa-surface-raised);
+  border: 1px solid var(--oa-border);
   border-radius: var(--oa-card-radius);
 }
 
@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   font-size: type.$font-size-base;
   pointer-events: none;
 }
@@ -71,7 +71,7 @@
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
-    border-bottom: 1px solid var(--vscode-sideBar-border);
+    border-bottom: 1px solid var(--oa-border);
   }
 
   th {
@@ -79,14 +79,14 @@
     top: 0;
     z-index: 2;
     height: 33px;
-    color: var(--vscode-descriptionForeground);
-    background: var(--vscode-editor-background);
+    color: var(--oa-text-secondary);
+    background: var(--oa-surface);
     font-size: type.$font-size-xs;
     font-weight: 400;
   }
 
   tbody tr:hover td {
-    background: var(--vscode-list-hoverBackground);
+    background: var(--oa-hover);
   }
 }
 
@@ -96,7 +96,7 @@
   z-index: 1;
   width: 72px;
   min-width: 72px;
-  background: var(--vscode-editor-background);
+  background: var(--oa-surface);
 }
 
 thead .stickyRight {
@@ -104,5 +104,5 @@ thead .stickyRight {
 }
 
 tbody .stickyRight {
-  background: var(--vscode-editorWidget-background);
+  background: var(--oa-surface-raised);
 }

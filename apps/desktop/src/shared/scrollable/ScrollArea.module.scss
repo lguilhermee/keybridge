@@ -2,9 +2,9 @@
   --oa-scrollbar-size: 8px;
   --oa-scrollbar-min-thumb-size: 20px;
   --oa-scrollbar-inset-top: 0px;
-  --oa-scrollbar-thumb: var(--vscode-scrollbarSlider-background, rgba(0, 0, 0, 0.1));
-  --oa-scrollbar-thumb-hover: var(--vscode-scrollbarSlider-background, rgba(0, 0, 0, 0.12));
-  --oa-scrollbar-thumb-active: var(--vscode-scrollbarSlider-background, rgba(0, 0, 0, 0.12));
+  --oa-scrollbar-thumb: var(--oa-scrollbar, rgba(0, 0, 0, 0.1));
+  --oa-scrollbar-thumb-hover: var(--oa-scrollbar, rgba(0, 0, 0, 0.12));
+  --oa-scrollbar-thumb-active: var(--oa-scrollbar, rgba(0, 0, 0, 0.12));
   --oa-scrollbar-hit-size: max(12px, var(--oa-scrollbar-size));
   position: relative;
   min-width: 0;

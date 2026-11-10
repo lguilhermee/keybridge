@@ -3,7 +3,7 @@ import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Checkbox";
 import { TextInput } from "../../shared/ui/FormControls";
 import { Select } from "../../shared/ui/Select";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import styles from "./ProxySettingsCard.module.scss";
 
 export function ProxySettingsCard({
@@ -38,7 +38,7 @@ export function ProxySettingsCard({
     </button>
   );
 
-  return <TitledCard title={t("Proxy settings")} action={action}>
+  return <SectionCard title={t("Proxy settings")} action={action}>
     <div className={styles.content}>
       {editing ? <>
         <div className={styles.row}>
@@ -77,5 +77,5 @@ export function ProxySettingsCard({
         </div>}
       </>}
     </div>
-  </TitledCard>;
+  </SectionCard>;
 }

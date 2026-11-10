@@ -3,21 +3,21 @@
 .root {
   display: grid;
   gap: 6px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   font-size: type.$font-size-xs;
 
   input {
     width: 100%;
     height: 32px;
     padding: 0 9px;
-    color: var(--vscode-input-foreground);
-    background: var(--vscode-input-background);
-    border: 1px solid var(--vscode-input-border);
-    border-radius: 5px;
+    color: var(--oa-text);
+    background: var(--oa-surface-input);
+    border: 1px solid var(--oa-border);
+    border-radius: var(--oa-radius-md);
     outline: 0;
 
     &:focus {
-      border-color: var(--vscode-focusBorder);
+      border-color: var(--oa-accent);
     }
   }
 }

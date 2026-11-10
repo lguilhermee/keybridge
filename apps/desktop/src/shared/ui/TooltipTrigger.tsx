@@ -1,4 +1,5 @@
 import { cloneElement, useCallback, useEffect, useId, useRef, useState, type FocusEventHandler, type PointerEventHandler, type ReactElement } from "react";
+import type { Placement } from "@floating-ui/dom";
 import { useTooltip, type TooltipAnchor } from "./Tooltip";
 
 
@@ -15,7 +16,7 @@ type TriggerProps = {
   onBlur?: FocusEventHandler<HTMLElement>;
 };
 
-export function TooltipTrigger({ label, children }: { label: string; children: ReactElement<TriggerProps> }) {
+export function TooltipTrigger({ label, placement, children }: { label: string; placement?: Placement; children: ReactElement<TriggerProps> }) {
   const { show: showTooltip, hide: hideTooltip } = useTooltip();
   const [anchor, setAnchor] = useState<TooltipAnchor | null>(null);
   const tooltipId = useId();
@@ -53,7 +54,7 @@ export function TooltipTrigger({ label, children }: { label: string; children: R
       if (event.pointerType !== "touch" && event.buttons === 0 && !anchor) {
         const nextAnchor = anchorFor(event.currentTarget);
         setAnchor(nextAnchor);
-        showTooltip(nextAnchor, tooltipId, label);
+        showTooltip(nextAnchor, tooltipId, label, placement);
       }
     },
     onPointerLeave: (event) => {
@@ -70,7 +71,7 @@ export function TooltipTrigger({ label, children }: { label: string; children: R
       if (event.currentTarget.matches(":focus-visible")) {
         const nextAnchor = anchorFor(event.currentTarget);
         setAnchor(nextAnchor);
-        showTooltip(nextAnchor, tooltipId, label);
+        showTooltip(nextAnchor, tooltipId, label, placement);
       } else {
         setAnchor(null);
       }

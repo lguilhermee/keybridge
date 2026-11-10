@@ -11,7 +11,7 @@
 
   code {
     overflow-wrap: anywhere;
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -25,13 +25,13 @@
     display: grid;
     gap: 3px;
     padding: 10px;
-    background: var(--vscode-input-background);
-    border: 1px solid var(--vscode-input-border);
+    background: var(--oa-surface-input);
+    border: 1px solid var(--oa-border);
     border-radius: 5px;
   }
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -48,7 +48,7 @@
   gap: 16px;
   min-width: 0;
   padding: 9px 10px;
-  background: var(--vscode-list-inactiveSelectionBackground);
+  background: var(--oa-active);
   border-radius: 5px;
 
   > div {
@@ -59,7 +59,7 @@
 
   small {
     overflow: hidden;
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -72,12 +72,12 @@
 }
 
 .new {
-  color: var(--vscode-testing-iconPassed, #73c991);
+  color: var(--oa-success, #73c991);
 }
 
 .existing,
 .hint {
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
 }
 
 .hint {

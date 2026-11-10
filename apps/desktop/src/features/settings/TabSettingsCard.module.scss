@@ -28,7 +28,7 @@
   gap: 5px;
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -40,19 +40,19 @@
 .value {
   min-width: 0;
   max-width: 70%;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   overflow-wrap: anywhere;
   text-align: right;
 }
 
 .headerAction {
   padding: 4px;
-  color: var(--vscode-textLink-foreground);
+  color: var(--oa-accent);
   background: transparent;
   border: 0;
   font-size: type.$font-size-xs;
 
-  &:hover { color: var(--vscode-textLink-activeForeground); }
+  &:hover { color: var(--oa-accent-hover); }
   &:disabled { opacity: .5; }
 }
 

@@ -6,12 +6,12 @@
   display: flex;
   align-items: center;
   overflow: hidden;
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, transparent);
-  border-radius: 5px;
+  background: var(--oa-surface-input);
+  border: 1px solid var(--oa-border, transparent);
+  border-radius: var(--oa-radius-md);
 
   &:focus-within,
-  &[data-open] { border-color: var(--vscode-focusBorder); }
+  &[data-open] { border-color: var(--oa-accent); }
   &[data-disabled] { opacity: 0.55; }
 }
 
@@ -24,7 +24,7 @@
   align-items: center;
   gap: 8px;
   padding: 0 8px;
-  color: var(--vscode-input-foreground);
+  color: var(--oa-text);
   background: transparent;
   border: 0;
   font-size: type.$font-size-xs;
@@ -39,16 +39,16 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   background: transparent;
   border: 0;
 
-  &:hover { color: var(--vscode-foreground); background: var(--vscode-list-hoverBackground); }
+  &:hover { color: var(--oa-text); background: var(--oa-hover); }
 }
 
 .summary {
   overflow: hidden;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -61,8 +61,8 @@
   flex-direction: column;
   overflow: hidden;
   padding: 4px;
-  background: var(--vscode-dropdown-background);
-  border: 1px solid var(--vscode-dropdown-border);
+  background: var(--oa-surface-overlay);
+  border: 1px solid var(--oa-border);
   border-radius: var(--oa-overlay-radius);
   box-shadow: var(--oa-dropdown-shadow);
 }
@@ -84,7 +84,7 @@
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   font-size: type.$font-size-xs;
   font-weight: 600;
 }
@@ -103,7 +103,7 @@
   }
 
   &:has(input:focus-visible) .checkbox {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--oa-accent);
     outline-offset: 2px;
   }
 }
@@ -120,9 +120,9 @@
   gap: 8px;
   padding: 5px 8px 5px 32px;
   box-sizing: border-box;
-  color: var(--vscode-dropdown-foreground);
+  color: var(--oa-text);
   background: transparent;
-  border-radius: 4px;
+  border-radius: var(--oa-radius-sm);
   font-size: type.$font-size-xs;
   cursor: pointer;
 
@@ -135,12 +135,12 @@
   }
 
   &:hover {
-    color: var(--vscode-list-hoverForeground, var(--vscode-dropdown-foreground));
-    background: var(--vscode-list-hoverBackground);
+    color: var(--oa-text);
+    background: var(--oa-hover);
   }
 
   &:focus-visible {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--oa-accent);
     outline-offset: -1px;
   }
 }
@@ -151,18 +151,18 @@
   flex: 0 0 16px;
   display: grid;
   place-items: center;
-  color: var(--vscode-checkbox-foreground, var(--vscode-button-foreground));
-  background: var(--vscode-checkbox-background, var(--vscode-input-background));
-  border: 1px solid var(--vscode-checkbox-border, var(--vscode-input-border));
-  border-radius: 3px;
+  color: var(--oa-text-on-accent);
+  background: var(--oa-surface-input);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-sm);
 }
 
 .optionRow:has(input:checked) .checkbox,
 .group:has(input:checked) .checkbox,
 .checkbox[data-indeterminate] {
-  color: var(--vscode-button-foreground);
-  background: var(--vscode-button-background);
-  border-color: var(--vscode-button-background);
+  color: var(--oa-text-on-accent);
+  background: var(--oa-accent);
+  border-color: var(--oa-accent);
 }
 
 .checkbox[data-indeterminate]::after {
@@ -186,7 +186,7 @@
   }
 }
 
-.empty { padding: 8px; color: var(--vscode-descriptionForeground); font-size: type.$font-size-xs; }
+.empty { padding: 8px; color: var(--oa-text-secondary); font-size: type.$font-size-xs; }
 
 .footer {
   display: flex;
@@ -194,7 +194,7 @@
   gap: 4px;
   margin-top: 4px;
   padding-top: 4px;
-  border-top: 1px solid var(--vscode-dropdown-border);
+  border-top: 1px solid var(--oa-border);
 
   button {
     width: auto;
@@ -203,12 +203,12 @@
     align-items: center;
     justify-content: center;
     padding: 5px 8px;
-    color: var(--vscode-textLink-foreground);
+    color: var(--oa-accent);
     background: transparent;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--oa-radius-sm);
     font-size: type.$font-size-xs;
 
-    &:hover { background: var(--vscode-list-hoverBackground); }
+    &:hover { background: var(--oa-hover); }
   }
 }

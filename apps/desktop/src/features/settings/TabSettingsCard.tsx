@@ -4,7 +4,7 @@ import { Button } from "../../shared/ui/Button";
 import { TextInput } from "../../shared/ui/FormControls";
 import { Icon } from "../../shared/ui/Icon";
 import { Select } from "../../shared/ui/Select";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import styles from "./TabSettingsCard.module.scss";
 
 export function TabSettingsCard({
@@ -40,7 +40,7 @@ export function TabSettingsCard({
     <button type="button" className={styles.headerAction} disabled={!settings} onClick={onEdit}>{t("Edit")}</button>
   );
 
-  return <TitledCard
+  return <SectionCard
     title={<div className={styles.title}><Icon src={cursorIconUrl} size="1.1em" /><span>{t("TAB settings")}</span></div>}
     action={action}
   >
@@ -86,5 +86,5 @@ export function TabSettingsCard({
         </div>}
       </>}
     </div>
-  </TitledCard>;
+  </SectionCard>;
 }

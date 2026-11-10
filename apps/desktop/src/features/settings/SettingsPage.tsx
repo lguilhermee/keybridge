@@ -14,7 +14,7 @@ import { Checkbox } from "../../shared/ui/Checkbox";
 import { ConfirmDialog } from "../../shared/ui/ConfirmDialog";
 import { FormField, TextInput } from "../../shared/ui/FormControls";
 import { Select } from "../../shared/ui/Select";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import { setLocalePreference, useI18n, type LocalePreference } from "../../i18n/store";
 import { useMessage } from "../../shared/ui/message";
 import { appStore, useAppStore } from "../../shared/store/appStore";
@@ -160,7 +160,7 @@ export function SettingsPage() {
     : t("Only request, response, and trace attachments are deleted; call summaries, metrics, and configuration are kept.");
   const content = (
     <div className={styles.page}>
-      <TitledCard title={t("Call observability")}>
+      <SectionCard title={t("Call observability")}>
         <div className={styles.settingRow}>
           <div>
             <strong>{t("Detailed mode")}</strong>
@@ -174,8 +174,8 @@ export function SettingsPage() {
             onChange={(checked) => void appStore.updateDetailed(checked)}
           />
         </div>
-      </TitledCard>
-      <TitledCard title={t("Port settings")} action={editingPorts ? (
+      </SectionCard>
+      <SectionCard title={t("Port settings")} action={editingPorts ? (
         <div className={styles.cardActions}>
           <Button size="small" disabled={savingPorts} onClick={cancelPortEdit}>{t("Cancel")}</Button>
           <Button variant="primary" size="small" disabled={savingPorts} onClick={() => void savePorts()}>{savingPorts ? t("Saving...") : t("Save")}</Button>
@@ -225,7 +225,7 @@ export function SettingsPage() {
             </small>
           </div>
         </div>
-      </TitledCard>
+      </SectionCard>
       <ExternalApiSettingsCard servicePort={ports.service_port} />
       <HeadroomSettingsCard />
       <ProxySettingsCard settings={outboundProxy} draft={proxyDraft} editing={editingProxy} saving={savingProxy} onDraftChange={setProxyDraft} onEdit={editProxy} onCancel={cancelProxyEdit} onSave={() => void saveProxy()} />
@@ -233,7 +233,7 @@ export function SettingsPage() {
       <CommitSettingsCard />
       <PricingSettingsCard />
       <AppLifecycleSettingsCard />
-      <LegacyModelImport>{({ busy, previewing, open }) => <TitledCard title={t("Import")}>
+      <LegacyModelImport>{({ busy, previewing, open }) => <SectionCard title={t("Import")}>
         <div className={styles.importRow}>
           <div>
             <strong>{t("Legacy configuration")}</strong>
@@ -243,8 +243,8 @@ export function SettingsPage() {
             {previewing ? t("Reading...") : t("Review and import")}
           </Button>
         </div>
-      </TitledCard>}</LegacyModelImport>
-      <TitledCard title={t("Language")}>
+      </SectionCard>}</LegacyModelImport>
+      <SectionCard title={t("Language")}>
         <div className={styles.settingRow}>
           <div>
             <strong>{t("Display language")}</strong>
@@ -264,8 +264,8 @@ export function SettingsPage() {
             />
           </div>
         </div>
-      </TitledCard>
-      <TitledCard title={t("Theme")}>
+      </SectionCard>
+      <SectionCard title={t("Theme")}>
         <div className={styles.themeActions}>
           {themeOptions.map(({ id }) => (
             <button
@@ -277,8 +277,8 @@ export function SettingsPage() {
             </button>
           ))}
         </div>
-      </TitledCard>
-      <TitledCard title={t("Storage management")}>
+      </SectionCard>
+      <SectionCard title={t("Storage management")}>
         <div className={styles.storageRow}>
           <div>
             <strong>{t("Statistics")}</strong>
@@ -292,7 +292,7 @@ export function SettingsPage() {
             {t("Clear storage")}
           </button>
         </div>
-      </TitledCard>
+      </SectionCard>
       <ConfirmDialog
         open={confirmClear}
         title={clearTitle}

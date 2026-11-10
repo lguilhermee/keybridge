@@ -1,86 +1,32 @@
 import { useState } from "react";
-import type { IconifyIcon } from "@iconify/react/offline";
 import KeepAliveRouteOutlet from "keepalive-for-react-router";
-import { NavLink, useLocation } from "react-router-dom";
-import cursorIconUrl from "../shared/assets/icons/cursor.svg";
+import { useLocation } from "react-router-dom";
 import { PageLayout } from "./layout/PageLayout";
-import { Card } from "../shared/ui/Card";
-import controls from "../shared/ui/Controls.module.scss";
-import { Icon } from "../shared/ui/Icon";
-import { TooltipTrigger } from "../shared/ui/TooltipTrigger";
-import { flatColorAreaChartIcon, flatColorCrystalOscillatorIcon, flatColorSalesPerformanceIcon, flatColorSettingsIcon, refreshIcon } from "../shared/ui/icons";
-import { VirtualList } from "../shared/virtual/VirtualList";
-import { appStore, useAppStore } from "../shared/store/appStore";
-import { useUpdateStore } from "../shared/store/updateStore";
-import styles from "./AppLayout.module.scss";
+import { CommandPalette } from "./CommandPalette";
+import { IconRail } from "./IconRail";
+import { PageFrame } from "./PageFrame";
 import { PageActionsTarget } from "./PageActions";
+import styles from "./AppLayout.module.scss";
 
-type MenuItem =
-  | { kind: "page"; path: string; label: string; icon: IconifyIcon | string }
-  | { kind: "group"; label: string };
-
-const keptAlivePages = ["/", "/calls", "/settings", "/harness/cursor", "/providers"];
+const keptAlivePages = ["/", "/calls", "/providers", "/cursor", "/settings"];
 
 export function AppLayout() {
-  const { busy, cursorHarness } = useAppStore();
-  const { availableVersion } = useUpdateStore();
   const location = useLocation();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [titleTarget, setTitleTarget] = useState<HTMLDivElement | null>(null);
   const [leftActionTarget, setLeftActionTarget] = useState<HTMLDivElement | null>(null);
   const [rightActionTarget, setRightActionTarget] = useState<HTMLDivElement | null>(null);
-  const menuItems: MenuItem[] = [
-    { kind: "page", path: "/", label: t("Overview"), icon: flatColorAreaChartIcon },
-    { kind: "page", path: "/calls", label: t("Call history"), icon: flatColorSalesPerformanceIcon },
-    { kind: "group", label: t("Models") },
-    { kind: "page", path: "/harness/cursor", label: "Cursor", icon: cursorIconUrl },
-    { kind: "group", label: t("Settings") },
-    { kind: "page", path: "/providers", label: t("Providers"), icon: flatColorCrystalOscillatorIcon },
-    { kind: "page", path: "/settings", label: t("System settings"), icon: flatColorSettingsIcon },
-  ];
+  // All settings sections share one cached page; the section switch must not
+  // remount it or reset its scroll position.
+  const cacheKey = location.pathname.startsWith("/settings") ? "/settings" : location.pathname;
 
   return <PageLayout className={styles.root}>
-    <Card as="aside" className={styles.menuCard}>
-      <nav className={styles.navigation} aria-label={t("Main menu")}>
-        <VirtualList
-          items={menuItems}
-          itemKey={(item) => item.kind === "group" ? `group-${item.label}` : item.path}
-          estimatedItemHeight={36}
-          itemGap={3}
-          className={`${styles.navigationList} scroll-shadow-bottom`}
-        >
-          {(item) => item.kind === "group"
-          ? <div className={styles.navigationGroup} key={`group-${item.label}`}>{item.label}</div>
-          : <div className={styles.navigationRow} key={item.path}>
-            <NavLink to={item.path} end={item.path === "/"}>
-              {typeof item.icon === "string"
-                ? <Icon src={item.icon} size="1.3em" />
-                : <Icon icon={item.icon} size="1.3em" />}
-              <span>{item.label}</span>
-              {item.path === "/harness/cursor" && cursorHarness && <span
-                className={styles.menuStatusTag}
-                data-taken={cursorHarness.settings_applied || undefined}
-                title={t("Local proxy configuration only; Remote SSH is not verified.")}
-              >
-                {cursorHarness.settings_applied ? t("Local: on") : t("Local: off")}
-              </span>}
-              {item.path === "/settings" && availableVersion && <span className={styles.menuIndicatorDot} aria-hidden="true" />}
-            </NavLink>
-          </div>}
-        </VirtualList>
-      </nav>
-    </Card>
+    <IconRail onOpenPalette={() => setPaletteOpen(true)} />
+    <PageFrame titleRef={setTitleTarget} leftActionsRef={setLeftActionTarget} rightActionsRef={setRightActionTarget} />
     <main className={styles.content}>
-      <div className={styles.actionRegion}>
-        <Card className={styles.actions}>
-          <div ref={setLeftActionTarget} className={styles.pageActions} />
-          {location.pathname !== "/" && <TooltipTrigger label={t("Refresh")}><button className={controls.iconButton} aria-label={t("Refresh")} disabled={busy} onClick={() => void appStore.refresh()}>
-            <Icon className={busy ? controls.spin : ""} icon={refreshIcon} size="1.1em" />
-          </button></TooltipTrigger>}
-          <div ref={setRightActionTarget} className={styles.pageActions} />
-        </Card>
-      </div>
-      <PageActionsTarget.Provider value={{ left: leftActionTarget, right: rightActionTarget }}>
+      <PageActionsTarget.Provider value={{ title: titleTarget, left: leftActionTarget, right: rightActionTarget }}>
         <KeepAliveRouteOutlet
-          activeCacheKey={location.pathname}
+          activeCacheKey={cacheKey}
           include={keptAlivePages}
           max={keptAlivePages.length}
           enableActivity
@@ -89,5 +35,6 @@ export function AppLayout() {
         />
       </PageActionsTarget.Provider>
     </main>
+    <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
   </PageLayout>;
 }

@@ -12,7 +12,7 @@ import {
 import { updateStore, useUpdateStore } from "../../shared/store/updateStore";
 import { Button } from "../../shared/ui/Button";
 import { Switch } from "../../shared/ui/Switch";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import { useMessage } from "../../shared/ui/message";
 import styles from "./AppLifecycleSettingsCard.module.scss";
 
@@ -109,7 +109,7 @@ export function AppLifecycleSettingsCard() {
     }
   };
 
-  return <TitledCard title={t("Application")}>
+  return <SectionCard title={t("Application")}>
     <div className={styles.row}>
       <div>
         <strong>{t("Launch at login")}</strong>
@@ -162,5 +162,5 @@ export function AppLifecycleSettingsCard() {
             {checking ? t("Checking...") : t("Check for updates")}
           </Button>}
     </div>
-  </TitledCard>;
+  </SectionCard>;
 }

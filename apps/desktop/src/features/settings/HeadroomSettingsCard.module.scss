@@ -13,7 +13,7 @@
   }
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -21,21 +21,21 @@
 .value {
   min-width: 0;
   max-width: 70%;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   overflow-wrap: anywhere;
   text-align: right;
 
-  &[data-state="running"] { color: var(--vscode-testing-iconPassed); }
-  &[data-state="failed"], &[data-state="not_installed"] { color: var(--vscode-testing-iconFailed); }
+  &[data-state="running"] { color: var(--oa-success); }
+  &[data-state="failed"], &[data-state="not_installed"] { color: var(--oa-danger); }
 }
 
 .textButton {
   padding: 4px;
-  color: var(--vscode-textLink-foreground);
+  color: var(--oa-accent);
   background: transparent;
   border: 0;
 
-  &:hover { color: var(--vscode-textLink-activeForeground); }
+  &:hover { color: var(--oa-accent-hover); }
   &:disabled { opacity: .5; }
 }
 

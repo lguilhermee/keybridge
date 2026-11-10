@@ -2,11 +2,11 @@
 
 .status {
   padding: 3px 7px;
-  color: var(--vscode-descriptionForeground);
-  background: var(--vscode-input-background);
+  color: var(--oa-text-secondary);
+  background: var(--oa-surface-input);
   border-radius: 99px;
   font-size: type.$font-size-xs;
 }
 
 .completed { color: #56b870; }
-.failed { color: var(--vscode-errorForeground, #f48771); }
+.failed { color: var(--oa-danger, #f48771); }

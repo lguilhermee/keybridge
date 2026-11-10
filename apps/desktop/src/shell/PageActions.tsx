@@ -3,15 +3,23 @@ import { createPortal } from "react-dom";
 import { useKeepAliveContext } from "keepalive-for-react";
 
 type PageActionsTargets = {
+  title: HTMLElement | null;
   left: HTMLElement | null;
   right: HTMLElement | null;
 };
 
-export const PageActionsTarget = createContext<PageActionsTargets>({ left: null, right: null });
+export const PageActionsTarget = createContext<PageActionsTargets>({ title: null, left: null, right: null });
 
 export function PageActions({ children, position = "right" }: { children: ReactNode; position?: "left" | "right" }) {
   const targets = useContext(PageActionsTarget);
   const { active } = useKeepAliveContext();
   const target = targets[position];
   return active && target ? createPortal(children, target) : null;
+}
+
+/** Portals the page title into the PageFrame top bar; only renders while the page is the active kept-alive page. */
+export function PageTitle({ children }: { children: ReactNode }) {
+  const { title } = useContext(PageActionsTarget);
+  const { active } = useKeepAliveContext();
+  return active && title ? createPortal(children, title) : null;
 }

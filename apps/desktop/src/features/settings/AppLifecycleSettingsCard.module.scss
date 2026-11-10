@@ -8,7 +8,7 @@
   padding: 16px;
 
   & + & {
-    border-top: 1px solid var(--vscode-widget-border);
+    border-top: 1px solid var(--oa-border);
   }
 
   > div {
@@ -17,7 +17,7 @@
   }
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }

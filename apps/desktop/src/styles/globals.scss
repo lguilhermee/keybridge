@@ -19,13 +19,20 @@
 
 :root {
   --window-header-height: 30px;
+  --app-rail-width: 44px;
+  --app-topbar-height: 44px;
+  --app-content-top: calc(var(--window-header-height) + var(--app-topbar-height));
+  --app-page-padding: 18px;
+  --app-page-max-width: 1280px;
   --oa-ui-font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --oa-code-font: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
   --oa-metrics-font: "PingFang-Medium", var(--oa-ui-font);
   --oa-number-font: "HFKos", "PingFang-Medium", var(--oa-ui-font);
   font-family: var(--oa-ui-font);
   font-size: type.$font-size-base;
-  color: var(--vscode-foreground);
+  // Tabular digits keep token, cost, and timing numbers aligned across the app.
+  font-variant-numeric: tabular-nums;
+  color: var(--oa-text);
   background: transparent;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -36,8 +43,8 @@
 }
 
 ::selection {
-  color: var(--vscode-editor-selectionForeground);
-  background: var(--vscode-editor-selectionBackground);
+  color: var(--oa-selection-text);
+  background: var(--oa-selection-bg);
 }
 
 html,
@@ -65,16 +72,17 @@ button {
 }
 
 .scroll-shadow-top[data-scrolled="true"] {
+  --scroll-shadow-top-size: 16px;
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0,
-    black var(--app-content-top) ,
+    black var(--scroll-shadow-top-size),
     black 100%
   );
   mask-image: linear-gradient(
     to bottom,
     transparent 0,
-    black var(--app-content-top),
+    black var(--scroll-shadow-top-size),
     black 100%
   );
 }

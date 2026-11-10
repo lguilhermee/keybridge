@@ -204,6 +204,6 @@ export function HomePage() {
       onCustomApply={applyCustom}
       onRefresh={() => void refresh()}
     /></PageActions>
-    <PageContent title={t("Summary")} sections={sections} />
+    <PageContent title={t("Overview")} sections={sections} />
   </>;
 }

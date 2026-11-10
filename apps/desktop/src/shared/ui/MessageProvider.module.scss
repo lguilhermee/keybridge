@@ -15,9 +15,9 @@
 .message {
   max-width: min(520px, calc(100vw - 32px));
   padding: 10px 16px;
-  color: var(--vscode-notifications-foreground);
-  background: var(--vscode-notifications-background);
-  border: 1px solid var(--vscode-notifications-border);
+  color: var(--oa-text);
+  background: var(--oa-surface-overlay);
+  border: 1px solid var(--oa-border);
   border-radius: var(--oa-overlay-radius);
   box-shadow: 0 10px 30px rgb(0 0 0 / 38%);
   font-size: type.$font-size-base;

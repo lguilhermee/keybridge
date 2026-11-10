@@ -3,7 +3,7 @@ import type { TokenPricingSettings } from "../../shared/api";
 import { appStore, DEFAULT_TOKEN_PRICING, useAppStore } from "../../shared/store/appStore";
 import { Button } from "../../shared/ui/Button";
 import { FormField, TextInput } from "../../shared/ui/FormControls";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import { useMessage } from "../../shared/ui/message";
 import styles from "./ProxySettingsCard.module.scss";
 
@@ -97,7 +97,7 @@ export function PricingSettingsCard() {
   );
 
   return (
-    <TitledCard title={t("Token pricing")} action={action}>
+    <SectionCard title={t("Token pricing")} action={action}>
       <div className={styles.content}>
         <small>{t("Token unit prices used for the home page estimated value. Unit: USD per million tokens.")}</small>
         {editing ? (
@@ -160,6 +160,6 @@ export function PricingSettingsCard() {
           </>
         )}
       </div>
-    </TitledCard>
+    </SectionCard>
   );
 }

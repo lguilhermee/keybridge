@@ -13,7 +13,7 @@
   gap: 20px;
 
   small {
-    color: var(--vscode-descriptionForeground);
+    color: var(--oa-text-secondary);
     font-size: type.$font-size-xs;
   }
 }
@@ -30,7 +30,7 @@
 .value {
   min-width: 0;
   max-width: 70%;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   overflow-wrap: anywhere;
   text-align: right;
 }
@@ -43,11 +43,11 @@
 
 .textButton {
   padding: 4px;
-  color: var(--vscode-textLink-foreground);
+  color: var(--oa-accent);
   background: transparent;
   border: 0;
 
-  &:hover { color: var(--vscode-textLink-activeForeground); }
+  &:hover { color: var(--oa-accent-hover); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -57,17 +57,17 @@
   min-height: 320px;
   box-sizing: border-box;
   padding: 10px 12px;
-  color: var(--vscode-input-foreground);
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, var(--vscode-sideBar-border));
+  color: var(--oa-text);
+  background: var(--oa-surface-input);
+  border: 1px solid var(--oa-border);
   border-radius: 6px;
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--oa-code-font, monospace);
   font-size: type.$font-size-xs;
   line-height: 1.6;
   resize: none;
 
   &:focus {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--oa-accent);
   }
 }
 

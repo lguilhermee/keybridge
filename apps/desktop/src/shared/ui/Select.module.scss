@@ -4,14 +4,14 @@
 .combo input {
   width: 100%;
   height: 34px;
-  color: var(--vscode-input-foreground);
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, transparent);
-  border-radius: 5px;
+  color: var(--oa-text);
+  background: var(--oa-surface-input);
+  border: 1px solid var(--oa-border, transparent);
+  border-radius: var(--oa-radius-md);
   outline: none;
   font-size: type.$font-size-xs;
   &:focus {
-    border-color: var(--vscode-focusBorder);
+    border-color: var(--oa-accent);
   }
 }
 
@@ -55,11 +55,11 @@
   display: flex;
   align-items: center;
   overflow: hidden;
-  border: 1px solid var(--vscode-input-border, transparent);
-  border-radius: 6px;
-  background: var(--vscode-input-background);
+  border: 1px solid var(--oa-border, transparent);
+  border-radius: var(--oa-radius-md);
+  background: var(--oa-surface-input);
   &:focus-within {
-    border-color: var(--vscode-focusBorder);
+    border-color: var(--oa-accent);
   }
 }
 .combo input {
@@ -75,7 +75,7 @@
   flex: 0 0 34px;
   align-self: center;
   padding: 0;
-  color: var(--vscode-descriptionForeground);
+  color: var(--oa-text-secondary);
   background: transparent;
   border: 0;
   appearance: none;
@@ -86,7 +86,7 @@
   align-items: center;
   justify-content: center;
   &:hover {
-    color: var(--vscode-foreground);
+    color: var(--oa-text);
   }
   &:disabled {
     cursor: not-allowed;
@@ -99,9 +99,9 @@
   z-index: 14000;
   overflow: hidden;
   padding: 4px;
-  background: var(--vscode-dropdown-background);
-  border: 1px solid var(--vscode-dropdown-border);
-  border-radius: 6px;
+  background: var(--oa-surface-overlay);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-md);
   box-shadow: var(--oa-dropdown-shadow);
 
   button {
@@ -109,17 +109,17 @@
     min-height: 30px;
     display: block;
     padding: 5px 8px;
-    color: var(--vscode-dropdown-foreground);
+    color: var(--oa-text);
     text-align: left;
     background: transparent;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--oa-radius-sm);
     font-size: type.$font-size-xs;
     &:hover,
     &[data-active],
     &[aria-selected="true"] {
-      background: var(--vscode-list-activeSelectionBackground);
-      color: var(--vscode-list-activeSelectionForeground);
+      background: var(--oa-active);
+      color: var(--oa-text);
     }
   }
 }

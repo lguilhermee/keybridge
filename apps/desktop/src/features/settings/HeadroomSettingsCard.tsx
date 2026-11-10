@@ -3,7 +3,7 @@ import { api, type HeadroomStatus } from "../../shared/api";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Checkbox";
 import { TextInput } from "../../shared/ui/FormControls";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import { useMessage } from "../../shared/ui/message";
 import styles from "./HeadroomSettingsCard.module.scss";
 
@@ -79,7 +79,7 @@ export function HeadroomSettingsCard() {
 
   const busy = saving || installing || status?.installing === true;
 
-  return <TitledCard
+  return <SectionCard
     title="Headroom"
     action={editing ? (
       <div className={styles.cardActions}>
@@ -133,5 +133,5 @@ export function HeadroomSettingsCard() {
         {busy ? t("Installing...") : t("Install")}
       </Button>
     </div>}
-  </TitledCard>;
+  </SectionCard>;
 }

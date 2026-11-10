@@ -3,7 +3,7 @@ import { api, type ExternalApiSettings } from "../../shared/api";
 import { Button } from "../../shared/ui/Button";
 import { FormField, SecretTextInput } from "../../shared/ui/FormControls";
 import { Switch } from "../../shared/ui/Switch";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import { useMessage } from "../../shared/ui/message";
 import styles from "./ExternalApiSettingsCard.module.scss";
 
@@ -37,7 +37,7 @@ export function ExternalApiSettingsCard({ servicePort }: { servicePort: number }
   const address = `http://127.0.0.1:${servicePort}/byok/v1`;
   const changed = saved && (saved.enabled !== draft.enabled || saved.api_key !== draft.api_key);
 
-  return <TitledCard title={t("External API")} action={<Button size="small" variant="primary" disabled={!changed || saving} onClick={() => void save()}>
+  return <SectionCard title={t("External API")} action={<Button size="small" variant="primary" disabled={!changed || saving} onClick={() => void save()}>
     {saving ? t("Saving...") : t("Save")}
   </Button>}>
     <div className={styles.content}>
@@ -58,5 +58,5 @@ export function ExternalApiSettingsCard({ servicePort }: { servicePort: number }
         <code>{address}</code>
       </div>
     </div>
-  </TitledCard>;
+  </SectionCard>;
 }

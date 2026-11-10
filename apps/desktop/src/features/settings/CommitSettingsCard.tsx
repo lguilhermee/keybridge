@@ -7,7 +7,7 @@ import { Button } from "../../shared/ui/Button";
 import { Modal } from "../../shared/ui/Modal";
 import { ModelSelect, type ModelSelectOption } from "../../shared/ui/ModelSelect";
 import { claudeIcon, flatColorOrganizationIcon, openAiIcon } from "../../shared/ui/icons";
-import { TitledCard } from "../../shared/ui/TitledCard";
+import { SectionCard } from "./SectionCard";
 import { useMessage } from "../../shared/ui/message";
 import controls from "../../shared/ui/Controls.module.scss";
 import { modelProviderName } from "../../shared/utils/modelProvider";
@@ -182,7 +182,7 @@ export function CommitSettingsCard() {
 
   return (
     <>
-      <TitledCard title={t("Commit Message Model Settings")} action={action}>
+      <SectionCard title={t("Commit Message Model Settings")} action={action}>
         <div className={styles.content}>
           <div className={styles.row}>
             <div className={styles.details}>
@@ -200,7 +200,7 @@ export function CommitSettingsCard() {
             </div> : <span className={styles.value}>{selectedModelLabel}</span>}
           </div>
         </div>
-      </TitledCard>
+      </SectionCard>
 
       <Modal
         open={promptOpen}
