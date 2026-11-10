@@ -13,8 +13,10 @@ export const ANTIGRAVITY_ENDPOINTS = [
 ];
 
 const FETCH_AVAILABLE_MODELS_PATH = "/v1internal:fetchAvailableModels";
+// Google gates newer models by this client version: Gemini 4 Carbon/Argon are
+// only listed and served for antigravity/hub >= 2.15.5.
 export const ANTIGRAVITY_USER_AGENT =
-  "antigravity/hub/2.12.2 (aidev_client; os_type=darwin; arch=arm64; cl=975423596)";
+  "antigravity/hub/2.31.0 (aidev_client; os_type=darwin; arch=arm64; cl=975423596)";
 
 export const ANTIGRAVITY_CLIENT_HEADERS: Record<string, string> = {};
 
