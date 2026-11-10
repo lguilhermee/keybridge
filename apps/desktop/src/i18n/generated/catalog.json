@@ -40,35 +40,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 312,
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 76,
           "column": 31
-        }
-      ]
-    },
-    "01e93bf5df3af78e": {
-      "source": "{name} accounts",
-      "kind": "template",
-      "placeholders": [
-        "name"
-      ],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 78,
-          "column": 11
-        }
-      ]
-    },
-    "02278c7303d1646a": {
-      "source": "Installed providers will appear here.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 124,
-          "column": 14
         }
       ]
     },
@@ -90,9 +64,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 370,
-          "column": 266
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 196,
+          "column": 11
         }
       ]
     },
@@ -102,18 +76,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 172,
-          "column": 64
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 174,
+          "column": 74
         },
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 286,
-          "column": 70
-        },
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 236,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 226,
           "column": 33
         }
       ]
@@ -168,7 +137,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 70,
           "column": 61
         }
@@ -180,8 +149,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 241,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 231,
           "column": 34
         }
       ]
@@ -228,6 +197,18 @@
         }
       ]
     },
+    "06f08e7c2f8a8c00": {
+      "source": "Enable all",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 266,
+          "column": 114
+        }
+      ]
+    },
     "07ae7fd684564e68": {
       "source": "Installing...",
       "kind": "text",
@@ -242,6 +223,20 @@
           "file": "features/settings/HeadroomSettingsCard.tsx",
           "line": 133,
           "column": 17
+        }
+      ]
+    },
+    "08b5420f7189b360": {
+      "source": "Available again at {time}",
+      "kind": "template",
+      "placeholders": [
+        "time"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 83,
+          "column": 10
         }
       ]
     },
@@ -292,7 +287,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 71,
           "column": 66
         }
@@ -343,8 +338,8 @@
           "column": 94
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 504,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 89,
           "column": 84
         },
         {
@@ -365,7 +360,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 39,
           "column": 38
         }
@@ -377,8 +372,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 171,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 179,
           "column": 162
         }
       ]
@@ -450,18 +445,6 @@
         }
       ]
     },
-    "11a6767d5674c7e4": {
-      "source": "Done",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 278,
-          "column": 45
-        }
-      ]
-    },
     "11b5e553bf8cf8db": {
       "source": "Overview time range",
       "kind": "text",
@@ -480,8 +463,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 473,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 59,
           "column": 102
         },
         {
@@ -502,7 +485,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 24,
           "column": 11
         }
@@ -617,14 +600,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 349,
-          "column": 443
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 204,
+          "column": 20
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 357,
-          "column": 203
+          "file": "features/providers/ModelEditorModal.tsx",
+          "line": 131,
+          "column": 18
         },
         {
           "file": "features/settings/CommitSettingsCard.tsx",
@@ -679,9 +662,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 376,
-          "column": 20
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 269,
+          "column": 22
         }
       ]
     },
@@ -690,6 +673,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 98,
+          "column": 50
+        },
         {
           "file": "features/settings/ExternalApiSettingsCard.tsx",
           "line": 52,
@@ -703,9 +691,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 349,
-          "column": 62
+          "file": "features/providers/ModelEditorModal.tsx",
+          "line": 126,
+          "column": 22
         }
       ]
     },
@@ -727,7 +715,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 40,
           "column": 38
         }
@@ -739,7 +727,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 69,
           "column": 56
         }
@@ -777,7 +765,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 80,
           "column": 58
         }
@@ -789,29 +777,39 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 93,
+          "column": 20
+        },
+        {
+          "file": "features/cursor/LegacyModelImport.tsx",
+          "line": 58,
+          "column": 20
+        },
+        {
           "file": "features/home/overview/OverviewTimeRangeFilter.tsx",
           "line": 125,
           "column": 105
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 339,
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 223,
           "column": 20
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 370,
-          "column": 84
-        },
-        {
-          "file": "features/models/LegacyModelImport.tsx",
-          "line": 58,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 188,
           "column": 20
         },
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 278,
-          "column": 72
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 60,
+          "column": 65
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 259,
+          "column": 19
         },
         {
           "file": "features/settings/CommitSettingsCard.tsx",
@@ -888,13 +886,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 178,
-          "column": 52
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 130,
+          "column": 65
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 142,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 132,
           "column": 42
         }
       ]
@@ -905,9 +903,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 370,
-          "column": 31
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 262,
+          "column": 33
         }
       ]
     },
@@ -928,14 +926,26 @@
         }
       ]
     },
+    "1be17fbbb424f0f7": {
+      "source": "Configure an OpenAI or Anthropic compatible endpoint with an API key.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 274,
+          "column": 18
+        }
+      ]
+    },
     "1daf2a32f2477c87": {
       "source": "The standard endpoint path is appended automatically for the selected protocol.",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 155,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 163,
           "column": 231
         }
       ]
@@ -999,8 +1009,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 202,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 192,
           "column": 36
         }
       ]
@@ -1010,11 +1020,6 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 409,
-          "column": 105
-        },
         {
           "file": "shared/ui/ModelSelect.tsx",
           "line": 232,
@@ -1033,6 +1038,18 @@
           "file": "features/home/metrics/HomeMetrics.tsx",
           "line": 133,
           "column": 5
+        }
+      ]
+    },
+    "20e8bb9ff8edc8c4": {
+      "source": "Provider account",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 265,
+          "column": 20
         }
       ]
     },
@@ -1071,7 +1088,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 22,
           "column": 162
         }
@@ -1097,14 +1114,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 103,
-          "column": 7
-        },
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 301,
-          "column": 70
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 33,
+          "column": 23
         }
       ]
     },
@@ -1114,14 +1126,26 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 309,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 70,
           "column": 87
         },
         {
           "file": "shell/IconRail.tsx",
           "line": 29,
           "column": 73
+        }
+      ]
+    },
+    "24e74c5d1f5dc770": {
+      "source": "Each model uses its own key",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 133,
+          "column": 41
         }
       ]
     },
@@ -1137,14 +1161,33 @@
         }
       ]
     },
+    "2600ec6423cf46ad": {
+      "source": "{count} accounts",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 209,
+          "column": 62
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 288,
+          "column": 39
+        }
+      ]
+    },
     "276fcdb7e5918158": {
       "source": "Account saved and the model catalog is synced.",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 245,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 235,
           "column": 64
         }
       ]
@@ -1157,8 +1200,8 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 536,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 140,
           "column": 84
         }
       ]
@@ -1169,19 +1212,19 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 166,
-          "column": 27
-        },
-        {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 169,
-          "column": 27
-        },
-        {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 399,
+          "file": "features/providers/modelEditing.ts",
+          "line": 29,
           "column": 93
+        },
+        {
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 174,
+          "column": 27
+        },
+        {
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 177,
+          "column": 27
         }
       ]
     },
@@ -1201,23 +1244,9 @@
           "column": 15
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 161,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 169,
           "column": 25
-        }
-      ]
-    },
-    "2b8fea37429ff37d": {
-      "source": "Provider runtime {version} is installed and ready to use.",
-      "kind": "template",
-      "placeholders": [
-        "version"
-      ],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 302,
-          "column": 44
         }
       ]
     },
@@ -1257,6 +1286,18 @@
         }
       ]
     },
+    "2d7f60bf88d17ae5": {
+      "source": "Group models by",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 190,
+          "column": 133
+        }
+      ]
+    },
     "2e146b50a578f197": {
       "source": "Call information",
       "kind": "text",
@@ -1287,9 +1328,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 112,
-          "column": 19
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 66,
+          "column": 20
         },
         {
           "file": "features/settings/AppLifecycleSettingsCard.tsx",
@@ -1330,8 +1371,8 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 537,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 141,
           "column": 84
         }
       ]
@@ -1344,18 +1385,18 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 159,
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 82,
           "column": 17
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 83,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 73,
           "column": 15
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 194,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 184,
           "column": 22
         }
       ]
@@ -1412,23 +1453,23 @@
           "column": 15
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 167,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 175,
           "column": 27
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 167,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 175,
           "column": 70
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 170,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 178,
           "column": 27
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 170,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 178,
           "column": 70
         }
       ]
@@ -1439,9 +1480,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 370,
-          "column": 47
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 262,
+          "column": 49
         }
       ]
     },
@@ -1453,8 +1494,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 138,
+          "file": "features/providers/useModelTests.ts",
+          "line": 27,
           "column": 15
         }
       ]
@@ -1483,6 +1524,18 @@
         }
       ]
     },
+    "343caea0a933c477": {
+      "source": "Nothing to show yet",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 245,
+          "column": 24
+        }
+      ]
+    },
     "34671d4267b6d26e": {
       "source": "{count} per page",
       "kind": "template",
@@ -1503,8 +1556,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 162,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 170,
           "column": 72
         }
       ]
@@ -1515,7 +1568,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 44,
           "column": 11
         }
@@ -1576,8 +1629,8 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 474,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 60,
           "column": 16
         }
       ]
@@ -1590,8 +1643,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 201,
+          "file": "features/providers/useModelTests.ts",
+          "line": 78,
           "column": 13
         }
       ]
@@ -1605,6 +1658,18 @@
           "file": "features/settings/SettingsPage.tsx",
           "line": 276,
           "column": 40
+        }
+      ]
+    },
+    "3d3a92a802954f4a": {
+      "source": "Shared connection details for the models in this group",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 120,
+          "column": 51
         }
       ]
     },
@@ -1637,6 +1702,23 @@
         }
       ]
     },
+    "3df9726c68ba76d6": {
+      "source": "Endpoint",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 116,
+          "column": 70
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 119,
+          "column": 22
+        }
+      ]
+    },
     "3f8644f2516f3229": {
       "source": "Cursor tracing",
       "kind": "text",
@@ -1663,9 +1745,9 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 298,
-          "column": 20
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 38,
+          "column": 13
         }
       ]
     },
@@ -1675,13 +1757,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 363,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 211,
           "column": 35
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 366,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 214,
           "column": 41
         }
       ]
@@ -1692,8 +1774,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 576,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 180,
           "column": 28
         }
       ]
@@ -1704,7 +1786,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 37,
           "column": 12
         }
@@ -1716,9 +1798,21 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 188,
-          "column": 20
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 135,
+          "column": 18
+        }
+      ]
+    },
+    "4318541457e17dd6": {
+      "source": "Manage models",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 173,
+          "column": 48
         }
       ]
     },
@@ -1740,8 +1834,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 313,
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 77,
           "column": 31
         }
       ]
@@ -1817,7 +1911,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 36,
           "column": 56
         }
@@ -1829,14 +1923,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 171,
-          "column": 64
-        },
-        {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 285,
-          "column": 70
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 173,
+          "column": 74
         },
         {
           "file": "features/settings/CommitSettingsCard.tsx",
@@ -1888,8 +1977,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 528,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 132,
           "column": 50
         },
         {
@@ -1920,8 +2009,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 338,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 92,
           "column": 14
         }
       ]
@@ -1961,8 +2050,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 213,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 221,
           "column": 41
         },
         {
@@ -2022,8 +2111,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 564,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 168,
           "column": 11
         }
       ]
@@ -2034,8 +2123,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 310,
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 74,
           "column": 32
         }
       ]
@@ -2074,18 +2163,6 @@
         }
       ]
     },
-    "4c3f9f90ccf0d000": {
-      "source": "Initialize the provider runtime first",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 101,
-          "column": 11
-        }
-      ]
-    },
     "4c8982fbd71080ae": {
       "source": "Start Cursor BYOK automatically after signing in.",
       "kind": "text",
@@ -2104,7 +2181,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 59,
           "column": 21
         }
@@ -2169,7 +2246,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 22,
           "column": 253
         }
@@ -2229,7 +2306,7 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 35,
           "column": 7
         }
@@ -2241,7 +2318,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 24,
           "column": 112
         }
@@ -2296,19 +2373,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 303,
+          "column": 105
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
           "line": 170,
-          "column": 105
-        },
-        {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 193,
-          "column": 105
-        },
-        {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 284,
-          "column": 111
+          "column": 92
         }
       ]
     },
@@ -2383,8 +2455,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 105,
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 35,
           "column": 25
         }
       ]
@@ -2395,8 +2467,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 309,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 70,
           "column": 70
         },
         {
@@ -2412,7 +2484,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 55,
           "column": 14
         }
@@ -2424,7 +2496,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 50,
           "column": 80
         }
@@ -2436,13 +2508,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 149,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 157,
           "column": 59
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 149,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 157,
           "column": 199
         }
       ]
@@ -2473,6 +2545,25 @@
         }
       ]
     },
+    "5a0f8c1b2755ee50": {
+      "source": "Resets {time}",
+      "kind": "template",
+      "placeholders": [
+        "time"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 104,
+          "column": 74
+        },
+        {
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 110,
+          "column": 72
+        }
+      ]
+    },
     "5b8c83cd899ddd10": {
       "source": "Current version {version}",
       "kind": "template",
@@ -2495,8 +2586,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 413,
+          "file": "features/providers/modelEditing.ts",
+          "line": 43,
           "column": 70
         }
       ]
@@ -2521,7 +2612,7 @@
       ],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 43,
           "column": 11
         }
@@ -2574,7 +2665,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 22,
           "column": 218
         }
@@ -2598,13 +2689,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 573,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 177,
           "column": 30
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 592,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 196,
           "column": 42
         }
       ]
@@ -2615,8 +2706,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 155,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 163,
           "column": 136
         }
       ]
@@ -2627,8 +2718,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 155,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 163,
           "column": 54
         }
       ]
@@ -2687,8 +2778,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 149,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 157,
           "column": 88
         }
       ]
@@ -2699,7 +2790,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 20,
           "column": 33
         }
@@ -2725,24 +2816,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 26,
           "column": 14
-        }
-      ]
-    },
-    "63c59596323cbe7f": {
-      "source": "{label}: {percent}% left",
-      "kind": "template",
-      "placeholders": [
-        "label",
-        "percent"
-      ],
-      "refs": [
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 497,
-          "column": 13
         }
       ]
     },
@@ -2802,8 +2878,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 233,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 223,
           "column": 15
         }
       ]
@@ -2831,8 +2907,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 171,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 179,
           "column": 62
         }
       ]
@@ -2849,14 +2925,26 @@
         }
       ]
     },
+    "67ca4176bbe6c28d": {
+      "source": "Select a provider on the left.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 248,
+          "column": 19
+        }
+      ]
+    },
     "67df9ad18ed89a41": {
       "source": "Enter a model ID directly or load models returned by the API.",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 160,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 168,
           "column": 48
         }
       ]
@@ -2886,8 +2974,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 202,
+          "file": "features/providers/useModelTests.ts",
+          "line": 79,
           "column": 13
         }
       ]
@@ -2898,7 +2986,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 22,
           "column": 121
         }
@@ -2922,8 +3010,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 470,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 56,
           "column": 66
         }
       ]
@@ -2934,19 +3022,33 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 164,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 172,
           "column": 59
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 166,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 174,
           "column": 61
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 169,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 177,
           "column": 61
+        }
+      ]
+    },
+    "6ae3f6ed28cc3dcd": {
+      "source": "{percent}% left",
+      "kind": "template",
+      "placeholders": [
+        "percent"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 103,
+          "column": 45
         }
       ]
     },
@@ -2990,8 +3092,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 161,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 169,
           "column": 165
         }
       ]
@@ -3002,13 +3104,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 96,
-          "column": 7
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 30,
+          "column": 13
         },
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 309,
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 73,
           "column": 29
         }
       ]
@@ -3019,14 +3121,31 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 108,
+          "column": 35
+        },
+        {
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 20,
           "column": 66
         },
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 21,
           "column": 95
+        }
+      ]
+    },
+    "6cb2279dbfe762e0": {
+      "source": "Disable all",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 267,
+          "column": 115
         }
       ]
     },
@@ -3036,9 +3155,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 324,
-          "column": 136
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 191,
+          "column": 131
         }
       ]
     },
@@ -3048,8 +3167,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 355,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 104,
           "column": 121
         }
       ]
@@ -3062,8 +3181,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 400,
+          "file": "features/providers/modelEditing.ts",
+          "line": 30,
           "column": 89
         }
       ]
@@ -3074,8 +3193,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 347,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 101,
           "column": 11
         }
       ]
@@ -3088,7 +3207,7 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 45,
           "column": 7
         }
@@ -3106,32 +3225,20 @@
         }
       ]
     },
-    "6f191ff7f89eaaac": {
-      "source": "Initializing...",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 112,
-          "column": 53
-        }
-      ]
-    },
     "6f300fee169a15cf": {
       "source": "Thinking budget tokens",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 171,
-          "column": 27
+          "file": "features/providers/modelEditing.ts",
+          "line": 29,
+          "column": 207
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 399,
-          "column": 207
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 179,
+          "column": 27
         }
       ]
     },
@@ -3141,7 +3248,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 80,
           "column": 33
         }
@@ -3214,20 +3321,6 @@
         }
       ]
     },
-    "731489c6416909c2": {
-      "source": "{name} model management",
-      "kind": "template",
-      "placeholders": [
-        "name"
-      ],
-      "refs": [
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 402,
-          "column": 12
-        }
-      ]
-    },
     "743641a10389f4e1": {
       "source": "The model configuration changed. Refresh and try again.",
       "kind": "text",
@@ -3265,11 +3358,6 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 194,
-          "column": 64
-        },
-        {
           "file": "features/settings/SettingsPage.tsx",
           "line": 320,
           "column": 30
@@ -3302,6 +3390,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 137,
+          "column": 68
+        },
+        {
           "file": "features/settings/HeadroomSettingsCard.tsx",
           "line": 16,
           "column": 21
@@ -3331,8 +3424,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 530,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 134,
           "column": 100
         }
       ]
@@ -3343,8 +3436,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 359,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 207,
           "column": 27
         }
       ]
@@ -3379,7 +3472,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 40,
           "column": 101
         },
@@ -3396,8 +3489,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 241,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 231,
           "column": 100
         }
       ]
@@ -3408,14 +3501,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 368,
-          "column": 94
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 260,
+          "column": 96
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 430,
-          "column": 71
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 283,
+          "column": 79
         }
       ]
     },
@@ -3425,9 +3518,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 349,
-          "column": 744
+          "file": "features/providers/ModelEditorModal.tsx",
+          "line": 132,
+          "column": 296
         }
       ]
     },
@@ -3476,8 +3569,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 199,
+          "file": "features/providers/useModelTests.ts",
+          "line": 76,
           "column": 11
         }
       ]
@@ -3528,23 +3621,18 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 354,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 103,
           "column": 89
         },
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 22,
           "column": 88
         },
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 278,
-          "column": 86
-        },
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 525,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 129,
           "column": 82
         }
       ]
@@ -3555,8 +3643,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 308,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 69,
           "column": 32
         },
         {
@@ -3605,8 +3693,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 160,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 168,
           "column": 382
         }
       ]
@@ -3634,7 +3722,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 84,
           "column": 41
         }
@@ -3649,8 +3737,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 155,
+          "file": "features/providers/useModelTests.ts",
+          "line": 46,
           "column": 27
         }
       ]
@@ -3661,7 +3749,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 22,
           "column": 29
         }
@@ -3673,8 +3761,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 259,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 52,
           "column": 47
         }
       ]
@@ -3727,15 +3815,32 @@
         }
       ]
     },
+    "84a7e27178d91639": {
+      "source": "No accounts yet",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 288,
+          "column": 88
+        }
+      ]
+    },
     "84aebc69a1bf739a": {
       "source": "Configured",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 216,
-          "column": 25
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 154,
+          "column": 29
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 211,
+          "column": 122
         }
       ]
     },
@@ -3836,12 +3941,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 28,
           "column": 63
         },
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 29,
           "column": 92
         }
@@ -3882,9 +3987,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 112,
-          "column": 85
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 66,
+          "column": 48
         }
       ]
     },
@@ -3894,8 +3999,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 156,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 164,
           "column": 61
         }
       ]
@@ -3906,8 +4011,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 554,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 158,
           "column": 14
         }
       ]
@@ -3918,14 +4023,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 98,
-          "column": 9
-        },
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 272,
-          "column": 9
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 24,
+          "column": 7
         }
       ]
     },
@@ -3949,9 +4049,36 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 368,
-          "column": 38
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 260,
+          "column": 40
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 101,
+          "column": 14
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 149,
+          "column": 51
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 223,
+          "column": 60
+        }
+      ]
+    },
+    "8975c1059edd0bc4": {
+      "source": "Sign in with OAuth or import account credentials from an installed provider.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 266,
+          "column": 18
         }
       ]
     },
@@ -3977,9 +4104,9 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 424,
-          "column": 22
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 307,
+          "column": 16
         }
       ]
     },
@@ -3989,7 +4116,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 42,
           "column": 50
         }
@@ -4001,14 +4128,26 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 117,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 125,
           "column": 88
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 162,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 170,
           "column": 54
+        }
+      ]
+    },
+    "8a7c8b67fe8bde8b": {
+      "source": "Accounts",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 125,
+          "column": 46
         }
       ]
     },
@@ -4035,14 +4174,19 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 155,
-          "column": 82
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 128,
+          "column": 18
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 362,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 210,
           "column": 27
+        },
+        {
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 163,
+          "column": 82
         }
       ]
     },
@@ -4052,9 +4196,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 323,
-          "column": 105
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 193,
+          "column": 123
         }
       ]
     },
@@ -4066,9 +4210,31 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 210,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 40,
           "column": 22
+        }
+      ]
+    },
+    "8cd1856b03dd6844": {
+      "source": "Add provider",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 155,
+          "column": 7
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 170,
+          "column": 79
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 249,
+          "column": 87
         }
       ]
     },
@@ -4078,8 +4244,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 236,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 226,
           "column": 19
         }
       ]
@@ -4090,8 +4256,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 587,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 191,
           "column": 81
         }
       ]
@@ -4102,8 +4268,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 398,
+          "file": "features/providers/modelEditing.ts",
+          "line": 28,
           "column": 123
         }
       ]
@@ -4177,8 +4343,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 39,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 29,
           "column": 56
         }
       ]
@@ -4211,11 +4377,6 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 414,
-          "column": 75
-        },
-        {
           "file": "features/settings/ProxySettingsCard.tsx",
           "line": 72,
           "column": 133
@@ -4228,7 +4389,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 45,
           "column": 11
         }
@@ -4240,8 +4401,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 314,
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 78,
           "column": 21
         }
       ]
@@ -4264,8 +4425,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 241,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 231,
           "column": 144
         }
       ]
@@ -4276,9 +4437,26 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorPresetChips.tsx",
+          "file": "features/providers/ModelPresetChips.tsx",
           "line": 8,
           "column": 37
+        }
+      ]
+    },
+    "956596be5290c5f1": {
+      "source": "Remove provider configuration",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 139,
+          "column": 28
+        },
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 222,
+          "column": 14
         }
       ]
     },
@@ -4287,11 +4465,6 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 410,
-          "column": 106
-        },
         {
           "file": "shared/ui/ModelSelect.tsx",
           "line": 233,
@@ -4305,8 +4478,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 590,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 194,
           "column": 81
         }
       ]
@@ -4331,9 +4504,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 287,
-          "column": 23
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 51,
+          "column": 21
         }
       ]
     },
@@ -4366,6 +4539,18 @@
         }
       ]
     },
+    "98aae89721022769": {
+      "source": "API keys",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 127,
+          "column": 45
+        }
+      ]
+    },
     "991d5fc9b9522dd3": {
       "source": "Protocol type",
       "kind": "text",
@@ -4384,9 +4569,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 65,
-          "column": 14
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 172,
+          "column": 25
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 178,
+          "column": 56
         },
         {
           "file": "shell/CommandPalette.tsx",
@@ -4434,18 +4624,6 @@
         }
       ]
     },
-    "9a7dc42e2945d93a": {
-      "source": "No providers installed",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 123,
-          "column": 16
-        }
-      ]
-    },
     "9b1f8d1dd7de7257": {
       "source": "Local proxy",
       "kind": "text",
@@ -4478,8 +4656,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 222,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 52,
           "column": 26
         }
       ]
@@ -4514,7 +4692,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 36,
           "column": 14
         }
@@ -4532,20 +4710,37 @@
         }
       ]
     },
+    "9d3a016c749d9928": {
+      "source": "API key endpoint",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 273,
+          "column": 20
+        }
+      ]
+    },
     "9db70467e7c52134": {
       "source": "Custom Headers",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 175,
-          "column": 16
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 136,
+          "column": 18
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 406,
+          "file": "features/providers/modelEditing.ts",
+          "line": 36,
           "column": 36
+        },
+        {
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 183,
+          "column": 16
         }
       ]
     },
@@ -4555,8 +4750,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 340,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 94,
           "column": 21
         }
       ]
@@ -4567,8 +4762,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 136,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 126,
           "column": 10
         }
       ]
@@ -4605,7 +4800,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 31,
           "column": 14
         }
@@ -4617,8 +4812,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 407,
+          "file": "features/providers/modelEditing.ts",
+          "line": 37,
           "column": 89
         }
       ]
@@ -4670,14 +4865,9 @@
           "column": 15
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 160,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 168,
           "column": 25
-        },
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 414,
-          "column": 37
         }
       ]
     },
@@ -4701,9 +4891,9 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 298,
-          "column": 129
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 39,
+          "column": 13
         }
       ]
     },
@@ -4716,7 +4906,7 @@
       ],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 42,
           "column": 11
         }
@@ -4743,6 +4933,23 @@
           "file": "shared/ui/ModelSelect.tsx",
           "line": 120,
           "column": 34
+        }
+      ]
+    },
+    "a58531617619bd8e": {
+      "source": "Model order",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 167,
+          "column": 31
+        },
+        {
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 170,
+          "column": 18
         }
       ]
     },
@@ -4794,26 +5001,14 @@
         }
       ]
     },
-    "a95928ac667694f2": {
-      "source": "Provider runtime initialized",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 270,
-          "column": 7
-        }
-      ]
-    },
     "a99dd514fa4c9267": {
       "source": "Open authorization page",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 243,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 233,
           "column": 147
         }
       ]
@@ -4853,7 +5048,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 20,
           "column": 83
         }
@@ -4871,13 +5066,25 @@
         }
       ]
     },
+    "ab7efcd06c94ffa8": {
+      "source": "Drag models to change the order shown in Cursor's model picker.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 171,
+          "column": 16
+        }
+      ]
+    },
     "ac1175362b3e99c5": {
       "source": "Merge this setting, preserving your existing configuration. Changing only local User or workspace settings is not enough.",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 28,
           "column": 15
         }
@@ -4901,8 +5108,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 556,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 160,
           "column": 21
         }
       ]
@@ -4913,8 +5120,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 354,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 103,
           "column": 115
         }
       ]
@@ -4925,7 +5132,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 36,
           "column": 38
         }
@@ -4954,8 +5161,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 575,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 179,
           "column": 25
         }
       ]
@@ -4978,7 +5185,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 32,
           "column": 14
         }
@@ -4990,8 +5197,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 359,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 207,
           "column": 50
         }
       ]
@@ -5002,24 +5209,24 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 39,
           "column": 77
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 332,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 106,
+          "column": 72
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 152,
+          "column": 56
+        },
+        {
+          "file": "features/providers/ModelEditorModal.tsx",
+          "line": 126,
           "column": 40
-        },
-        {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 332,
-          "column": 139
-        },
-        {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 349,
-          "column": 80
         }
       ]
     },
@@ -5164,9 +5371,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 370,
-          "column": 52
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 187,
+          "column": 14
         }
       ]
     },
@@ -5176,14 +5383,26 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 178,
-          "column": 32
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 130,
+          "column": 45
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 142,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 132,
           "column": 22
+        }
+      ]
+    },
+    "b80a0363d27adf9f": {
+      "source": "No installed provider can add accounts right now.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 291,
+          "column": 50
         }
       ]
     },
@@ -5208,14 +5427,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 137,
-          "column": 10
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 123,
+          "column": 85
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 357,
-          "column": 49
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 200,
+          "column": 14
         }
       ]
     },
@@ -5227,7 +5446,7 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 34,
           "column": 7
         }
@@ -5239,8 +5458,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 161,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 169,
           "column": 50
         }
       ]
@@ -5275,8 +5494,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 130,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 120,
           "column": 22
         }
       ]
@@ -5287,7 +5506,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 21,
           "column": 31
         }
@@ -5299,8 +5518,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 129,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 119,
           "column": 21
         }
       ]
@@ -5323,8 +5542,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 475,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 61,
           "column": 110
         },
         {
@@ -5366,14 +5585,26 @@
         }
       ]
     },
+    "c3812fc4acb861d5": {
+      "source": "Remove",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 224,
+          "column": 21
+        }
+      ]
+    },
     "c3b059b298c57777": {
       "source": "Remote SSH guide",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 331,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 86,
           "column": 127
         }
       ]
@@ -5384,8 +5615,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 311,
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 75,
           "column": 30
         }
       ]
@@ -5423,9 +5654,9 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 221,
-          "column": 12
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 159,
+          "column": 14
         }
       ]
     },
@@ -5435,13 +5666,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 362,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 210,
           "column": 54
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 365,
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 213,
           "column": 42
         }
       ]
@@ -5458,26 +5689,14 @@
         }
       ]
     },
-    "c9f4d52ae1654811": {
-      "source": "Initialize provider runtime",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 277,
-          "column": 12
-        }
-      ]
-    },
     "ca17b54a12d3936f": {
       "source": "Authorization is required to install the certificate",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 355,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 104,
           "column": 47
         }
       ]
@@ -5503,13 +5722,13 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 157,
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 80,
           "column": 23
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 81,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 71,
           "column": 21
         }
       ]
@@ -5556,8 +5775,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 414,
+          "file": "features/providers/modelEditing.ts",
+          "line": 44,
           "column": 87
         }
       ]
@@ -5590,7 +5809,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 21,
           "column": 141
         }
@@ -5602,9 +5821,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 326,
-          "column": 199
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 169,
+          "column": 30
         }
       ]
     },
@@ -5625,6 +5844,26 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 254,
+          "column": 126
+        },
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 257,
+          "column": 80
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 145,
+          "column": 70
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 148,
+          "column": 22
+        },
         {
           "file": "shell/CommandPalette.tsx",
           "line": 98,
@@ -5653,7 +5892,7 @@
           "column": 25
         },
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 58,
           "column": 86
         }
@@ -5667,8 +5906,8 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 164,
+          "file": "features/providers/useModelTests.ts",
+          "line": 55,
           "column": 27
         }
       ]
@@ -5703,8 +5942,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 50,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 31,
           "column": 43
         }
       ]
@@ -5715,13 +5954,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 148,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 156,
           "column": 25
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 148,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 156,
           "column": 61
         }
       ]
@@ -5732,9 +5971,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 376,
-          "column": 38
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 269,
+          "column": 40
         }
       ]
     },
@@ -5744,9 +5983,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 100,
-          "column": 11
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 26,
+          "column": 9
         }
       ]
     },
@@ -5756,9 +5995,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 246,
-          "column": 32
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 166,
+          "column": 30
         }
       ]
     },
@@ -5807,8 +6046,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 160,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 168,
           "column": 363
         }
       ]
@@ -5825,32 +6064,20 @@
         }
       ]
     },
-    "d5e21b47460555b0": {
-      "source": "Initialize the CA first",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 332,
-          "column": 57
-        }
-      ]
-    },
     "d6b460c54c610315": {
       "source": "Anthropic extra parameters",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 188,
-          "column": 16
+          "file": "features/providers/modelEditing.ts",
+          "line": 26,
+          "column": 73
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 396,
-          "column": 73
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 196,
+          "column": 16
         }
       ]
     },
@@ -5867,7 +6094,7 @@
       ],
       "refs": [
         {
-          "file": "features/models/CursorModelTestResult.tsx",
+          "file": "features/providers/ModelTestResult.tsx",
           "line": 37,
           "column": 7
         }
@@ -5920,18 +6147,6 @@
           "file": "features/home/metrics/HomeMetrics.tsx",
           "line": 81,
           "column": 5
-        }
-      ]
-    },
-    "daeaf38abf628351": {
-      "source": "Manage accounts",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 240,
-          "column": 20
         }
       ]
     },
@@ -6042,9 +6257,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 216,
-          "column": 43
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 154,
+          "column": 47
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 211,
+          "column": 140
         }
       ]
     },
@@ -6066,13 +6286,13 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 457,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 43,
           "column": 32
         },
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 457,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 43,
           "column": 68
         }
       ]
@@ -6083,9 +6303,23 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 325,
-          "column": 124
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 192,
+          "column": 123
+        }
+      ]
+    },
+    "df1f59ec64211a48": {
+      "source": "Remove all accounts and configuration for {name}? Installed provider files are kept.",
+      "kind": "template",
+      "placeholders": [
+        "name"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 231,
+          "column": 11
         }
       ]
     },
@@ -6107,8 +6341,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 139,
+          "file": "features/providers/ProviderAddPanel.tsx",
+          "line": 129,
           "column": 10
         }
       ]
@@ -6122,6 +6356,18 @@
           "file": "features/settings/AppLifecycleSettingsCard.tsx",
           "line": 85,
           "column": 48
+        }
+      ]
+    },
+    "e1d36c3adeeba964": {
+      "source": "Choose a provider",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 157,
+          "column": 9
         }
       ]
     },
@@ -6145,18 +6391,18 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 164,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 172,
           "column": 153
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 166,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 174,
           "column": 155
         },
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 169,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 177,
           "column": 155
         }
       ]
@@ -6191,24 +6437,48 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 173,
-          "column": 96
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 175,
+          "column": 106
         },
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 287,
-          "column": 102
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 189,
+          "column": 21
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 370,
-          "column": 111
-        },
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 505,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 90,
           "column": 68
+        }
+      ]
+    },
+    "e2ec76e1f3c1cb66": {
+      "source": "No providers or models yet.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 184,
+          "column": 57
+        }
+      ]
+    },
+    "e3a015e00c72285f": {
+      "source": "Multiple server addresses",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 102,
+          "column": 56
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 129,
+          "column": 29
         }
       ]
     },
@@ -6237,8 +6507,8 @@
       ],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 79,
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 159,
           "column": 11
         }
       ]
@@ -6249,8 +6519,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 158,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 166,
           "column": 40
         }
       ]
@@ -6261,8 +6531,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 50,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 31,
           "column": 83
         }
       ]
@@ -6273,9 +6543,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 326,
-          "column": 223
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 108,
+          "column": 53
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 169,
+          "column": 54
         }
       ]
     },
@@ -6285,8 +6560,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 162,
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 170,
           "column": 142
         }
       ]
@@ -6309,14 +6584,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 182,
-          "column": 16
+          "file": "features/providers/modelEditing.ts",
+          "line": 24,
+          "column": 67
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 394,
-          "column": 67
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 190,
+          "column": 16
         }
       ]
     },
@@ -6375,9 +6650,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 106,
-          "column": 9
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 42,
+          "column": 13
         }
       ]
     },
@@ -6413,8 +6688,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 354,
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 103,
           "column": 53
         }
       ]
@@ -6468,14 +6743,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelEditor.tsx",
-          "line": 164,
-          "column": 25
+          "file": "features/providers/modelEditing.ts",
+          "line": 29,
+          "column": 34
         },
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 399,
-          "column": 34
+          "file": "features/providers/ModelEditor.tsx",
+          "line": 172,
+          "column": 25
         }
       ]
     },
@@ -6497,9 +6772,21 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 112,
-          "column": 115
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 66,
+          "column": 78
+        }
+      ]
+    },
+    "ee34e5be422d4a95": {
+      "source": "Provider runtime is not initialized",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderRuntimeBanner.tsx",
+          "line": 31,
+          "column": 13
         }
       ]
     },
@@ -6509,9 +6796,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 234,
-          "column": 18
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 165,
+          "column": 117
         }
       ]
     },
@@ -6520,16 +6807,6 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
-        {
-          "file": "features/providers/ProviderManagementPage.tsx",
-          "line": 82,
-          "column": 20
-        },
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 406,
-          "column": 18
-        },
         {
           "file": "shared/ui/ConfirmDialog.tsx",
           "line": 4,
@@ -6543,14 +6820,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 266,
-          "column": 113
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 177,
+          "column": 93
         },
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 266,
-          "column": 142
+          "file": "features/cursor/CursorPage.tsx",
+          "line": 177,
+          "column": 122
         }
       ]
     },
@@ -6583,6 +6860,18 @@
         }
       ]
     },
+    "f062cd8ee0315097": {
+      "source": "Add a signed-in provider account or an API-key endpoint to get started.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 247,
+          "column": 19
+        }
+      ]
+    },
     "f145149881c27f78": {
       "source": "Clear detailed records?",
       "kind": "text",
@@ -6601,7 +6890,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/LegacyModelImport.tsx",
+          "file": "features/cursor/LegacyModelImport.tsx",
           "line": 65,
           "column": 20
         }
@@ -6649,9 +6938,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 349,
-          "column": 688
+          "file": "features/providers/ModelEditorModal.tsx",
+          "line": 132,
+          "column": 240
         },
         {
           "file": "shared/ui/Modal.tsx",
@@ -6678,7 +6967,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/RemoteSshHelp.tsx",
+          "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 43,
           "column": 11
         }
@@ -6702,7 +6991,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorGates.tsx",
+          "file": "features/cursor/CursorGates.tsx",
           "line": 40,
           "column": 119
         }
@@ -6714,24 +7003,19 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/models/CursorModelCards.tsx",
+          "file": "features/providers/AccountProviderDetail.tsx",
+          "line": 303,
+          "column": 86
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
           "line": 170,
-          "column": 86
+          "column": 73
         },
         {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 193,
-          "column": 86
-        },
-        {
-          "file": "features/models/CursorModelCards.tsx",
-          "line": 284,
-          "column": 92
-        },
-        {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 349,
-          "column": 725
+          "file": "features/providers/ModelEditorModal.tsx",
+          "line": 132,
+          "column": 277
         }
       ]
     },
@@ -6770,18 +7054,6 @@
           "file": "features/home/metrics/HomeMetrics.tsx",
           "line": 163,
           "column": 46
-        }
-      ]
-    },
-    "fbae290f791177b8": {
-      "source": "Model management",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 374,
-          "column": 101
         }
       ]
     },
@@ -6827,8 +7099,8 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/providers/ProviderResourcePanels.tsx",
-          "line": 521,
+          "file": "features/providers/ProviderResourceList.tsx",
+          "line": 125,
           "column": 115
         }
       ]
@@ -6854,11 +7126,6 @@
           "file": "features/calls/CallTable.tsx",
           "line": 181,
           "column": 15
-        },
-        {
-          "file": "features/models/CursorSettingsPage.tsx",
-          "line": 322,
-          "column": 98
         }
       ]
     },

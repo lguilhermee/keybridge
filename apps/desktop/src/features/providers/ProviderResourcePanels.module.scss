@@ -62,20 +62,6 @@
   }
 }
 
-.fileButton {
-  align-self: flex-start;
-  padding: 5px 10px;
-  color: var(--oa-text-on-accent);
-  background: var(--oa-accent);
-  border-radius: 4px;
-  font-size: type.$font-size-xs;
-  cursor: pointer;
-
-  input {
-    display: none;
-  }
-}
-
 .toolbar {
   flex-wrap: wrap;
 
@@ -85,54 +71,45 @@
   }
 }
 
-.modelToolbar {
-  display: flex;
-  gap: 8px;
-}
-
-.modelTableWrap {
-  min-width: min(520px, 70vw);
-}
-
-.modelTable {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--oa-border);
-    text-align: left;
-  }
-
-  th:last-child,
-  td:last-child {
-    width: 72px;
-    text-align: center;
-  }
-
-  td:first-child {
-    min-width: 0;
-  }
-
-  .modelName {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  td span {
-    color: var(--oa-text-secondary);
-    font-size: type.$font-size-xs;
-  }
-}
-
 .resourceSection {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.metricLabel {
+  color: var(--oa-text-secondary);
+}
+
+.metricValue {
+  color: var(--oa-text);
+  font-family: var(--oa-number-font);
+}
+
+.metricReset {
+  color: var(--oa-text-muted);
+}
+
+.quotaBar {
+  width: 72px;
+  height: 5px;
+  overflow: hidden;
+  background: var(--oa-surface-sunken);
+  border-radius: 999px;
+}
+
+.quotaFill {
+  display: block;
+  height: 100%;
+  background: var(--oa-accent);
+  border-radius: 999px;
 }
 
 .resourceList {
@@ -141,7 +118,6 @@
   gap: 8px;
 }
 
-.channelRow,
 .resourceRow {
   display: flex;
   align-items: center;

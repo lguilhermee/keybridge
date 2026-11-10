@@ -9,10 +9,10 @@ import { JsonEditor } from "../../shared/ui/JsonEditor";
 import { Combobox, Select, type ComboboxHandle } from "../../shared/ui/Select";
 import { Switch } from "../../shared/ui/Switch";
 import { claudeIcon, openAiIcon } from "../../shared/ui/icons";
-import { CursorPresetChips } from "./CursorPresetChips";
-import styles from "./CursorSettings.module.scss";
+import { ModelPresetChips } from "./ModelPresetChips";
+import styles from "./ModelEditor.module.scss";
 
-export type CursorModelDraft = {
+export type ModelDraft = {
   providerId: string;
   model: ModelInput;
   openAIExtraParamsText: string;
@@ -20,42 +20,50 @@ export type CursorModelDraft = {
   anthropicExtraParamsText: string;
 };
 
-export const emptyCursorModelDraft = (): CursorModelDraft => ({
-  providerId: "builtin/openai",
-  model: {
-    sort_order: 0,
-    display_name: "",
-    group_name: null,
-    type: "openai",
-    base_url: "",
-    use_full_url: false,
-    api_key: "",
-    tooltip_data: "",
-    model_id: "",
-    reasoning_effort: null,
-    openai_endpoint: "/v1/responses",
-    openai_extra_params_enabled: false,
-    openai_extra_params: {},
-    custom_headers_enabled: false,
-    custom_headers: {},
-    anthropic_extra_params_enabled: false,
-    anthropic_extra_params: {},
-    context_window_tokens: null,
-    max_completion_tokens: null,
-    anthropic_max_tokens: null,
-    anthropic_thinking_effort: "xhigh",
-    thinking_budget_tokens: null,
-  },
-  openAIExtraParamsText: "{}",
-  customHeadersText: defaultCustomHeadersText,
-  anthropicExtraParamsText: "{}",
-});
+/** Optional prefill used when adding a model inside an existing API-key group. */
+export type ModelDraftSeed = Partial<ModelInput> & { customHeadersText?: string };
 
-export function CursorModelEditor({ draft, modelOptions, discovering, onChange, onDiscover }: {
-  draft: CursorModelDraft;
+export const emptyModelDraft = (seed?: ModelDraftSeed): ModelDraft => {
+  const { customHeadersText, ...modelSeed } = seed ?? {};
+  const customHeaders = modelSeed.custom_headers;
+  return {
+    providerId: `builtin/${modelSeed.type ?? "openai"}`,
+    model: {
+      sort_order: 0,
+      display_name: "",
+      group_name: null,
+      type: "openai",
+      base_url: "",
+      use_full_url: false,
+      api_key: "",
+      tooltip_data: "",
+      model_id: "",
+      reasoning_effort: null,
+      openai_endpoint: "/v1/responses",
+      openai_extra_params_enabled: false,
+      openai_extra_params: {},
+      custom_headers_enabled: false,
+      anthropic_extra_params_enabled: false,
+      anthropic_extra_params: {},
+      context_window_tokens: null,
+      max_completion_tokens: null,
+      anthropic_max_tokens: null,
+      anthropic_thinking_effort: "xhigh",
+      thinking_budget_tokens: null,
+      ...modelSeed,
+      custom_headers: customHeaders ? { ...customHeaders } : {},
+    },
+    openAIExtraParamsText: "{}",
+    customHeadersText: customHeadersText ?? (customHeaders && modelSeed.custom_headers_enabled ? JSON.stringify(customHeaders, null, 2) : defaultCustomHeadersText),
+    anthropicExtraParamsText: "{}",
+  };
+};
+
+export function ModelEditor({ draft, modelOptions, discovering, onChange, onDiscover }: {
+  draft: ModelDraft;
   modelOptions: string[];
   discovering: boolean;
-  onChange: (draft: CursorModelDraft) => void;
+  onChange: (draft: ModelDraft) => void;
   onDiscover: () => Promise<boolean>;
 }) {
   const modelCombobox = useRef<ComboboxHandle>(null);
@@ -143,7 +151,7 @@ export function CursorModelEditor({ draft, modelOptions, discovering, onChange, 
   };
 
   return <div className={styles.editor}>
-    <CursorPresetChips type={draft.model.type} baseUrl={draft.model.base_url} onPick={applyPreset} />
+    <ModelPresetChips type={draft.model.type} baseUrl={draft.model.base_url} onPick={applyPreset} />
     <div className={styles.grid}>
       <FormField label={t("Model type")}><Select ariaLabel={t("Model type")} value={draft.providerId} options={providerOptions} onChange={setProvider} /></FormField>
       {draft.model.type === "openai" && <FormField label={t("Request protocol")} hint={t("Only determines the request and response format; it does not change the request URL.")}> <Select ariaLabel={t("Request protocol")} value={draft.model.openai_endpoint} options={[

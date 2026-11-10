@@ -1,9 +1,9 @@
 import type { ModelType } from "../../shared/api";
 import { modelPresets, presetEndpoint, trimTrailingSlash, type ModelPreset } from "../../shared/utils/modelPresets";
-import styles from "./CursorPresetChips.module.scss";
+import styles from "./ModelPresetChips.module.scss";
 
 /** Common provider presets: clicking fills the endpoint for the current protocol type and the default model. */
-export function CursorPresetChips({ type, baseUrl, onPick }: { type: ModelType; baseUrl: string; onPick: (preset: ModelPreset) => void }) {
+export function ModelPresetChips({ type, baseUrl, onPick }: { type: ModelType; baseUrl: string; onPick: (preset: ModelPreset) => void }) {
   return <div className={styles.wrap}>
     <span className={styles.label}>{t("Presets")}</span>
     <div className={styles.chips}>

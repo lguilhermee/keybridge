@@ -7,9 +7,9 @@ import { AppFrame } from "./shell/AppFrame";
 import { AppLayout } from "./shell/AppLayout";
 import { CallsPage } from "./features/calls/CallsPage";
 import { CallDetailsPage } from "./features/calls/CallDetailsPage";
-import { CursorSettingsPage } from "./features/models/CursorSettingsPage";
+import { CursorPage } from "./features/cursor/CursorPage";
 import { HomePage } from "./features/home/HomePage";
-import { ProviderManagementPage } from "./features/providers/ProviderManagementPage";
+import { ProvidersPage } from "./features/providers/ProvidersPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { defaultSettingsSection } from "./features/settings/sections";
 import { useAppStore } from "./shared/store/appStore";
@@ -27,8 +27,8 @@ export function App() {
             <Route element={<AppLayout />}>
               <Route index element={<HomePage />} />
               <Route path="calls" element={<CallsPage />} />
-              <Route path="providers" element={<ProviderManagementPage />} />
-              <Route path="cursor" element={<CursorSettingsPage />} />
+              <Route path="providers" element={<ProvidersPage />} />
+              <Route path="cursor" element={<CursorPage />} />
               <Route path="settings" element={<Navigate to={`/settings/${defaultSettingsSection}`} replace />} />
               <Route path="settings/:section" element={<SettingsPage />} />
             </Route>

@@ -99,7 +99,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       label: model.display_name,
       keywords: model.model_id,
       icon: model.type === "anthropic" ? claudeIcon : openAiIcon,
-      run: go("/cursor"),
+      run: go("/providers"),
     })),
     ...providerModels.map((model) => ({
       id: `provider-model-${model.id}`,

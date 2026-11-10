@@ -2,15 +2,15 @@ import type { ModelConnectivityResult } from "../../shared/api";
 import { Icon } from "../../shared/ui/Icon";
 import { TooltipTrigger } from "../../shared/ui/TooltipTrigger";
 import { informationOutlineIcon } from "../../shared/ui/icons";
-import styles from "./CursorModelTestResult.module.scss";
+import styles from "./ModelTestResult.module.scss";
 
-export type CursorModelTestState =
+export type ModelTestState =
   | { status: "success"; result: ModelConnectivityResult }
   | { status: "error"; error: string }
   | { status: "cancelled" };
 
-export function CursorModelTestResult({ state, testing = false, compact = false }: {
-  state?: CursorModelTestState;
+export function ModelTestResult({ state, testing = false, compact = false }: {
+  state?: ModelTestState;
   testing?: boolean;
   /** Compact badge form used inside list rows: renders nothing while untested; details go into a tooltip. */
   compact?: boolean;
