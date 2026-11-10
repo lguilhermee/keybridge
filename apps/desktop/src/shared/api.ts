@@ -500,15 +500,14 @@ export const api = {
   testModel: (hash: string, testId: string, signal?: AbortSignal) => request<ModelConnectivityResult>(`/models/${encodeURIComponent(hash)}/test/${encodeURIComponent(testId)}`, { method: "POST", signal }),
   cancelModelTest: (hash: string, testId: string) => request<void>(`/models/${encodeURIComponent(hash)}/test/${encodeURIComponent(testId)}`, { method: "DELETE" }),
   overview: (filter?: { startMs: number; endMs: number; modelHashes?: string[]; bucketMs?: number }) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ utc_offset_minutes: String(-new Date().getTimezoneOffset()) });
     if (filter) {
       params.set("start_ms", String(filter.startMs));
       params.set("end_ms", String(filter.endMs));
       if (filter.modelHashes?.length) params.set("model_hashes", JSON.stringify(filter.modelHashes));
       if (filter.bucketMs) params.set("bucket_ms", String(filter.bucketMs));
     }
-    const query = params.toString();
-    return request<Overview>(`/overview${query ? `?${query}` : ""}`);
+    return request<Overview>(`/overview?${params.toString()}`);
   },
   cursorHarness: () => request<CursorHarnessStatus>("/harness/cursor/status"),
   initializeCursorCa: () => request<CursorHarnessStatus>("/harness/cursor/ca/initialize", { method: "POST" }),

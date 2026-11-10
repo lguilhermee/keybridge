@@ -16,20 +16,26 @@ import { useI18n } from "../../i18n/store";
 type TimeRange = { startMs: number; endMs: number };
 
 const CALENDAR_DAYS = 365;
-const DAY_MS = 24 * 60 * 60_000;
+
+function localDateKey(value: Date) {
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${value.getFullYear()}-${month}-${day}`;
+}
 
 function contributionCalendarData(overview: Overview, endMs: number) {
   const tokensByDate = new Map<string, number>();
   for (const bucket of overview.token_usage_series) {
-    const date = new Date(bucket.bucket_start_ms).toISOString().slice(0, 10);
+    const date = localDateKey(new Date(bucket.bucket_start_ms));
     const tokens = bucket.input_tokens + bucket.cache_read_tokens + bucket.cache_write_tokens + bucket.output_tokens;
     tokensByDate.set(date, (tokensByDate.get(date) ?? 0) + tokens);
   }
   const lastDay = new Date(Math.max(0, endMs - 1));
-  lastDay.setUTCHours(0, 0, 0, 0);
-  const firstDayMs = lastDay.getTime() - (CALENDAR_DAYS - 1) * DAY_MS;
+  lastDay.setHours(0, 0, 0, 0);
   return Array.from({ length: CALENDAR_DAYS }, (_, offset) => {
-    const date = new Date(firstDayMs + offset * DAY_MS).toISOString().slice(0, 10);
+    const day = new Date(lastDay);
+    day.setDate(lastDay.getDate() - (CALENDAR_DAYS - 1) + offset);
+    const date = localDateKey(day);
     return { date, tokens: tokensByDate.get(date) ?? 0 };
   });
 }
