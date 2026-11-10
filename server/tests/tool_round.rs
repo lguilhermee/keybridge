@@ -24,7 +24,7 @@ use cursor_server::{
         MessageContent, ModelConfigInput, ModelType, ProjectedContent, ToolCall,
         OPENAI_CHAT_ENDPOINT,
     },
-    provider::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent},
     run::consume_model_cycle,
 };
 use prost::Message;
@@ -147,7 +147,7 @@ async fn dynamic_mcp_uses_one_definition_for_stream_ui_exec_and_result() {
         ..Default::default()
     };
     let definitions = BTreeMap::from([(definition.name.clone(), definition.clone())]);
-    let event = cursor_server::provider::ModelEvent::ToolCallStart {
+    let event = cursor_server::protocol::ModelEvent::ToolCallStart {
         index: 0,
         call_id: "browser-call".into(),
         name: definition.name.clone(),

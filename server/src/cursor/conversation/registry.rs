@@ -9,7 +9,7 @@ use crate::{
         checkpoint::SubagentCompletions, prompting::PromptCompiler, transport::TransportHandle,
     },
     model::{ConversationId, RunId},
-    provider::Provider,
+    protocol::Provider,
     run::{CommandResult, RunHandle},
     search::WebCache,
     store::Store,

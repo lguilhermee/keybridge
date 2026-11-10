@@ -17,7 +17,7 @@ use serde_json::{json, Value};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    model::ModelInvocation, plugin::PluginRegistry, provider::Provider, store::Store, Error,
+    model::ModelInvocation, provider::PluginRegistry, protocol::Provider, store::Store, Error,
 };
 
 use self::protocol::Protocol;

@@ -6,7 +6,7 @@ use crate::{
         ContentPart, ModelInvocation, ModelLatency, ProjectedContent, ProjectedMessage,
         ProviderReplayState, Role, Usage,
     },
-    provider::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent},
     Error, Result,
 };
 

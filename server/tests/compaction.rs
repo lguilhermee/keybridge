@@ -16,7 +16,7 @@ use cursor_server::{
         ContentPart, ConversationId, MessageContent, ModelConfigInput, ModelType, Origin,
         ProjectedContent, Role, Usage, OPENAI_CHAT_ENDPOINT,
     },
-    provider::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent},
 };
 use prost::Message;
 

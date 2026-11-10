@@ -20,8 +20,8 @@ use cursor_server::{
         OPENAI_RESPONSES_ENDPOINT,
     },
     network::NetworkClients,
-    plugin::{PluginRegistry, PluginRuntime},
-    provider::{FinishReason, ModelEvent, ProviderRouter},
+    provider::{PluginRegistry, PluginRuntime},
+    protocol::{FinishReason, ModelEvent, ProviderRouter},
     store::ExternalApiSettings,
 };
 use serde_json::{json, Value};

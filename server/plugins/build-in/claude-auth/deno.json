@@ -1,9 +1,9 @@
 {
   "imports": {
-    "cursor-byok:plugin": "../../../src/plugin/sdk/plugin.ts",
-    "cursor-byok:provider": "../../../src/plugin/sdk/provider.ts",
-    "cursor-byok:model": "../../../src/plugin/sdk/model.ts",
-    "cursor-byok:resource": "../../../src/plugin/sdk/resource.ts"
+    "cursor-byok:plugin": "../../../src/provider/sdk/plugin.ts",
+    "cursor-byok:provider": "../../../src/provider/sdk/provider.ts",
+    "cursor-byok:model": "../../../src/provider/sdk/model.ts",
+    "cursor-byok:resource": "../../../src/provider/sdk/resource.ts"
   },
   "fmt": {
     "lineWidth": 100,

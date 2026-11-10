@@ -20,8 +20,8 @@ use crate::{
         ModelRequest, ModelSpec, ModelType, Overview, ProjectedContent, ProjectedMessage,
         PromptSpec, ProviderType, Role,
     },
-    plugin::{PluginDescriptor, PluginRegistry, PluginRuntime, PluginRuntimeStatus},
-    provider::{is_valid_response_event, ModelEvent, Provider},
+    provider::{PluginDescriptor, PluginRegistry, PluginRuntime, PluginRuntimeStatus},
+    protocol::{is_valid_response_event, ModelEvent, Provider},
     store::{
         CommitSettings, DesktopSettings, ExternalApiSettings, PortSettings, ProxySettings,
         ProxySettingsInput, StatisticsStorage, Store, TabSettings, TokenPricingSettings,
@@ -192,7 +192,7 @@ impl ControlService {
         plugin_id: &str,
         resource_type: &str,
         method_id: &str,
-    ) -> Result<crate::plugin::OAuthBeginResponse> {
+    ) -> Result<crate::provider::OAuthBeginResponse> {
         self.plugins
             .oauth_begin(plugin_id, resource_type, method_id)
             .await
@@ -201,7 +201,7 @@ impl ControlService {
     pub async fn plugin_oauth_poll(
         &self,
         session_id: &str,
-    ) -> Result<crate::plugin::OAuthPollResponse> {
+    ) -> Result<crate::provider::OAuthPollResponse> {
         self.plugins.oauth_poll(session_id).await
     }
 
@@ -210,7 +210,7 @@ impl ControlService {
         plugin_id: &str,
         resource_type: &str,
         files: serde_json::Value,
-    ) -> Result<crate::plugin::ImportResponse> {
+    ) -> Result<crate::provider::ImportResponse> {
         self.plugins
             .import_resources(plugin_id, resource_type, files)
             .await
@@ -380,7 +380,7 @@ impl ControlService {
         const TEST_PROMPT: &str = "Output the numbers 1 through 120 separated by a single space. No commas, no newlines, no explanation.";
 
         let mut model = ModelSpec::new(model_hash);
-        if model_hash.starts_with(crate::plugin::ADAPTER_ID_PREFIX) {
+        if model_hash.starts_with(crate::provider::ADAPTER_ID_PREFIX) {
             let descriptor = self.plugins.model_descriptor(model_hash).await?;
             model.display_name = Some(descriptor.display_name);
             model.max_output_tokens = Some(descriptor.max_output_tokens.unwrap_or(65_536));

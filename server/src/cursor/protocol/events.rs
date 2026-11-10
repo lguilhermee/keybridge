@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, time::Duration};
 use crate::{
     cursor::{protocol::proto::agent::v1 as pb, tools::codec},
     model::Usage,
-    provider::ModelEvent,
+    protocol::ModelEvent,
     Result,
 };
 

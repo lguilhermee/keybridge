@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use serde_json::{json, Value};
 
-use crate::{plugin::PluginRegistry, store::Store, Result};
+use crate::{provider::PluginRegistry, store::Store, Result};
 
 #[derive(Clone)]
 pub(super) struct ListedModel {

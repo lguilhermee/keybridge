@@ -14,7 +14,7 @@ use cursor_server::{
         TransportCommand, TransportHandle, TransportRegistry,
     },
     model::{ContentPart, MessageContent, ProjectedContent, Role},
-    provider::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent},
 };
 use prost::Message;
 

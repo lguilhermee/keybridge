@@ -239,7 +239,7 @@ async fn bidi_handler(
     let trace = registry.trace(&decoded.request_id);
     let local = if let Some(model_id) = decoded.model_id() {
         // Plugin model IDs only make sense locally and are never forwarded to the official Cursor upstream.
-        if model_id.starts_with(crate::plugin::ADAPTER_ID_PREFIX)
+        if model_id.starts_with(crate::provider::ADAPTER_ID_PREFIX)
             || registry.store().model(model_id).await?.is_some()
         {
             tracing::info!(

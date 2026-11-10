@@ -13,7 +13,7 @@ use cursor_server::{
         TransportCommand, TransportRegistry,
     },
     model::ToolRoundId,
-    provider::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent},
     store::{BlobEdge, BlobId},
 };
 use prost::Message;

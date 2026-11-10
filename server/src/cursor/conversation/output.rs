@@ -305,7 +305,7 @@ impl ConversationOutput {
                         } else {
                             presentation.text_delta(&delta);
                             self.emit_model_event(
-                                crate::provider::ModelEvent::TextDelta(delta),
+                                crate::protocol::ModelEvent::TextDelta(delta),
                                 "",
                             )?;
                         }
@@ -316,7 +316,7 @@ impl ConversationOutput {
                         if !self.context.compacting {
                             presentation.thinking_delta(&delta);
                             self.emit_model_event(
-                                crate::provider::ModelEvent::ThinkingDelta(delta),
+                                crate::protocol::ModelEvent::ThinkingDelta(delta),
                                 "",
                             )?;
                         }
@@ -343,7 +343,7 @@ impl ConversationOutput {
                             argument_error: None,
                         };
                         self.emit_model_event(
-                            crate::provider::ModelEvent::ToolCallStart {
+                            crate::protocol::ModelEvent::ToolCallStart {
                                 index,
                                 call_id,
                                 name: name.clone(),
@@ -985,7 +985,7 @@ impl ConversationOutput {
 
     fn emit_model_event(
         &self,
-        event: crate::provider::ModelEvent,
+        event: crate::protocol::ModelEvent,
         model_call_id: &str,
     ) -> Result<()> {
         if let Some(message) =

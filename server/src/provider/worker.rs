@@ -24,7 +24,7 @@ use super::{
     definition::{file_url, PluginDefinitionLoader},
     protocol::{HostMessage, WorkerMessage},
 };
-use crate::{provider::CallRecorder, store::Store, Error, Result};
+use crate::{protocol::CallRecorder, store::Store, Error, Result};
 
 const INVOCATION_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 const MAX_NETWORK_RESPONSE_BYTES: u64 = 16 * 1024 * 1024;
@@ -949,7 +949,7 @@ mod tests {
     }
     use crate::{
         model::{NewLlmCall, ProviderType},
-        provider::{CallRecorder, FinishReason},
+        protocol::{CallRecorder, FinishReason},
         store::Store,
     };
 

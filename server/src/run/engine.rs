@@ -9,7 +9,7 @@ use crate::{
         CanonicalMessage, MessageContent, Origin, PreparedRun, Role, RunAction, ToolRoundAssistant,
         ToolRoundId, Usage,
     },
-    provider::Provider,
+    protocol::Provider,
     store::{ContextUsageAnchor, RunStatus, Store},
 };
 

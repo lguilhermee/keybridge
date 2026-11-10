@@ -11,7 +11,7 @@ use crate::{
     api::cursor::proxy::{self, CursorProxy},
     cursor::{protocol::proto::agent::v1 as agent, transport::TransportRegistry},
     model::{format_token_count, parse_token_count, ModelConfig},
-    plugin::PluginModelDescriptor,
+    provider::PluginModelDescriptor,
     Error, Result,
 };
 

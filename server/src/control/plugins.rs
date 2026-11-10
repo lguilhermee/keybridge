@@ -6,7 +6,7 @@ use axum::{
 };
 
 use crate::{
-    plugin::{
+    provider::{
         ImportResponse, OAuthBeginResponse, OAuthPollResponse, PluginDescriptor,
         PluginRuntimeStatus,
     },

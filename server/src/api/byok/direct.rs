@@ -16,7 +16,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use crate::{
     model::{ModelConfig, NewLlmCall, Usage},
     network::NetworkClients,
-    provider::{custom_headers, CallRecorder, FinishReason},
+    protocol::{custom_headers, CallRecorder, FinishReason},
     store::Store,
     Error, Result,
 };
@@ -310,7 +310,7 @@ impl NativeSummary {
                 .or_else(|| value.get("usage")),
         }
         .filter(|usage| !usage.is_null())
-        .map(|usage| crate::provider::native_usage(protocol.provider_type(), usage));
+        .map(|usage| crate::protocol::native_usage(protocol.provider_type(), usage));
         if let Some(usage) = usage {
             let current = self.usage.get_or_insert_default();
             for (target, incoming) in [

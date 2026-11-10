@@ -9,7 +9,7 @@ pub mod headroom;
 pub mod local_app;
 pub mod model;
 pub mod network;
-pub mod plugin;
+pub mod protocol;
 pub mod provider;
 pub mod run;
 pub mod search;

@@ -110,8 +110,8 @@ files; accounts and enabled-model settings are stored separately and survive it.
 From the repository root, with Deno available:
 
 ```powershell
-deno test --no-config --no-lock --import-map server/src/plugin/sdk/import-map.json server/plugins/build-in/devin-auth/devin_test.ts
-cargo test -p cursor-server --lib plugin::
+deno test --no-config --no-lock --import-map server/src/provider/sdk/import-map.json server/plugins/build-in/devin-auth/devin_test.ts
+cargo test -p cursor-server --lib provider::
 ```
 
 Offline tests do not establish that an account can use every catalog model.

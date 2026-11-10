@@ -25,8 +25,8 @@ use super::{
 };
 use crate::{
     model::ModelInvocation,
-    provider::ProviderStream,
-    provider::{CallRecorder, ModelEvent},
+    protocol::ProviderStream,
+    protocol::{CallRecorder, ModelEvent},
     store::Store,
     Error, Result,
 };
@@ -1515,7 +1515,7 @@ fn quota_tier(private_data: &serde_json::Value, now_ms: i64) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plugin::state::ResourceState;
+    use crate::provider::state::ResourceState;
 
     fn record(id: &str, state: ResourceState, private_data: serde_json::Value) -> ResourceRecord {
         ResourceRecord {

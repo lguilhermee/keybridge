@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     config::{ProviderConfig, ProviderKind},
     model::{ModelInvocation, ModelLatency, NewLlmCall, ProviderType},
-    plugin::{PluginRegistry, ADAPTER_ID_PREFIX},
+    provider::{PluginRegistry, ADAPTER_ID_PREFIX},
     store::Store,
     Error, Result,
 };

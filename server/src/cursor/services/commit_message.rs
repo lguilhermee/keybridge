@@ -30,8 +30,8 @@ use crate::{
         ContentPart, ModelInvocation, ModelRequest, ModelSpec, ProjectedContent, ProjectedMessage,
         PromptSpec, Role,
     },
-    plugin::ADAPTER_ID_PREFIX,
-    provider::{ModelEvent, Provider},
+    provider::ADAPTER_ID_PREFIX,
+    protocol::{ModelEvent, Provider},
     store::CommitSettings,
     Error, Result,
 };

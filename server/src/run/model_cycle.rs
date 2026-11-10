@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     model::{normalize_tool_name, ProviderReplayState, ToolCall, Usage},
-    provider::{FinishReason, ModelEvent, ProviderStream},
+    protocol::{FinishReason, ModelEvent, ProviderStream},
 };
 
 use super::{RunEvent, RunFailure};
@@ -449,7 +449,7 @@ mod tests {
     use super::*;
     use crate::{
         model::Usage,
-        provider::{FinishReason, ModelEvent},
+        protocol::{FinishReason, ModelEvent},
     };
     use tokio_stream::wrappers::ReceiverStream;
 

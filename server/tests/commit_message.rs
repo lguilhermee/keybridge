@@ -19,7 +19,7 @@ use cursor_server::{
     },
     model::{ContentPart, ModelConfigInput, ModelType, ProjectedContent, OPENAI_CHAT_ENDPOINT},
     network::NetworkClients,
-    provider::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent},
     store::{CommitPromptLocale, CommitSettings, DEFAULT_COMMIT_PROMPT_ZH_CN},
 };
 use tower::ServiceExt;

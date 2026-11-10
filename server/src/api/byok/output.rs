@@ -16,7 +16,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     model::Usage,
-    provider::{FinishReason, ModelEvent, ProviderStream},
+    protocol::{FinishReason, ModelEvent, ProviderStream},
     Error, Result,
 };
 

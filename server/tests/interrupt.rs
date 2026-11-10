@@ -15,7 +15,7 @@ use cursor_server::{
         CanonicalMessage, ConversationId, ModelConfigInput, ModelSpec, ModelType, Origin,
         PreparedRun, PromptSpec, Role, RunAction, RunId, RunKind, Usage, OPENAI_CHAT_ENDPOINT,
     },
-    provider::{FinishReason, ModelEvent},
+    protocol::{FinishReason, ModelEvent},
     run::{self, CommandResult, CommitCause, RunEngine, RunEvent, RunOutcome, RunPhase},
     store::RunStatus,
 };

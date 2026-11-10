@@ -8,7 +8,7 @@ use std::{
 
 use cursor_server::{
     model::{ModelInvocation, ModelRequest},
-    provider::{ModelEvent, Provider, ProviderStream},
+    protocol::{ModelEvent, Provider, ProviderStream},
     Error,
 };
 use futures_util::{stream, StreamExt};
