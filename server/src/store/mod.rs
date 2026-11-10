@@ -1,6 +1,7 @@
 //! Exposes the local persistence interface.
 mod cas;
 mod checkpoints;
+mod combos;
 mod conversations;
 mod cursor_traces;
 mod input_anchors;
@@ -10,6 +11,7 @@ mod messages;
 mod migrations;
 mod models;
 mod overview;
+mod refusal_fallbacks;
 mod runs;
 mod settings;
 mod sqlite;

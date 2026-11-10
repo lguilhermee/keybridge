@@ -119,7 +119,10 @@ async fn connecting_points_codex_at_keybridge_and_every_exit_restores_the_user_c
 
     // Without a model Codex would refuse the empty catalog, so it gets its own config back.
     let model_hash = store.models().await.unwrap()[0].model_hash.clone();
-    store.delete_model(&model_hash).await.unwrap();
+    store
+        .delete_models(std::slice::from_ref(&model_hash))
+        .await
+        .unwrap();
     harness.refresh().await;
     if state(&harness).await["configured_models"] == 0 {
         assert_eq!(fs::read_to_string(&config_path).unwrap(), USER_CONFIG);

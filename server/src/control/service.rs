@@ -15,10 +15,10 @@ use url::Url;
 use crate::{
     local_app::{CodexHarness, CursorHarness},
     model::{
-        ContentPart, CursorRunTraceArtifact, CursorRunTraceSummary, LlmCallRequest,
-        LlmCallResponseChunk, LlmCallSummary, ModelConfig, ModelConfigInput, ModelInvocation,
-        ModelRequest, ModelSpec, ModelType, Overview, ProjectedContent, ProjectedMessage,
-        PromptSpec, ProtocolType, Role,
+        ComboConfig, ComboInput, ContentPart, CursorRunTraceArtifact, CursorRunTraceSummary,
+        LlmCallRequest, LlmCallResponseChunk, LlmCallSummary, ModelConfig, ModelConfigInput,
+        ModelInvocation, ModelRequest, ModelSpec, ModelType, Overview, ProjectedContent,
+        ProjectedMessage, PromptSpec, ProtocolType, RefusalFallback, RefusalFallbackInput, Role,
     },
     protocol::{is_valid_response_event, ModelEvent, Protocol},
     provider::{ProviderDescriptor, ProviderRegistry, ProviderRuntime, ProviderRuntimeStatus},
@@ -363,9 +363,67 @@ impl ControlService {
             .await
     }
 
-    pub async fn delete_model(&self, model_hash: &str) -> Result<()> {
-        self.codex_follows(self.store.delete_model(model_hash).await)
+    pub async fn delete_models(&self, model_hashes: &[String]) -> Result<()> {
+        self.codex_follows(self.store.delete_models(model_hashes).await)
             .await
+    }
+
+    pub async fn combos(&self) -> Result<Vec<ComboConfig>> {
+        self.store.combos().await
+    }
+
+    pub async fn create_combo(&self, input: &ComboInput) -> Result<ComboConfig> {
+        self.ensure_models_exist(&input.members, "combo member")
+            .await?;
+        self.store.create_combo(input).await
+    }
+
+    pub async fn update_combo(&self, combo_id: &str, input: &ComboInput) -> Result<ComboConfig> {
+        self.ensure_models_exist(&input.members, "combo member")
+            .await?;
+        self.store.update_combo(combo_id, input).await
+    }
+
+    pub async fn delete_combo(&self, combo_id: &str) -> Result<()> {
+        self.store.delete_combo(combo_id).await
+    }
+
+    pub async fn refusal_fallbacks(&self) -> Result<Vec<RefusalFallback>> {
+        self.store.refusal_fallbacks().await
+    }
+
+    pub async fn set_refusal_fallback(&self, input: &RefusalFallbackInput) -> Result<()> {
+        if let Some(fallback_model_id) = &input.fallback_model_id {
+            let models = [
+                input.model_id.trim().to_owned(),
+                fallback_model_id.trim().to_owned(),
+            ];
+            self.ensure_models_exist(&models, "refusal fallback model")
+                .await?;
+        }
+        self.store.set_refusal_fallback(input).await
+    }
+
+    /// Rejects ids that are neither an API-key model hash nor a configured provider model.
+    async fn ensure_models_exist(&self, model_ids: &[String], what: &str) -> Result<()> {
+        let provider_models = self
+            .providers
+            .configured_models()
+            .await
+            .into_iter()
+            .map(|model| model.id)
+            .collect::<BTreeSet<_>>();
+        for member in model_ids {
+            let exists = if member.starts_with(crate::provider::ADAPTER_ID_PREFIX) {
+                provider_models.contains(member)
+            } else {
+                self.store.model(member).await?.is_some()
+            };
+            if !exists {
+                return Err(Error::Config(format!("unknown {what}: {member}")));
+            }
+        }
+        Ok(())
     }
 
     pub async fn update_model(

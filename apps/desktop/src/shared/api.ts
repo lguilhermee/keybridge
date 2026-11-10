@@ -55,6 +55,38 @@ export interface ModelInput {
   thinking_budget_tokens: number | null;
 }
 
+/** How a combo picks the member that answers first; later members are fallbacks. */
+export type ComboStrategy = "ordered" | "loop" | "random";
+
+/** One Cursor model name backed by several configured models (API-key model hashes or provider model ids). */
+export interface Combo {
+  combo_id: string;
+  sort_order: number;
+  display_name: string;
+  strategy: ComboStrategy;
+  members: string[];
+  created_at_ms: number;
+  updated_at_ms: number;
+}
+
+/** When `model_id` refuses, that request and the rest of its run go to `fallback_model_id`. */
+export interface RefusalFallback {
+  model_id: string;
+  fallback_model_id: string;
+}
+
+export interface RefusalFallbackInput {
+  model_id: string;
+  /** `null` turns the fallback off. */
+  fallback_model_id: string | null;
+}
+
+export interface ComboInput {
+  display_name: string;
+  strategy: ComboStrategy;
+  members: string[];
+}
+
 export interface ModelDiscoveryInput {
   type: ModelType;
   base_url: string;
@@ -576,7 +608,13 @@ export const api = {
   previewV0049Models: () => request<LegacyModelImportPreview>("/models/import-v0049"),
   importV0049Models: () => request<LegacyModelImportResult>("/models/import-v0049", { method: "POST" }),
   updateModel: (hash: string, model: ModelInput) => request<Model>(`/models/${hash}`, { method: "PUT", body: JSON.stringify(model) }),
-  deleteModel: (hash: string) => request<void>(`/models/${hash}`, { method: "DELETE" }),
+  deleteModels: (modelHashes: string[]) => request<void>("/models", { method: "DELETE", body: JSON.stringify({ model_hashes: modelHashes }) }),
+  combos: () => request<Combo[]>("/combos"),
+  refusalFallbacks: () => request<RefusalFallback[]>("/refusal-fallbacks"),
+  setRefusalFallback: (input: RefusalFallbackInput) => request<void>("/refusal-fallbacks", { method: "PUT", body: JSON.stringify(input) }),
+  createCombo: (combo: ComboInput) => request<Combo>("/combos", { method: "POST", body: JSON.stringify(combo) }),
+  updateCombo: (comboId: string, combo: ComboInput) => request<Combo>(`/combos/${encodeURIComponent(comboId)}`, { method: "PUT", body: JSON.stringify(combo) }),
+  deleteCombo: (comboId: string) => request<void>(`/combos/${encodeURIComponent(comboId)}`, { method: "DELETE" }),
   testModel: (hash: string, testId: string, signal?: AbortSignal) => request<ModelConnectivityResult>(`/models/${encodeURIComponent(hash)}/test/${encodeURIComponent(testId)}`, { method: "POST", signal }),
   cancelModelTest: (hash: string, testId: string) => request<void>(`/models/${encodeURIComponent(hash)}/test/${encodeURIComponent(testId)}`, { method: "DELETE" }),
   overview: (filter?: { startMs: number; endMs: number; modelHashes?: string[]; bucketMs?: number }) => {

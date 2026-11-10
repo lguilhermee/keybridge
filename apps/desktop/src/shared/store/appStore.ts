@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { api, type CodexHarnessStatus, type CursorHarnessStatus, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
+import { api, type CodexHarnessStatus, type Combo, type ComboInput, type CursorHarnessStatus, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
 import { applyTheme, isThemeId, type ThemeId } from "../theme/theme";
 
 export const DEFAULT_TOKEN_PRICING: TokenPricingSettings = {
@@ -12,6 +12,7 @@ export const DEFAULT_TOKEN_PRICING: TokenPricingSettings = {
 
 export type AppSnapshot = {
   models: Model[];
+  combos: Combo[];
   overview: Overview;
   detailed: boolean;
   ports: PortSettings;
@@ -34,6 +35,7 @@ const savedTheme = (): ThemeId => {
 
 let snapshot: AppSnapshot = {
   models: [],
+  combos: [],
   overview: {
     metrics: {
       llm_calls: 0,
@@ -91,8 +93,9 @@ export const appStore = {
   async refresh() {
     update({ busy: true, error: null });
     try {
-      const [models, overview, settings, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers] = await Promise.all([
+      const [models, combos, overview, settings, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers] = await Promise.all([
         api.models(),
+        api.combos(),
         api.overview(),
         api.observability(),
         api.ports(),
@@ -102,7 +105,7 @@ export const appStore = {
         api.providerRuntime(),
         api.providers(),
       ]);
-      update({ models, overview, detailed: settings.detailed, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers });
+      update({ models, combos, overview, detailed: settings.detailed, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers });
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
     } finally {
@@ -110,11 +113,38 @@ export const appStore = {
     }
   },
 
-  async deleteModel(modelHash: string) {
-    await perform(async () => {
-      await api.deleteModel(modelHash);
+  async deleteModels(modelHashes: string[]) {
+    update({ cursorBusy: true, error: null });
+    try {
+      await api.deleteModels(modelHashes);
       await appStore.refresh();
-    });
+      return true;
+    } catch (cause) {
+      update({ error: cause instanceof Error ? cause.message : String(cause) });
+      return false;
+    } finally { update({ cursorBusy: false }); }
+  },
+  async saveCombo(comboId: string | null, combo: ComboInput) {
+    update({ cursorBusy: true, error: null });
+    try {
+      const saved = comboId ? await api.updateCombo(comboId, combo) : await api.createCombo(combo);
+      await appStore.refresh();
+      return saved;
+    } catch (cause) {
+      update({ error: cause instanceof Error ? cause.message : String(cause) });
+      return null;
+    } finally { update({ cursorBusy: false }); }
+  },
+  async deleteCombo(comboId: string) {
+    update({ cursorBusy: true, error: null });
+    try {
+      await api.deleteCombo(comboId);
+      await appStore.refresh();
+      return true;
+    } catch (cause) {
+      update({ error: cause instanceof Error ? cause.message : String(cause) });
+      return false;
+    } finally { update({ cursorBusy: false }); }
   },
 
   async initializeCursorCa() {

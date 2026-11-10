@@ -1,4 +1,6 @@
 //! Publishes the configured model catalog to Cursor.
+use std::collections::HashMap;
+
 use axum::{
     body::{Body, Bytes},
     extract::{Extension, State},
@@ -10,7 +12,7 @@ use prost::Message;
 use crate::{
     api::cursor::proxy::{self, CursorProxy},
     cursor::{protocol::proto::agent::v1 as agent, transport::TransportRegistry},
-    model::{format_token_count, parse_token_count, ModelConfig},
+    model::{format_token_count, parse_token_count, ComboConfig, ModelConfig},
     provider::ProviderModelDescriptor,
     Error, Result,
 };
@@ -252,21 +254,37 @@ pub async fn available_models(
     request: Request<Body>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
+    let combos = registry.store().combos().await?;
     let provider_models = match registry.providers() {
         Some(providers) => providers.configured_models().await,
         None => Vec::new(),
     };
     tracing::info!(
         model_count = models.len(),
+        combo_count = combos.len(),
         provider_model_count = provider_models.len(),
         "appending BYOK models to Cursor AvailableModels"
     );
-    let mut available_models = models.iter().map(available_model).collect::<Vec<_>>();
+    let member_names = models
+        .iter()
+        .map(|model| (model.model_hash.as_str(), model.display_name.as_str()))
+        .chain(
+            provider_models
+                .iter()
+                .map(|model| (model.id.as_str(), model.display_name.as_str())),
+        )
+        .collect::<HashMap<_, _>>();
+    let mut available_models = combos
+        .iter()
+        .map(|combo| available_combo(combo, &member_names))
+        .collect::<Vec<_>>();
+    available_models.extend(models.iter().map(available_model));
     available_models.extend(provider_models.iter().map(available_provider_model));
     let local = AvailableModelsAddition {
-        model_names: models
+        model_names: combos
             .iter()
-            .map(|model| model.model_hash.clone())
+            .map(|combo| combo.combo_id.clone())
+            .chain(models.iter().map(|model| model.model_hash.clone()))
             .chain(provider_models.iter().map(|model| model.id.clone()))
             .collect(),
         models: available_models,
@@ -287,19 +305,22 @@ pub async fn usable_models(
     request: Request<Body>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
+    let combos = registry.store().combos().await?;
     let provider_models = match registry.providers() {
         Some(providers) => providers.configured_models().await,
         None => Vec::new(),
     };
     tracing::info!(
         model_count = models.len(),
+        combo_count = combos.len(),
         provider_model_count = provider_models.len(),
         "appending BYOK models to Cursor GetUsableModels"
     );
     let local = UsableModelsAddition {
-        models: models
+        models: combos
             .iter()
-            .map(usable_model)
+            .map(usable_combo)
+            .chain(models.iter().map(usable_model))
             .chain(provider_models.iter().map(usable_provider_model))
             .collect(),
     }
@@ -733,6 +754,76 @@ fn available_provider_model(model: &ProviderModelDescriptor) -> AvailableModel {
             variant: 1,
             dismiss_on_selection: false,
         }],
+    }
+}
+
+/// One picker entry for a combo. Context and effort apply to whichever member answers.
+fn available_combo(combo: &ComboConfig, member_names: &HashMap<&str, &str>) -> AvailableModel {
+    let members = combo
+        .members
+        .iter()
+        .map(|member| member_names.get(member.as_str()).copied().unwrap_or(member))
+        .collect::<Vec<_>>()
+        .join(" → ");
+    let tooltip = TooltipData {
+        markdown_content: Some(format!("Combo ({}): {members}", combo.strategy.as_str())),
+    };
+    let contexts = context_options(None);
+    let variants = model_variants(
+        &combo.combo_id,
+        &combo.display_name,
+        &tooltip,
+        &contexts,
+        true,
+    );
+    let legacy_slugs = variants
+        .iter()
+        .filter_map(|variant| variant.legacy_slug.clone())
+        .collect();
+    AvailableModel {
+        name: combo.combo_id.clone(),
+        default_on: true,
+        supports_agent: Some(true),
+        degradation_status: Some(0),
+        tooltip_data: Some(tooltip.clone()),
+        supports_thinking: Some(true),
+        supports_images: Some(true),
+        supports_max_mode: Some(false),
+        client_display_name: Some(combo.display_name.clone()),
+        server_model_name: Some(combo.combo_id.clone()),
+        supports_non_max_mode: Some(true),
+        tooltip_data_for_max_mode: Some(tooltip),
+        is_recommended_for_background_composer: Some(false),
+        supports_plan_mode: Some(true),
+        inputbox_short_model_name: Some(combo.display_name.clone()),
+        supports_sandboxing: Some(true),
+        supports_cmd_k: Some(false),
+        parameter_definitions: model_parameters(&contexts, true),
+        variants,
+        legacy_slugs,
+        named_model_section_index: Some(1),
+        vendor_name: Some("cursor".into()),
+        vendor: Some(AvailableModelVendor {
+            id: 6,
+            display_name: "Cursor".into(),
+        }),
+        model_picker_badges: vec![ModelPickerBadge {
+            label: "Combo".into(),
+            variant: 1,
+            dismiss_on_selection: false,
+        }],
+    }
+}
+
+fn usable_combo(combo: &ComboConfig) -> agent::ModelDetails {
+    agent::ModelDetails {
+        model_id: combo.combo_id.clone(),
+        display_model_id: combo.combo_id.clone(),
+        display_name: combo.display_name.clone(),
+        display_name_short: combo.display_name.clone(),
+        thinking_details: Some(agent::ThinkingDetails::default()),
+        credentials: Some(cli_local_model_credentials()),
+        ..Default::default()
     }
 }
 

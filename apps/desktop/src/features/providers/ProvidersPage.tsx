@@ -1,18 +1,19 @@
 import type { IconifyIcon } from "@iconify/react/offline";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { configuredProviderModels, type Model, type ProviderDescriptor } from "../../shared/api";
+import { configuredProviderModels, type Combo, type Model, type ProviderDescriptor } from "../../shared/api";
 import { appStore, useAppStore } from "../../shared/store/appStore";
 import { Button } from "../../shared/ui/Button";
 import controls from "../../shared/ui/Controls.module.scss";
 import { Icon } from "../../shared/ui/Icon";
 import { Modal } from "../../shared/ui/Modal";
-import { claudeIcon, flatColorOrganizationIcon, openAiIcon, providerIcon } from "../../shared/ui/icons";
+import { claudeIcon, flatColorComboChartIcon, flatColorOrganizationIcon, openAiIcon, providerIcon } from "../../shared/ui/icons";
 import { VirtualList } from "../../shared/virtual/VirtualList";
 import { PageActions } from "../../shell/PageActions";
 import { PageContent } from "../../shell/layout/PageContent";
 import { modelProviderName } from "../../shared/utils/modelProvider";
 import { AccountProviderDetail } from "./AccountProviderDetail";
 import { ApiKeyProviderDetail } from "./ApiKeyProviderDetail";
+import { ComboDetail } from "./ComboDetail";
 import { ProviderAddPanel } from "./ProviderAddPanel";
 import { ProviderRuntimeBanner } from "./ProviderRuntimeBanner";
 import { ModelEditorModal } from "./ModelEditorModal";
@@ -32,12 +33,14 @@ type ApiGroup = {
 
 type Selection =
   | { kind: "account"; providerId: string }
-  | { kind: "apikey"; groupKey: string };
+  | { kind: "apikey"; groupKey: string }
+  | { kind: "combo"; comboId: string | null };
 
 type ListItem =
   | { kind: "header"; id: string; label: string }
   | { kind: "account"; id: string; provider: ProviderDescriptor }
-  | { kind: "apikey"; id: string; group: ApiGroup };
+  | { kind: "apikey"; id: string; group: ApiGroup }
+  | { kind: "combo"; id: string; combo: Combo };
 
 type AddFlow =
   | { step: "kind" }
@@ -67,7 +70,7 @@ function typeGroup(model: Model) {
 }
 
 export function ProvidersPage() {
-  const { models, providers, providerRuntime, cursorBusy } = useAppStore();
+  const { models, combos, providers, providerRuntime, cursorBusy } = useAppStore();
   const tests = useModelTests();
   const [starting, setStarting] = useState(false);
   const cancelRequested = useRef(false);
@@ -106,14 +109,16 @@ export function ProvidersPage() {
   // Keep the selection pointed at a real entry; fall back to the first account, then the first API-key group.
   useEffect(() => {
     setSelected((current) => {
+      if (current?.kind === "combo" && (current.comboId === null || combos.some((combo) => combo.combo_id === current.comboId))) return current;
       if (current?.kind === "account" && providers.some((provider) => provider.id === current.providerId)) return current;
       if (current?.kind === "apikey" && groups.some((group) => group.key === current.groupKey)) return current;
       if (current?.kind === "apikey" && groups[0]) return { kind: "apikey", groupKey: groups[0].key };
       if (providers[0]) return { kind: "account", providerId: providers[0].id };
       if (groups[0]) return { kind: "apikey", groupKey: groups[0].key };
+      if (combos[0]) return { kind: "combo", comboId: combos[0].combo_id };
       return null;
     });
-  }, [providers, groups]);
+  }, [providers, groups, combos]);
 
   const providerModels = configuredProviderModels(providers);
   const testTargets = [
@@ -126,13 +131,17 @@ export function ProvidersPage() {
     ...providers.map((provider): ListItem => ({ kind: "account", id: `account:${provider.id}`, provider })),
     { kind: "header", id: "apikeys", label: t("API keys") },
     ...groups.map((group): ListItem => ({ kind: "apikey", id: `apikey:${group.key}`, group })),
+    { kind: "header", id: "combos", label: t("Combos") },
+    ...combos.map((combo): ListItem => ({ kind: "combo", id: `combo:${combo.combo_id}`, combo })),
   ];
 
   const isSelected = (item: ListItem) =>
     (item.kind === "account" && selected?.kind === "account" && selected.providerId === item.provider.id)
-    || (item.kind === "apikey" && selected?.kind === "apikey" && selected.groupKey === item.group.key);
+    || (item.kind === "apikey" && selected?.kind === "apikey" && selected.groupKey === item.group.key)
+    || (item.kind === "combo" && selected?.kind === "combo" && selected.comboId === item.combo.combo_id);
 
   const selectedProvider = selected?.kind === "account" ? providers.find((provider) => provider.id === selected.providerId) ?? null : null;
+  const selectedCombo = selected?.kind === "combo" ? combos.find((combo) => combo.combo_id === selected.comboId) ?? null : null;
   const selectedGroup = selected?.kind === "apikey" ? groups.find((group) => group.key === selected.groupKey) ?? null : null;
 
   const addableProviders = providers.filter((provider) => provider.resources.some((resource) => resource.add.length > 0 || resource.import !== null));
@@ -192,7 +201,23 @@ export function ProvidersPage() {
                       <button type="button" aria-pressed={apiGrouping === "type"} onClick={() => setApiGrouping("type")}>{t("By type")}</button>
                       <button type="button" aria-pressed={apiGrouping === "flat"} onClick={() => setApiGrouping("flat")}>{t("Default layout")}</button>
                     </span>}
+                    {item.id === "combos" && <span className={styles.groupingToggle}>
+                      <button type="button" aria-pressed={selected?.kind === "combo" && selected.comboId === null} onClick={() => setSelected({ kind: "combo", comboId: null })}>{t("Add combo")}</button>
+                    </span>}
                   </div>;
+                }
+                if (item.kind === "combo") {
+                  return <button
+                    type="button"
+                    className={`${styles.listItem} ${isSelected(item) ? styles.listItemActive : ""}`}
+                    onClick={() => setSelected({ kind: "combo", comboId: item.combo.combo_id })}
+                  >
+                    <Icon className={styles.listItemIconGlyph} icon={flatColorComboChartIcon} />
+                    <span className={styles.listItemText}>
+                      <span className={styles.listItemName}>{item.combo.display_name}</span>
+                      <span className={styles.listItemMeta}>{t("{count} models", { count: item.combo.members.length })}</span>
+                    </span>
+                  </button>;
                 }
                 if (item.kind === "account") {
                   const provider = item.provider;
@@ -241,7 +266,12 @@ export function ProvidersPage() {
               onEditModel={(model) => setEditor({ editing: model })}
               onAddModel={() => openAddModel(selectedGroup)}
             />}
-            {!selectedProvider && !selectedGroup && <div className={styles.emptyDetail}>
+            {selected?.kind === "combo" && (selected.comboId === null || selectedCombo) && <ComboDetail
+              key={selectedCombo?.combo_id ?? "new"}
+              combo={selectedCombo}
+              onSaved={(combo) => setSelected({ kind: "combo", comboId: combo.combo_id })}
+            />}
+            {!selectedProvider && !selectedGroup && selected?.kind !== "combo" && <div className={styles.emptyDetail}>
               <strong>{t("Nothing to show yet")}</strong>
               <span>{providers.length === 0 && models.length === 0
                 ? t("Add a signed-in provider account or an API-key endpoint to get started.")
@@ -272,6 +302,14 @@ export function ProvidersPage() {
           <Icon icon={openAiIcon} size="1.6em" />
           <strong>{t("API key endpoint")}</strong>
           <span>{t("Configure an OpenAI or Anthropic compatible endpoint with an API key.")}</span>
+        </button>
+        <button type="button" className={styles.kindOption} onClick={() => {
+          setAddFlow(null);
+          setSelected({ kind: "combo", comboId: null });
+        }}>
+          <Icon icon={flatColorComboChartIcon} size="1.6em" />
+          <strong>{t("Model combo")}</strong>
+          <span>{t("One Cursor model name backed by several models, with automatic fallback when one fails or refuses.")}</span>
         </button>
       </div>}
       {addFlow?.step === "account" && <div className={styles.providerPickList}>

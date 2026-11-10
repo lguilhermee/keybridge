@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import cursorIconUrl from "../../../shared/assets/icons/cursor.svg";
-import { api, providerText, type CommitSettingsView, type HeadroomStatus, type TabMode, type TabSettings } from "../../../shared/api";
+import { api, type CommitSettingsView, type HeadroomStatus, type TabMode, type TabSettings } from "../../../shared/api";
 import { commitPromptLocale } from "../../../i18n/runtime";
 import { useI18n } from "../../../i18n/store";
 import { useAppStore } from "../../../shared/store/appStore";
@@ -12,11 +12,11 @@ import { ModelSelect, type ModelSelectOption } from "../../../shared/ui/ModelSel
 import { Select } from "../../../shared/ui/Select";
 import { Switch } from "../../../shared/ui/Switch";
 import { TextInput } from "../../../shared/ui/FormControls";
-import { claudeIcon, flatColorOrganizationIcon, openAiIcon } from "../../../shared/ui/icons";
 import controls from "../../../shared/ui/Controls.module.scss";
-import { modelProviderName } from "../../../shared/utils/modelProvider";
+import { configuredModelOptions } from "../../../shared/utils/configuredModelOptions";
 import type { VirtualPageSection } from "../../../shell/layout/VirtualPage";
 import { SectionCard } from "../SectionCard";
+import { RefusalFallbackGroup } from "./RefusalFallbackGroup";
 import styles from "./sections.module.scss";
 
 function errorText(cause: unknown) {
@@ -27,6 +27,7 @@ export function cursorGroups(): VirtualPageSection[] {
   return [
     { key: "tab", estimatedHeight: 120, content: <TabGroup /> },
     { key: "commit", estimatedHeight: 110, content: <CommitGroup /> },
+    { key: "refusal", estimatedHeight: 160, content: <RefusalFallbackGroup /> },
     { key: "headroom", estimatedHeight: 210, content: <HeadroomGroup /> },
   ];
 }
@@ -174,36 +175,11 @@ function CommitGroup() {
   }, [locale, message]);
 
   const modelOptions = useMemo(() => {
-    const options: ModelSelectOption[] = [{ value: "", label: t("Direct"), group: "Cursor" }];
-    const seen = new Set<string>();
-    for (const model of models) {
-      seen.add(model.model_hash);
-      options.push({
-        value: model.model_hash,
-        label: model.display_name && model.display_name !== model.model_id
-          ? `${model.display_name} (${model.model_id})`
-          : model.display_name || model.model_id,
-        group: modelProviderName(model),
-        icon: model.type === "anthropic" ? claudeIcon : openAiIcon,
-      });
-    }
-    for (const provider of providers) {
-      for (const channel of provider.channels) {
-        if (!channel.configured) continue;
-        const group = providerText(channel.displayName, locale) || provider.name;
-        for (const model of channel.models.filter((model) => model.enabled)) {
-          seen.add(model.id);
-          options.push({
-            value: model.id,
-            label: model.displayName,
-            group,
-            iconSrc: model.icon || undefined,
-            icon: model.icon ? undefined : flatColorOrganizationIcon,
-          });
-        }
-      }
-    }
-    if (view?.model_id && !seen.has(view.model_id)) {
+    const options: ModelSelectOption[] = [
+      { value: "", label: t("Direct"), group: "Cursor" },
+      ...configuredModelOptions(models, providers, locale),
+    ];
+    if (view?.model_id && !options.some((option) => option.value === view.model_id)) {
       options.push({ value: view.model_id, label: view.model_id, group: "Cursor" });
     }
     return options;

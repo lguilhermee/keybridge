@@ -26,6 +26,11 @@ pub struct ModelOrder {
     pub model_hashes: Vec<String>,
 }
 
+#[derive(Deserialize)]
+pub struct ModelDeletion {
+    pub model_hashes: Vec<String>,
+}
+
 pub async fn list(State(service): State<ControlService>) -> Result<Json<Vec<ModelConfig>>> {
     Ok(Json(service.models().await?))
 }
@@ -49,9 +54,9 @@ pub async fn reorder(
 
 pub async fn remove(
     State(service): State<ControlService>,
-    Path(model_hash): Path<String>,
+    Json(input): Json<ModelDeletion>,
 ) -> Result<StatusCode> {
-    service.delete_model(&model_hash).await?;
+    service.delete_models(&input.model_hashes).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

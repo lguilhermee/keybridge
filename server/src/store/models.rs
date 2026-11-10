@@ -120,6 +120,14 @@ impl Store {
                 .bind(&current.model_hash)
                 .execute(&mut *transaction)
                 .await?;
+            super::combos::rename_combo_member(&mut transaction, &current.model_hash, &next_hash)
+                .await?;
+            super::refusal_fallbacks::rename_refusal_model(
+                &mut transaction,
+                &current.model_hash,
+                &next_hash,
+            )
+            .await?;
         }
         let result = sqlx::query(
             r#"UPDATE model_configs SET
@@ -169,19 +177,27 @@ impl Store {
             .expect("updated model must exist"))
     }
 
-    pub async fn delete_model(&self, hash: &str) -> Result<()> {
+    /// Deletes models atomically: every hash must exist, or nothing is deleted.
+    pub async fn delete_models(&self, hashes: &[String]) -> Result<()> {
+        if hashes.is_empty() {
+            return Err(Error::Config("at least one model required".into()));
+        }
         let _write = self.writes.lock().await;
         let mut transaction = self.pool.begin().await?;
-        sqlx::query("UPDATE llm_calls SET model_hash = NULL WHERE model_hash = ?")
-            .bind(hash)
-            .execute(&mut *transaction)
-            .await?;
-        let result = sqlx::query("DELETE FROM model_configs WHERE model_hash = ?")
-            .bind(hash)
-            .execute(&mut *transaction)
-            .await?;
-        if result.rows_affected() != 1 {
-            return Err(Error::RunNotFound(format!("model {hash}")));
+        for hash in hashes {
+            sqlx::query("UPDATE llm_calls SET model_hash = NULL WHERE model_hash = ?")
+                .bind(hash)
+                .execute(&mut *transaction)
+                .await?;
+            super::combos::remove_combo_member(&mut transaction, hash).await?;
+            super::refusal_fallbacks::remove_refusal_model(&mut transaction, hash).await?;
+            let result = sqlx::query("DELETE FROM model_configs WHERE model_hash = ?")
+                .bind(hash)
+                .execute(&mut *transaction)
+                .await?;
+            if result.rows_affected() != 1 {
+                return Err(Error::RunNotFound(format!("model {hash}")));
+            }
         }
         transaction.commit().await?;
         Ok(())

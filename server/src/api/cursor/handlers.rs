@@ -240,6 +240,7 @@ async fn bidi_handler(
     let local = if let Some(model_id) = decoded.model_id() {
         // Provider model IDs only make sense locally and are never forwarded to the official Cursor upstream.
         if model_id.starts_with(crate::provider::ADAPTER_ID_PREFIX)
+            || crate::model::is_combo_id(model_id)
             || registry.store().model(model_id).await?.is_some()
         {
             tracing::info!(

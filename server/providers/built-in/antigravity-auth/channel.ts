@@ -69,6 +69,8 @@ function resolveAntigravityModel(modelId: string): string {
 
   // 1. If explicit tier is already specified in the model ID, pass it directly!
   if (
+    lower.startsWith("gemini-4-carbon-") ||
+    lower.startsWith("gemini-4-argon-") ||
     lower.startsWith("gemini-3.8-flash-") ||
     lower.startsWith("gemini-3.7-flash-") ||
     lower.startsWith("gemini-3.6-flash-") ||
@@ -121,8 +123,16 @@ function resolveAntigravityModel(modelId: string): string {
   if (lower === "gemini-3-pro-high") {
     return "gemini-pro-agent";
   }
+  if (lower === "gemini-4-carbon" || lower === "gemini-4-argon") {
+    return `${lower}-medium`;
+  }
 
   return raw;
+}
+
+/** Antigravity clients send Gemini 4 Argon requests without toolConfig. */
+function isGeminiArgonModel(model: string): boolean {
+  return /^gemini-4-argon(?:-(?:low|medium|high))?$/.test(model.toLowerCase());
 }
 
 function randomHex(length = 8): string {
@@ -332,7 +342,7 @@ async function streamCloudCode(
     ]
     : undefined;
 
-  const toolConfig = tools
+  const toolConfig = tools && !isGeminiArgonModel(actualModel)
     ? {
       functionCallingConfig: { mode: "AUTO" },
     }

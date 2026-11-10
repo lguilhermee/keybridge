@@ -1,5 +1,6 @@
 //! Exposes the protocol-independent Agent Run loop.
 
+mod combo;
 mod command;
 mod compaction;
 mod engine;
@@ -10,6 +11,7 @@ mod messages;
 mod model_cycle;
 mod model_retry;
 mod port;
+mod refusal_fallback;
 mod tool_round;
 
 pub use command::*;

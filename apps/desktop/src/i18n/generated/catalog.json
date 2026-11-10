@@ -46,18 +46,30 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 77,
+          "line": 78,
           "column": 35
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 105,
+          "line": 106,
           "column": 41
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 177,
-          "column": 63
+          "line": 179,
+          "column": 27
+        }
+      ]
+    },
+    "007877479e2173b2": {
+      "source": "Ordered",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 32,
+          "column": 32
         }
       ]
     },
@@ -92,8 +104,8 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 196,
-          "column": 11
+          "line": 241,
+          "column": 13
         }
       ]
     },
@@ -104,7 +116,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 174,
+          "line": 218,
           "column": 74
         },
         {
@@ -128,6 +140,18 @@
           "file": "shell/IconRail.tsx",
           "line": 36,
           "column": 74
+        }
+      ]
+    },
+    "033c019bb8a1196e": {
+      "source": "Each new message starts with the next model in the list; the following models are fallbacks.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 33,
+          "column": 46
         }
       ]
     },
@@ -282,7 +306,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 474,
+          "line": 450,
           "column": 17
         }
       ]
@@ -523,8 +547,25 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 98,
+          "line": 99,
           "column": 21
+        }
+      ]
+    },
+    "0fe2df1a8d50b28d": {
+      "source": "Start strategy",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 85,
+          "column": 29
+        },
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 87,
+          "column": 26
         }
       ]
     },
@@ -568,6 +609,18 @@
           "file": "features/overview/OverviewTimeRangeFilter.tsx",
           "line": 121,
           "column": 76
+        }
+      ]
+    },
+    "11212c398ccd178d": {
+      "source": "Combos",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 134,
+          "column": 44
         }
       ]
     },
@@ -646,7 +699,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 67,
+          "line": 68,
           "column": 15
         }
       ]
@@ -670,7 +723,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 471,
+          "line": 447,
           "column": 17
         }
       ]
@@ -682,7 +735,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 343,
+          "line": 319,
           "column": 23
         }
       ]
@@ -706,12 +759,12 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 436,
+          "line": 412,
           "column": 18
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 440,
+          "line": 416,
           "column": 16
         }
       ]
@@ -737,32 +790,37 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 204,
+          "line": 249,
           "column": 20
         },
         {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 71,
+          "column": 22
+        },
+        {
           "file": "features/providers/ModelEditorModal.tsx",
-          "line": 153,
+          "line": 154,
           "column": 18
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 83,
+          "line": 84,
           "column": 119
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 287,
+          "line": 263,
           "column": 41
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 331,
+          "line": 307,
           "column": 22
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 428,
+          "line": 404,
           "column": 123
         },
         {
@@ -779,6 +837,11 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 253,
           "column": 32
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 93,
+          "column": 119
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
@@ -823,7 +886,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 98,
+          "line": 122,
           "column": 50
         },
         {
@@ -840,7 +903,7 @@
       "refs": [
         {
           "file": "features/providers/ModelEditorModal.tsx",
-          "line": 148,
+          "line": 149,
           "column": 22
         }
       ]
@@ -902,7 +965,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 554,
+          "line": 586,
           "column": 21
         }
       ]
@@ -946,7 +1009,12 @@
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 188,
+          "line": 232,
+          "column": 20
+        },
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 135,
           "column": 20
         },
         {
@@ -956,27 +1024,27 @@
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 259,
+          "line": 289,
           "column": 19
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 82,
+          "line": 83,
           "column": 64
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 285,
+          "line": 261,
           "column": 78
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 332,
+          "line": 308,
           "column": 21
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 427,
+          "line": 403,
           "column": 128
         },
         {
@@ -988,6 +1056,11 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 170,
           "column": 64
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 92,
+          "column": 81
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
@@ -1032,7 +1105,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 335,
+          "line": 311,
           "column": 14
         },
         {
@@ -1095,8 +1168,20 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 274,
+          "line": 304,
           "column": 18
+        }
+      ]
+    },
+    "1c836f743f9aab4b": {
+      "source": "New combo",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 64,
+          "column": 73
         }
       ]
     },
@@ -1207,6 +1292,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 179,
+          "column": 22
+        },
+        {
           "file": "shared/ui/ModelSelect.tsx",
           "line": 232,
           "column": 102
@@ -1256,7 +1346,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 265,
+          "line": 295,
           "column": 20
         }
       ]
@@ -1415,7 +1505,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 133,
+          "line": 159,
           "column": 41
         }
       ]
@@ -1463,12 +1553,12 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 209,
+          "line": 234,
           "column": 62
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 288,
+          "line": 326,
           "column": 39
         }
       ]
@@ -1533,6 +1623,18 @@
         }
       ]
     },
+    "2b6a738d8a24dc34": {
+      "source": "Pick this name in Cursor's model picker. When a model fails or refuses, the next model in the list answers instead.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 67,
+          "column": 48
+        }
+      ]
+    },
     "2b7f6a84de917e38": {
       "source": "Display name",
       "kind": "text",
@@ -1572,7 +1674,7 @@
         {
           "file": "features/providers/ModelEditorModal.tsx",
           "line": 92,
-          "column": 9
+          "column": 17
         }
       ]
     },
@@ -1612,7 +1714,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 190,
+          "line": 199,
           "column": 133
         }
       ]
@@ -1665,7 +1767,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 449,
+          "line": 425,
           "column": 17
         }
       ]
@@ -1741,6 +1843,18 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 75,
           "column": 55
+        }
+      ]
+    },
+    "31d99b312ac6161d": {
+      "source": "e.g. Red team",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 83,
+          "column": 50
         }
       ]
     },
@@ -1855,7 +1969,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 245,
+          "line": 275,
           "column": 24
         }
       ]
@@ -1871,6 +1985,18 @@
           "file": "shared/ui/Pagination.tsx",
           "line": 22,
           "column": 169
+        }
+      ]
+    },
+    "347d9ee48d73a3e7": {
+      "source": "Combo created",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 53,
+          "column": 40
         }
       ]
     },
@@ -2046,6 +2172,20 @@
         }
       ]
     },
+    "3bd8b0f12dacd95a": {
+      "source": "Delete the {count} selected models?",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 240,
+          "column": 13
+        }
+      ]
+    },
     "3c0d69f6a8f29727": {
       "source": "Connectivity tests succeeded for all {count} models",
       "kind": "template",
@@ -2084,6 +2224,18 @@
         }
       ]
     },
+    "3cd072dcc70dff21": {
+      "source": "Each new message starts with a random model; the other models are fallbacks in list order.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 34,
+          "column": 50
+        }
+      ]
+    },
     "3d3a92a802954f4a": {
       "source": "Shared connection details for the models in this group",
       "kind": "text",
@@ -2091,7 +2243,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 120,
+          "line": 146,
           "column": 51
         }
       ]
@@ -2103,7 +2255,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 267,
+          "line": 243,
           "column": 15
         }
       ]
@@ -2132,12 +2284,12 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 116,
+          "line": 142,
           "column": 70
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 119,
+          "line": 145,
           "column": 22
         }
       ]
@@ -2156,6 +2308,18 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 78,
           "column": 20
+        }
+      ]
+    },
+    "40bb50da160cdc21": {
+      "source": "Move down",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 120,
+          "column": 108
         }
       ]
     },
@@ -2181,13 +2345,25 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 211,
+          "line": 256,
           "column": 35
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 214,
+          "line": 259,
           "column": 41
+        }
+      ]
+    },
+    "41b0238379cb73c0": {
+      "source": "Name in Cursor",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 82,
+          "column": 29
         }
       ]
     },
@@ -2369,22 +2545,22 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 173,
+          "line": 217,
           "column": 74
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 86,
+          "line": 87,
           "column": 94
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 296,
+          "line": 272,
           "column": 10
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 431,
+          "line": 407,
           "column": 112
         },
         {
@@ -2396,6 +2572,11 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 175,
           "column": 8
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 96,
+          "column": 113
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
@@ -2433,23 +2614,28 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 127,
+          "line": 128,
           "column": 81
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 282,
+          "line": 258,
           "column": 8
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 465,
+          "line": 441,
           "column": 48
         },
         {
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 207,
           "column": 141
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 132,
+          "column": 45
         }
       ]
     },
@@ -2472,7 +2658,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 114,
+          "line": 115,
           "column": 21
         }
       ]
@@ -2523,12 +2709,12 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 78,
+          "line": 79,
           "column": 12
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 106,
+          "line": 107,
           "column": 41
         },
         {
@@ -2598,17 +2784,17 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 113,
+          "line": 114,
           "column": 22
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 119,
+          "line": 120,
           "column": 25
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 130,
+          "line": 131,
           "column": 20
         }
       ]
@@ -2693,8 +2879,20 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 303,
+          "line": 279,
           "column": 27
+        }
+      ]
+    },
+    "4f4437425b5b86d4": {
+      "source": "Refusal fallback",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 101,
+          "column": 30
         }
       ]
     },
@@ -2729,6 +2927,20 @@
           "file": "features/calls/CallsTable.tsx",
           "line": 71,
           "column": 3
+        }
+      ]
+    },
+    "50263b8997509cd8": {
+      "source": "{count} models deleted",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 59,
+          "column": 9
         }
       ]
     },
@@ -2816,7 +3028,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 403,
+          "line": 379,
           "column": 15
         }
       ]
@@ -2828,12 +3040,12 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 293,
+          "line": 269,
           "column": 10
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 325,
+          "line": 301,
           "column": 16
         }
       ]
@@ -2864,7 +3076,7 @@
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 170,
+          "line": 214,
           "column": 92
         }
       ]
@@ -2915,6 +3127,18 @@
         }
       ]
     },
+    "55bb801cfba8343d": {
+      "source": "Combo",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 65,
+          "column": 50
+        }
+      ]
+    },
     "55c93e5830ff4a9f": {
       "source": "Input price ($/1M)",
       "kind": "text",
@@ -2944,7 +3168,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 90,
+          "line": 91,
           "column": 94
         }
       ]
@@ -2956,7 +3180,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 474,
+          "line": 450,
           "column": 38
         }
       ]
@@ -3074,6 +3298,20 @@
         }
       ]
     },
+    "5917f01a8c736567": {
+      "source": "On refusal: {model}",
+      "kind": "template",
+      "placeholders": [
+        "model"
+      ],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 137,
+          "column": 47
+        }
+      ]
+    },
     "596380cb6aa386c2": {
       "source": "Version {version} is available",
       "kind": "template",
@@ -3176,6 +3414,18 @@
         }
       ]
     },
+    "5ca49a7ffcb8716e": {
+      "source": "One Cursor model name backed by several models, with automatic fallback when one fails or refuses.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 312,
+          "column": 18
+        }
+      ]
+    },
     "5cc895a388da2a8f": {
       "source": "All {count} models in this configuration already exist; nothing needs to be imported",
       "kind": "template",
@@ -3216,6 +3466,18 @@
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 359,
           "column": 45
+        }
+      ]
+    },
+    "5d09c4b4f82137fd": {
+      "source": "Edit provider",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 134,
+          "column": 83
         }
       ]
     },
@@ -3588,6 +3850,18 @@
         }
       ]
     },
+    "67bc484430fe87ba": {
+      "source": "Random",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 34,
+          "column": 31
+        }
+      ]
+    },
     "67ca4176bbe6c28d": {
       "source": "Select a provider on the left.",
       "kind": "text",
@@ -3595,7 +3869,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 248,
+          "line": 278,
           "column": 19
         }
       ]
@@ -3706,17 +3980,17 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 97,
+          "line": 98,
           "column": 22
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 102,
+          "line": 103,
           "column": 24
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 126,
+          "line": 127,
           "column": 20
         }
       ]
@@ -3769,7 +4043,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 108,
+          "line": 132,
           "column": 35
         },
         {
@@ -3803,7 +4077,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 191,
+          "line": 200,
           "column": 131
         }
       ]
@@ -3925,6 +4199,18 @@
         }
       ]
     },
+    "6feeb4ff278771cd": {
+      "source": "When a checked model refuses a request, that request and the rest of its run go to the chosen refusal model. The next request starts with the original model again.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 104,
+          "column": 17
+        }
+      ]
+    },
     "702da8ecd2ab75b4": {
       "source": "Current app version.",
       "kind": "text",
@@ -4011,12 +4297,12 @@
       "refs": [
         {
           "file": "shared/store/appStore.ts",
-          "line": 229,
+          "line": 259,
           "column": 23
         },
         {
           "file": "shared/store/appStore.ts",
-          "line": 236,
+          "line": 266,
           "column": 25
         }
       ]
@@ -4079,12 +4365,12 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 137,
+          "line": 163,
           "column": 68
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 357,
+          "line": 333,
           "column": 21
         },
         {
@@ -4125,8 +4411,22 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 207,
+          "line": 252,
           "column": 27
+        }
+      ]
+    },
+    "7660ddefab4ade34": {
+      "source": "Delete the combo {name}? Its models stay configured.",
+      "kind": "template",
+      "placeholders": [
+        "name"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 143,
+          "column": 11
         }
       ]
     },
@@ -4219,7 +4519,7 @@
       "refs": [
         {
           "file": "features/providers/ModelEditorModal.tsx",
-          "line": 154,
+          "line": 155,
           "column": 296
         }
       ]
@@ -4248,7 +4548,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 437,
+          "line": 413,
           "column": 17
         }
       ]
@@ -4315,7 +4615,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 614,
+          "line": 652,
           "column": 43
         }
       ]
@@ -4415,12 +4715,12 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 307,
+          "line": 283,
           "column": 24
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 315,
+          "line": 291,
           "column": 24
         }
       ]
@@ -4449,6 +4749,18 @@
           "file": "features/providers/useModelTests.ts",
           "line": 46,
           "column": 27
+        }
+      ]
+    },
+    "8282b0eef4c8aa7e": {
+      "source": "Select at least one model.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 108,
+          "column": 74
         }
       ]
     },
@@ -4488,6 +4800,18 @@
         }
       ]
     },
+    "83f950575fd520aa": {
+      "source": "Off for every model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 134,
+          "column": 52
+        }
+      ]
+    },
     "848cf08625ad9385": {
       "source": "Proxy mode",
       "kind": "text",
@@ -4517,7 +4841,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 288,
+          "line": 326,
           "column": 88
         }
       ]
@@ -4534,7 +4858,7 @@
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 211,
+          "line": 236,
           "column": 122
         }
       ]
@@ -4706,6 +5030,30 @@
         }
       ]
     },
+    "87ce3f1e375fe977": {
+      "source": "Every message starts with the first model; the next models answer only when the previous one fails.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 32,
+          "column": 52
+        }
+      ]
+    },
+    "87ea074988aa5566": {
+      "source": "Refusal fallback saved",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 82,
+          "column": 15
+        }
+      ]
+    },
     "88274a9a0bee21e7": {
       "source": "Use reset card",
       "kind": "text",
@@ -4756,18 +5104,40 @@
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 101,
+          "line": 125,
           "column": 14
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 149,
+          "line": 175,
           "column": 51
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 223,
+          "line": 218,
+          "column": 62
+        },
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 248,
           "column": 60
+        }
+      ]
+    },
+    "8941320954efb8cd": {
+      "source": "Delete provider",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 135,
+          "column": 142
+        },
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 231,
+          "column": 51
         }
       ]
     },
@@ -4778,7 +5148,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 266,
+          "line": 296,
           "column": 18
         }
       ]
@@ -4845,7 +5215,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 125,
+          "line": 130,
           "column": 46
         }
       ]
@@ -4896,12 +5266,12 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 128,
+          "line": 154,
           "column": 18
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 210,
+          "line": 255,
           "column": 27
         },
         {
@@ -4918,7 +5288,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 193,
+          "line": 202,
           "column": 123
         }
       ]
@@ -4932,7 +5302,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 40,
+          "line": 64,
           "column": 22
         }
       ]
@@ -4944,17 +5314,17 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 155,
+          "line": 164,
           "column": 7
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 170,
+          "line": 179,
           "column": 79
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 249,
+          "line": 279,
           "column": 87
         }
       ]
@@ -5174,8 +5544,20 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 461,
+          "line": 437,
           "column": 18
+        }
+      ]
+    },
+    "92509539d609d6e5": {
+      "source": "Add combo",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 205,
+          "column": 179
         }
       ]
     },
@@ -5200,6 +5582,18 @@
           "file": "features/cursor/RemoteSshHelp.tsx",
           "line": 45,
           "column": 11
+        }
+      ]
+    },
+    "941fcdbdf74bda9c": {
+      "source": "Create combo",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 71,
+          "column": 34
         }
       ]
     },
@@ -5366,7 +5760,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 127,
+          "line": 132,
           "column": 45
         }
       ]
@@ -5395,12 +5789,12 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 172,
+          "line": 181,
           "column": 25
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 178,
+          "line": 187,
           "column": 56
         },
         {
@@ -5427,7 +5821,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 355,
+          "line": 331,
           "column": 27
         }
       ]
@@ -5439,12 +5833,12 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 76,
+          "line": 77,
           "column": 35
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 104,
+          "line": 105,
           "column": 41
         }
       ]
@@ -5482,7 +5876,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 52,
+          "line": 76,
           "column": 26
         }
       ]
@@ -5494,7 +5888,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 448,
+          "line": 424,
           "column": 18
         }
       ]
@@ -5542,7 +5936,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 273,
+          "line": 303,
           "column": 20
         }
       ]
@@ -5578,7 +5972,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 136,
+          "line": 162,
           "column": 18
         },
         {
@@ -5602,6 +5996,21 @@
           "file": "features/cursor/CursorPage.tsx",
           "line": 94,
           "column": 21
+        }
+      ]
+    },
+    "9ec608072dfaaa84": {
+      "source": "Delete {name} and all of its {count} models? Combos that use them will drop them.",
+      "kind": "template",
+      "placeholders": [
+        "name",
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 238,
+          "column": 11
         }
       ]
     },
@@ -5853,6 +6262,18 @@
         }
       ]
     },
+    "a5cb885fddd3cab5": {
+      "source": "Combo saved",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 53,
+          "column": 21
+        }
+      ]
+    },
     "a656107e99c71dea": {
       "source": "Statistics",
       "kind": "text",
@@ -5874,6 +6295,37 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 193,
           "column": 59
+        }
+      ]
+    },
+    "a84a0a76c9747c2a": {
+      "source": "Delete selected ({count})",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 189,
+          "column": 15
+        }
+      ]
+    },
+    "a8c981995c7a7a9c": {
+      "source": "Fallback order",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 99,
+          "column": 70
+        },
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 102,
+          "column": 22
         }
       ]
     },
@@ -6034,7 +6486,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 470,
+          "line": 446,
           "column": 18
         }
       ]
@@ -6116,7 +6568,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 354,
+          "line": 330,
           "column": 29
         }
       ]
@@ -6140,7 +6592,7 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 207,
+          "line": 252,
           "column": 50
         }
       ]
@@ -6189,17 +6641,17 @@
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 106,
+          "line": 130,
           "column": 72
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 152,
+          "line": 190,
           "column": 56
         },
         {
           "file": "features/providers/ModelEditorModal.tsx",
-          "line": 148,
+          "line": 149,
           "column": 40
         },
         {
@@ -6398,8 +6850,8 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 187,
-          "column": 14
+          "line": 231,
+          "column": 74
         }
       ]
     },
@@ -6427,7 +6879,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 291,
+          "line": 329,
           "column": 50
         }
       ]
@@ -6439,12 +6891,12 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 123,
+          "line": 149,
           "column": 85
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 200,
+          "line": 245,
           "column": 14
         }
       ]
@@ -6659,6 +7111,11 @@
           "file": "features/providers/AccountProviderDetail.tsx",
           "line": 224,
           "column": 21
+        },
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 121,
+          "column": 108
         }
       ]
     },
@@ -6713,6 +7170,18 @@
         }
       ]
     },
+    "c66feb5eb8f217c7": {
+      "source": "Move up",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 119,
+          "column": 91
+        }
+      ]
+    },
     "c7544625e7402a83": {
       "source": "Applies to every model in this group when changed; leave blank to keep each model's current configuration.",
       "kind": "text",
@@ -6720,12 +7189,12 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 210,
+          "line": 255,
           "column": 54
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 213,
+          "line": 258,
           "column": 42
         }
       ]
@@ -6949,6 +7418,18 @@
         }
       ]
     },
+    "cfb3fee6ea2c4bb6": {
+      "source": "Refusal model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 125,
+          "column": 24
+        }
+      ]
+    },
     "cfd9c021146b0ccd": {
       "source": "The CA is stored only on this device and is used to securely inspect Cursor HTTPS requests.",
       "kind": "text",
@@ -6968,8 +7449,25 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 169,
+          "line": 178,
           "column": 30
+        }
+      ]
+    },
+    "d164e644f89ba02f": {
+      "source": "Delete combo",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 73,
+          "column": 131
+        },
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 134,
+          "column": 14
         }
       ]
     },
@@ -6992,7 +7490,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 356,
+          "line": 332,
           "column": 34
         }
       ]
@@ -7014,13 +7512,18 @@
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 145,
+          "line": 171,
           "column": 70
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 148,
+          "line": 174,
           "column": 22
+        },
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 106,
+          "column": 29
         },
         {
           "file": "shell/CommandPalette.tsx",
@@ -7115,6 +7618,18 @@
           "file": "features/providers/ModelEditor.tsx",
           "line": 159,
           "column": 61
+        }
+      ]
+    },
+    "d3174fa7e9a17c2c": {
+      "source": "Choose a refusal model for every checked model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 70,
+          "column": 15
         }
       ]
     },
@@ -7289,7 +7804,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 609,
+          "line": 647,
           "column": 43
         }
       ]
@@ -7370,17 +7885,17 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 83,
+          "line": 84,
           "column": 102
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 287,
+          "line": 263,
           "column": 24
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 428,
+          "line": 404,
           "column": 106
         },
         {
@@ -7397,6 +7912,11 @@
           "file": "features/settings/sections/NetworkSection.tsx",
           "line": 253,
           "column": 15
+        },
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 93,
+          "column": 102
         },
         {
           "file": "features/settings/sections/UsageDataSection.tsx",
@@ -7446,7 +7966,7 @@
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 211,
+          "line": 236,
           "column": 140
         }
       ]
@@ -7509,7 +8029,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 192,
+          "line": 201,
           "column": 123
         }
       ]
@@ -7540,6 +8060,18 @@
         }
       ]
     },
+    "df863ddbe183f757": {
+      "source": "Model combo",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProvidersPage.tsx",
+          "line": 311,
+          "column": 20
+        }
+      ]
+    },
     "e0beec38b8847ca5": {
       "source": "Get key",
       "kind": "text",
@@ -7549,6 +8081,18 @@
           "file": "features/providers/ProviderAddPanel.tsx",
           "line": 129,
           "column": 10
+        }
+      ]
+    },
+    "e0f6db61289035f0": {
+      "source": "Provider deleted",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ApiKeyProviderDetail.tsx",
+          "line": 58,
+          "column": 9
         }
       ]
     },
@@ -7583,7 +8127,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 157,
+          "line": 166,
           "column": 9
         }
       ]
@@ -7643,7 +8187,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 61,
+          "line": 62,
           "column": 77
         }
       ]
@@ -7655,12 +8199,17 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 175,
+          "line": 219,
           "column": 106
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 189,
+          "line": 233,
+          "column": 21
+        },
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 136,
           "column": 21
         },
         {
@@ -7677,7 +8226,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 184,
+          "line": 193,
           "column": 57
         }
       ]
@@ -7689,12 +8238,12 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 102,
+          "line": 126,
           "column": 56
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 129,
+          "line": 155,
           "column": 29
         }
       ]
@@ -7737,7 +8286,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 159,
+          "line": 168,
           "column": 11
         }
       ]
@@ -7773,12 +8322,12 @@
       "refs": [
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 108,
+          "line": 132,
           "column": 53
         },
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 169,
+          "line": 178,
           "column": 54
         }
       ]
@@ -8162,7 +8711,7 @@
       "refs": [
         {
           "file": "features/providers/ProvidersPage.tsx",
-          "line": 247,
+          "line": 277,
           "column": 19
         }
       ]
@@ -8227,6 +8776,18 @@
         }
       ]
     },
+    "f2f6a01889951edc": {
+      "source": "Loop",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 33,
+          "column": 29
+        }
+      ]
+    },
     "f3d674280ec5d678": {
       "source": "Codex is using its own settings until a model is added on the Providers page.",
       "kind": "text",
@@ -8246,7 +8807,7 @@
       "refs": [
         {
           "file": "features/providers/ModelEditorModal.tsx",
-          "line": 154,
+          "line": 155,
           "column": 240
         },
         {
@@ -8297,7 +8858,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 353,
+          "line": 329,
           "column": 28
         }
       ]
@@ -8338,12 +8899,12 @@
         },
         {
           "file": "features/providers/ApiKeyProviderDetail.tsx",
-          "line": 170,
+          "line": 214,
           "column": 73
         },
         {
           "file": "features/providers/ModelEditorModal.tsx",
-          "line": 154,
+          "line": 155,
           "column": 277
         }
       ]
@@ -8389,6 +8950,18 @@
         }
       ]
     },
+    "fb11ba7c2acd2945": {
+      "source": "Models are tried from top to bottom. Each model is tried at most once per call.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 103,
+          "column": 51
+        }
+      ]
+    },
     "fb50c347f81184d5": {
       "source": "Estimated using configured token pricing; per-model prices apply where set.",
       "kind": "text",
@@ -8410,6 +8983,18 @@
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 29,
           "column": 30
+        }
+      ]
+    },
+    "fcc73322c29ba7a6": {
+      "source": "Switch on refusal",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/sections/RefusalFallbackGroup.tsx",
+          "line": 113,
+          "column": 24
         }
       ]
     },
@@ -8451,6 +9036,30 @@
           "file": "shared/ui/FormControls.tsx",
           "line": 15,
           "column": 81
+        }
+      ]
+    },
+    "fefe7f33d18de63f": {
+      "source": "Missing model",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 116,
+          "column": 76
+        }
+      ]
+    },
+    "ff570dee7cbf0cbe": {
+      "source": "Combo settings",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ComboDetail.tsx",
+          "line": 80,
+          "column": 70
         }
       ]
     },

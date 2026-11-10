@@ -139,6 +139,45 @@ Deno.test("provider parses usage metadata including cachedContentTokenCount as c
   ]);
 });
 
+Deno.test("Gemini 4 Argon resolves to the medium tier and omits toolConfig", async () => {
+  let requestBody = "";
+  const argonRequest: LlmRequest = {
+    ...request(),
+    tools: [{ name: "read_file", description: "Read a file", parameters: { type: "object" } }],
+  };
+
+  await antigravityChannel.invoke(
+    {
+      model: { id: "gemini-4-argon", displayName: "Gemini 4 Argon", privateData: {} },
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: argonRequest,
+    },
+    { emit: () => {} },
+    context({
+      stream: (_url, init) => {
+        requestBody = init?.body ?? "";
+        return {
+          status: 200,
+          headers: {},
+          lines: sse([
+            'data: {"response":{"candidates":[{"content":{"parts":[{"text":"ok"}]},"finishReason":"STOP"}]}}',
+          ]),
+        };
+      },
+    }),
+  );
+
+  const body = JSON.parse(requestBody) as { model: string; request: Record<string, unknown> };
+  assertEquals(body.model, "gemini-4-argon-medium");
+  assert(Array.isArray(body.request.tools), "tools were not sent");
+  assert(!("toolConfig" in body.request), "toolConfig was sent for Argon");
+});
+
 Deno.test("isQuotaError identifies rate limits and quota exhaustion", () => {
   assert(isQuotaError("RESOURCE_EXHAUSTED: quota exceeded"));
   assert(isQuotaError("Rate limit exceeded for model"));

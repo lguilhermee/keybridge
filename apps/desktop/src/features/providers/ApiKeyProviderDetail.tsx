@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, type Model, type ModelInput } from "../../shared/api";
 import { appStore, useAppStore } from "../../shared/store/appStore";
 import { Button } from "../../shared/ui/Button";
+import { Checkbox } from "../../shared/ui/Checkbox";
 import { ConfirmDialog } from "../../shared/ui/ConfirmDialog";
 import { FormField, SecretTextInput, TextInput } from "../../shared/ui/FormControls";
 import { useMessage } from "../../shared/ui/message";
@@ -13,6 +14,8 @@ import { errorText, modelInput, sharedValue } from "./modelEditing";
 import type { ModelTests } from "./useModelTests";
 import styles from "./ProvidersPage.module.scss";
 
+type PendingDelete = { kind: "provider" } | { kind: "models"; hashes: string[] };
+
 export function ApiKeyProviderDetail({ groupName, groupModels, tests, onEditModel, onAddModel }: {
   groupName: string;
   groupModels: Model[];
@@ -22,18 +25,39 @@ export function ApiKeyProviderDetail({ groupName, groupModels, tests, onEditMode
 }) {
   const { models, cursorBusy } = useAppStore();
   const message = useMessage();
-  const [deleting, setDeleting] = useState<Model | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(() => new Set());
   const [groupSettingsOpen, setGroupSettingsOpen] = useState(false);
   const [groupNameDraft, setGroupNameDraft] = useState("");
   const [groupBaseUrlDraft, setGroupBaseUrlDraft] = useState("");
   const [groupApiKeyDraft, setGroupApiKeyDraft] = useState("");
   const [groupSettingsBusy, setGroupSettingsBusy] = useState(false);
-
   const multi = groupModels.length > 1;
   const baseUrl = sharedValue(groupModels.map((model) => model.base_url));
   const typeValue = sharedValue(groupModels.map((model) => model.type));
   const apiKeyValue = sharedValue(groupModels.map((model) => model.api_key));
   const headerNames = [...new Set(groupModels.flatMap((model) => (model.custom_headers_enabled ? Object.keys(model.custom_headers) : [])))];
+  const checkedHashes = groupModels.filter((model) => checked.has(model.model_hash)).map((model) => model.model_hash);
+  const allChecked = groupModels.length > 0 && checkedHashes.length === groupModels.length;
+
+  const toggleChecked = (hash: string, value: boolean) => {
+    setChecked((current) => {
+      const next = new Set(current);
+      if (value) next.add(hash);
+      else next.delete(hash);
+      return next;
+    });
+  };
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const hashes = pendingDelete.kind === "provider" ? groupModels.map((model) => model.model_hash) : pendingDelete.hashes;
+    setPendingDelete(null);
+    if (!await appStore.deleteModels(hashes)) return;
+    setChecked(new Set());
+    message(pendingDelete.kind === "provider"
+      ? t("Provider deleted")
+      : t("{count} models deleted", { count: hashes.length }));
+  };
 
   const duplicateModel = async (model: Model) => {
     const names = new Set(models.map((item) => item.display_name));
@@ -107,6 +131,8 @@ export function ApiKeyProviderDetail({ groupName, groupModels, tests, onEditMode
           <Button size="small" disabled={cursorBusy || tests.batchTesting} onClick={() => void tests.testAllModels(groupModels)}>
             {tests.batchTesting ? t("Testing...") : t("Test all")}
           </Button>
+          <Button size="small" disabled={cursorBusy} onClick={openGroupSettings}>{t("Edit provider")}</Button>
+          <Button size="small" className={styles.deleteButton} disabled={cursorBusy} onClick={() => setPendingDelete({ kind: "provider" })}>{t("Delete provider")}</Button>
         </div>
       </div>,
     },
@@ -149,11 +175,29 @@ export function ApiKeyProviderDetail({ groupName, groupModels, tests, onEditMode
             <span className={styles.sectionMeta}>{t("{count} models", { count: groupModels.length })}</span>
           </div>
           <div className={styles.sectionActions}>
+            <Checkbox
+              label={t("Select all")}
+              checked={allChecked}
+              disabled={cursorBusy || groupModels.length === 0}
+              onChange={(value) => setChecked(value ? new Set(groupModels.map((model) => model.model_hash)) : new Set())}
+            />
+            {checkedHashes.length > 0 && <Button
+              size="small"
+              className={styles.deleteButton}
+              disabled={cursorBusy}
+              onClick={() => setPendingDelete({ kind: "models", hashes: checkedHashes })}
+            >{t("Delete selected ({count})", { count: checkedHashes.length })}</Button>}
             <Button size="small" onClick={onAddModel}>{t("Add model")}</Button>
           </div>
         </div>
         <div className={styles.modelList}>
           {groupModels.map((model) => <div key={model.model_hash} className={styles.modelRow}>
+            <Checkbox
+              label=""
+              checked={checked.has(model.model_hash)}
+              disabled={cursorBusy}
+              onChange={(value) => toggleChecked(model.model_hash, value)}
+            />
             <div className={styles.modelRowName}>
               <span className={styles.modelRowNameText}>{model.display_name}</span>
               <span className={styles.modelRowModelId}>{model.model_id}</span>
@@ -172,7 +216,7 @@ export function ApiKeyProviderDetail({ groupName, groupModels, tests, onEditMode
               />
               <TruncatedButton size="small" disabled={cursorBusy} label={t("Edit")} onClick={() => onEditModel(model)} />
               <TruncatedButton size="small" disabled={cursorBusy} label={t("Duplicate")} onClick={() => void duplicateModel(model)} />
-              <TruncatedButton size="small" className={styles.deleteButton} disabled={cursorBusy} label={t("Delete")} onClick={() => setDeleting(model)} />
+              <TruncatedButton size="small" className={styles.deleteButton} disabled={cursorBusy} label={t("Delete")} onClick={() => setPendingDelete({ kind: "models", hashes: [model.model_hash] })} />
             </div>
           </div>)}
         </div>
@@ -183,17 +227,18 @@ export function ApiKeyProviderDetail({ groupName, groupModels, tests, onEditMode
   return <>
     <VirtualPage sections={sections} />
     <ConfirmDialog
-      open={deleting !== null}
-      title={t("Delete model")}
+      open={pendingDelete !== null}
+      title={pendingDelete?.kind === "provider" ? t("Delete provider") : t("Delete model")}
       cancelLabel={t("Cancel")}
       confirmLabel={t("Delete")}
-      onCancel={() => setDeleting(null)}
-      onConfirm={() => {
-        if (deleting) void appStore.deleteModel(deleting.model_hash);
-        setDeleting(null);
-      }}
+      onCancel={() => setPendingDelete(null)}
+      onConfirm={() => void confirmDelete()}
     >
-      <p>{t("Delete this model?")}</p>
+      <p>{pendingDelete?.kind === "provider"
+        ? t("Delete {name} and all of its {count} models? Combos that use them will drop them.", { name: groupName, count: groupModels.length })
+        : pendingDelete && pendingDelete.hashes.length > 1
+          ? t("Delete the {count} selected models?", { count: pendingDelete.hashes.length })
+          : t("Delete this model?")}</p>
     </ConfirmDialog>
     <Modal
       open={groupSettingsOpen}

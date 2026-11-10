@@ -91,6 +91,7 @@ Full native encoding and execution dispatch for Cursor's **Computer Use** agent 
 - **Remote SSH Support:** Works across Cursor Remote-SSH workspaces via `"cursorAgentHost.remoteInferenceRoute": "always"` without exposing public ports or copying CA keys to remote hosts.
 - **Headroom Context Compression:** Optional integration with `headroom` proxy to compress large prompts before they hit upstream providers.
 - **External Local API:** Exposes your configured models and subscription providers as a local OpenAI/Anthropic-compatible endpoint for other tools on your machine.
+- **Model Combos with Fallback:** Group several configured models (API-key models or subscription models) under one name in Cursor's model picker. Pick the start strategy (ordered, loop, or random) and the fallback order; when a member errors, is rate limited, or refuses, the next member answers the same call.
 - **Desktop Observability & Benchmarks:** Built-in Tauri desktop dashboard with token usage heatmaps, cache-hit rate tracking, TTFT / throughput connection benchmarks, and full request/response payload inspection.
 
 ---

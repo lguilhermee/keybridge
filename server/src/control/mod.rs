@@ -1,9 +1,11 @@
 //! Exposes the local control API.
 mod calls;
+mod combos;
 mod harness;
 mod models;
 mod overview;
 mod providers;
+mod refusal_fallbacks;
 mod service;
 mod settings;
 
@@ -112,7 +114,21 @@ pub fn api_router(service: ControlService) -> Router {
     Router::new()
         .route(
             "/__byok-api__/api/models",
-            get(models::list).post(models::create),
+            get(models::list)
+                .post(models::create)
+                .delete(models::remove),
+        )
+        .route(
+            "/__byok-api__/api/combos",
+            get(combos::list).post(combos::create),
+        )
+        .route(
+            "/__byok-api__/api/combos/{combo_id}",
+            put(combos::update).delete(combos::remove),
+        )
+        .route(
+            "/__byok-api__/api/refusal-fallbacks",
+            get(refusal_fallbacks::list).put(refusal_fallbacks::set),
         )
         .route("/__byok-api__/api/models/discover", post(models::discover))
         .route(
@@ -123,7 +139,7 @@ pub fn api_router(service: ControlService) -> Router {
         .route("/__byok-api__/api/overview", get(overview::get))
         .route(
             "/__byok-api__/api/models/{model_hash}",
-            put(models::update).delete(models::remove),
+            put(models::update),
         )
         .route(
             "/__byok-api__/api/models/{model_hash}/test/{test_id}",

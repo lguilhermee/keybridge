@@ -34,6 +34,50 @@ function contextWindowFor(id: string): number | undefined {
 }
 
 const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
+  // Gemini 4 Series (thinking tier is part of the wire ID)
+  {
+    id: "gemini-4-carbon-high",
+    displayName: "Gemini 4 Carbon (High)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+    privateData: { reasoningEfforts: [] },
+  },
+  {
+    id: "gemini-4-carbon-medium",
+    displayName: "Gemini 4 Carbon (Medium)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+    privateData: { reasoningEfforts: [] },
+  },
+  {
+    id: "gemini-4-carbon-low",
+    displayName: "Gemini 4 Carbon (Low)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+    privateData: { reasoningEfforts: [] },
+  },
+  {
+    id: "gemini-4-argon-high",
+    displayName: "Gemini 4 Argon (High)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+    privateData: { reasoningEfforts: [] },
+  },
+  {
+    id: "gemini-4-argon-medium",
+    displayName: "Gemini 4 Argon (Medium)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+    privateData: { reasoningEfforts: [] },
+  },
+  {
+    id: "gemini-4-argon-low",
+    displayName: "Gemini 4 Argon (Low)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+    privateData: { reasoningEfforts: [] },
+  },
+
   // Gemini 3.8 Series
   {
     id: "gemini-3.8-flash-high",

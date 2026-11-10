@@ -6,16 +6,18 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     model::{
-        CanonicalMessage, MessageContent, Origin, PreparedRun, Role, RunAction, ToolRoundAssistant,
-        ToolRoundId, Usage,
+        CanonicalMessage, MessageContent, ModelSpec, Origin, PreparedRun, Role, RunAction,
+        ToolRoundAssistant, ToolRoundId, Usage,
     },
     protocol::Protocol,
     store::{ContextUsageAnchor, RunStatus, Store},
 };
 
 use super::{
+    combo::{run_model, ComboRun},
     consume_model_cycle,
     model_retry::{should_retry, MODEL_RETRY_DELAY},
+    refusal_fallback::RefusalRun,
     CommitBarrier, CommitCause, MessagesCommitted, RunCommand, RunEvent, RunFailure, RunOutcome,
     RunPort,
 };
@@ -181,6 +183,14 @@ impl RunEngine {
         // per run. A second refusal after compacting means the current input
         // itself does not fit, and compacting again would only destroy history.
         let mut overflow_compacted = false;
+        let mut combo = match ComboRun::start(&self.store, &prepared.model.model_id).await {
+            Ok(combo) => combo,
+            Err(failure) => return (RunOutcome::Failed(failure), usage),
+        };
+        let mut refusal = match RefusalRun::start(&self.store).await {
+            Ok(refusal) => refusal,
+            Err(failure) => return (RunOutcome::Failed(failure), usage),
+        };
         'model: loop {
             if cancellation.is_cancelled() {
                 return (RunOutcome::Cancelled, usage);
@@ -209,7 +219,14 @@ impl RunEngine {
                     return (client_failure(), usage);
                 }
                 match self
-                    .auto_compact(prepared, checkpoint, &messages, client, cancellation)
+                    .auto_compact(
+                        prepared,
+                        refusal.apply(run_model(prepared, combo.as_ref())),
+                        checkpoint,
+                        &messages,
+                        client,
+                        cancellation,
+                    )
                     .await
                 {
                     Ok((next_checkpoint, compaction_usage)) => {
@@ -248,18 +265,19 @@ impl RunEngine {
             } else {
                 super::history::user_terminated(history, CONTINUE_MESSAGE_ID, CONTINUE_INSTRUCTION)
             };
-            let request = crate::model::ModelRequest {
+            let mut request = crate::model::ModelRequest {
                 prompt: prepared.prompt.clone(),
-                model: prepared.model.clone(),
+                model: refusal.apply(run_model(prepared, combo.as_ref())),
                 history,
             };
             let mut retries = 0_u32;
+            let mut attempts = 0_u32;
             let mut pending_insertions = Vec::new();
             let cycle = 'attempt: loop {
-                let call_id = if retries == 0 {
+                let call_id = if attempts == 0 {
                     format!("{}:{provider_call_index}", prepared.run_id)
                 } else {
-                    format!("{}:{provider_call_index}:retry-{retries}", prepared.run_id)
+                    format!("{}:{provider_call_index}:retry-{attempts}", prepared.run_id)
                 };
                 let invocation = crate::model::ModelInvocation {
                     call_id,
@@ -369,7 +387,12 @@ impl RunEngine {
                     }
                 };
                 match cycle {
-                    Ok(cycle) => break 'attempt cycle,
+                    Ok(cycle) => {
+                        if let Some(combo) = combo.as_mut() {
+                            combo.call_succeeded();
+                        }
+                        break 'attempt cycle;
+                    }
                     Err(cycle_failure) => {
                         if let Some(cycle_usage) = cycle_failure.usage {
                             update_context_usage_anchor(
@@ -421,7 +444,14 @@ impl RunEngine {
                                     Err(error) => return (RunOutcome::Failed(error.into()), usage),
                                 };
                             match self
-                                .auto_compact(prepared, checkpoint, &messages, client, cancellation)
+                                .auto_compact(
+                                    prepared,
+                                    request.model.clone(),
+                                    checkpoint,
+                                    &messages,
+                                    client,
+                                    cancellation,
+                                )
                                 .await
                             {
                                 Ok((next_checkpoint, compaction_usage)) => {
@@ -436,9 +466,43 @@ impl RunEngine {
                             }
                         }
                         if !should_retry(&cycle_failure, retries) {
-                            return (RunOutcome::Failed(cycle_failure.failure), usage);
+                            let failed_model = request.model.model_id.clone();
+                            // A refusal goes to the refused model's refusal model when one
+                            // is set; a failing refusal model hands back to the combo.
+                            let Some(member) =
+                                refusal.switch(&failed_model, &cycle_failure).or_else(|| {
+                                    refusal.release();
+                                    combo
+                                        .as_mut()
+                                        .and_then(|combo| combo.fallback(&cycle_failure))
+                                        .map(str::to_owned)
+                                })
+                            else {
+                                return (RunOutcome::Failed(cycle_failure.failure), usage);
+                            };
+                            request.model = refusal.apply(run_model(prepared, combo.as_ref()));
+                            retries = 0;
+                            attempts += 1;
+                            let message = format!(
+                                "{failed_model} failed ({}); falling back to {member}",
+                                failure_message(&cycle_failure.failure)
+                            );
+                            if emit(
+                                client,
+                                RunEvent::ModelAttemptFailed {
+                                    attempt: attempts,
+                                    message,
+                                },
+                            )
+                            .await
+                            .is_err()
+                            {
+                                return (client_failure(), usage);
+                            }
+                            continue 'attempt;
                         }
                         retries += 1;
+                        attempts += 1;
                         let message = failure_message(&cycle_failure.failure);
                         tracing::warn!(
                             provider_call_index,
@@ -762,6 +826,7 @@ impl RunEngine {
     async fn auto_compact(
         &self,
         prepared: &PreparedRun,
+        mut model: ModelSpec,
         checkpoint: crate::model::CheckpointId,
         messages: &[CanonicalMessage],
         client: &mut RunPort,
@@ -796,10 +861,9 @@ impl RunEngine {
             .map_err(|error| RunOutcome::Failed(error.into()))?;
         let history = crate::model::project_messages(&compactable)
             .map(|history| {
-                super::compaction::compaction_history(history, prepared.model.context_window_tokens)
+                super::compaction::compaction_history(history, model.context_window_tokens)
             })
             .map_err(|error| RunOutcome::Failed(error.into()))?;
-        let mut model = prepared.model.clone();
         model.max_output_tokens = Some(super::compaction::OUTPUT_TOKENS);
         model.reasoning.enabled = false;
         model.reasoning.effort = None;
