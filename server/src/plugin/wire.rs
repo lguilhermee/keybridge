@@ -148,13 +148,19 @@ pub fn model_event(value: &serde_json::Value) -> Result<ModelEvent> {
                 .ok_or_else(|| Error::Protocol("plugin usage event requires usage".into()))?;
             let tokens = |name: &str| usage.get(name).and_then(serde_json::Value::as_u64);
             let input_tokens = tokens("inputTokens");
+            let cache_read_tokens = tokens("cacheReadTokens");
+            let cache_write_tokens = tokens("cacheWriteTokens");
             ModelEvent::Usage(Usage {
                 input_tokens,
-                context_input_tokens: input_tokens,
+                context_input_tokens: input_tokens.map(|input| {
+                    input
+                        .saturating_add(cache_read_tokens.unwrap_or_default())
+                        .saturating_add(cache_write_tokens.unwrap_or_default())
+                }),
                 output_tokens: tokens("outputTokens"),
                 total_tokens: tokens("totalTokens"),
-                cache_read_tokens: tokens("cacheReadTokens"),
-                cache_write_tokens: tokens("cacheWriteTokens"),
+                cache_read_tokens,
+                cache_write_tokens,
                 reasoning_tokens: tokens("reasoningTokens"),
             })
         }
@@ -287,7 +293,7 @@ mod tests {
             usage,
             ModelEvent::Usage(Usage {
                 input_tokens: Some(10),
-                context_input_tokens: Some(10),
+                context_input_tokens: Some(14),
                 output_tokens: Some(2),
                 total_tokens: None,
                 cache_read_tokens: Some(4),
@@ -296,5 +302,36 @@ mod tests {
             })
         );
         assert!(model_event(&serde_json::json!({"type":"mystery"})).is_err());
+    }
+
+    #[test]
+    fn plugin_usage_context_is_unknown_without_an_input_count() {
+        let usage = model_event(&serde_json::json!({
+            "type":"usage",
+            "usage":{"inputTokens":null,"outputTokens":2,"cacheReadTokens":4,"cacheWriteTokens":6}
+        }))
+        .unwrap();
+        assert_eq!(
+            usage,
+            ModelEvent::Usage(Usage {
+                input_tokens: None,
+                context_input_tokens: None,
+                output_tokens: Some(2),
+                total_tokens: None,
+                cache_read_tokens: Some(4),
+                cache_write_tokens: Some(6),
+                reasoning_tokens: None,
+            })
+        );
+
+        let full = model_event(&serde_json::json!({
+            "type":"usage",
+            "usage":{"inputTokens":10,"cacheReadTokens":20,"cacheWriteTokens":30}
+        }))
+        .unwrap();
+        let ModelEvent::Usage(full) = full else {
+            panic!("expected a usage event");
+        };
+        assert_eq!(full.context_input_tokens, Some(60));
     }
 }
