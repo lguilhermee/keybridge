@@ -303,9 +303,16 @@ impl ControlService {
         end_ms: Option<i64>,
         model_hashes: Option<&str>,
         bucket_ms: Option<i64>,
+        utc_offset_minutes: Option<i32>,
     ) -> Result<Overview> {
         self.store
-            .overview(start_ms, end_ms, model_hashes, bucket_ms)
+            .overview(
+                start_ms,
+                end_ms,
+                model_hashes,
+                bucket_ms,
+                utc_offset_minutes,
+            )
             .await
     }
 

@@ -19,6 +19,7 @@ const MAX_EXPLICIT_BUCKETS: i64 = 1440;
 const MINUTE_MS: i64 = 60_000;
 const HOUR_MS: i64 = 60 * MINUTE_MS;
 const DAY_MS: i64 = 24 * HOUR_MS;
+const MAX_UTC_OFFSET_MINUTES: i32 = 14 * 60;
 
 impl Store {
     pub async fn overview(
@@ -27,7 +28,9 @@ impl Store {
         end_ms: Option<i64>,
         model_hashes: Option<&str>,
         bucket_ms: Option<i64>,
+        utc_offset_minutes: Option<i32>,
     ) -> Result<Overview> {
+        let offset_ms = utc_offset_ms(utc_offset_minutes);
         let call_row = sqlx::query(
             "SELECT
                 COUNT(*) AS llm_calls,
@@ -85,10 +88,10 @@ impl Store {
         };
 
         let (token_usage_granularity, bucket_ms, series_start_ms, bucket_count) =
-            token_usage_buckets(start_ms, end_ms, bucket_ms);
+            token_usage_buckets(start_ms, end_ms, bucket_ms, offset_ms);
         let rows = sqlx::query(&format!(
             "SELECT
-                (created_at_ms / {bucket_ms}) * {bucket_ms} AS bucket_start_ms,
+                ((created_at_ms + {offset_ms}) / {bucket_ms}) * {bucket_ms} - {offset_ms} AS bucket_start_ms,
                 COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens,
                 COALESCE(SUM(COALESCE(cache_read_tokens, 0)), 0) AS cache_read_tokens,
                 COALESCE(SUM(COALESCE(cache_write_tokens, 0)), 0) AS cache_write_tokens,
@@ -147,6 +150,7 @@ fn token_usage_buckets(
     start_ms: Option<i64>,
     end_ms: Option<i64>,
     requested_bucket_ms: Option<i64>,
+    offset_ms: i64,
 ) -> (TokenUsageGranularity, i64, i64, i64) {
     if let (Some(start_ms), Some(end_ms)) = (start_ms, end_ms) {
         let duration_ms = end_ms.saturating_sub(start_ms).max(1);
@@ -172,8 +176,8 @@ fn token_usage_buckets(
         } else {
             MAX_RANGE_BUCKETS
         };
-        let last_bucket_ms = end_ms.saturating_sub(1).div_euclid(bucket_ms) * bucket_ms;
-        let first_bucket_ms = start_ms.div_euclid(bucket_ms) * bucket_ms;
+        let last_bucket_ms = bucket_floor(end_ms.saturating_sub(1), bucket_ms, offset_ms);
+        let first_bucket_ms = bucket_floor(start_ms, bucket_ms, offset_ms);
         let bucket_count =
             ((last_bucket_ms - first_bucket_ms).div_euclid(bucket_ms) + 1).clamp(1, max_buckets);
         let series_start_ms =
@@ -181,11 +185,7 @@ fn token_usage_buckets(
         return (granularity, bucket_ms, series_start_ms, bucket_count);
     }
 
-    let today_start_ms = Utc::now()
-        .date_naive()
-        .and_hms_opt(0, 0, 0)
-        .map(|value| value.and_utc().timestamp_millis())
-        .unwrap_or(0);
+    let today_start_ms = bucket_floor(Utc::now().timestamp_millis(), DAY_MS, offset_ms);
     let series_start_ms = today_start_ms.saturating_sub(
         i64::try_from(OVERVIEW_DAYS - 1)
             .unwrap_or(0)
@@ -197,6 +197,22 @@ fn token_usage_buckets(
         series_start_ms,
         i64::try_from(OVERVIEW_DAYS).unwrap_or(0),
     )
+}
+
+fn utc_offset_ms(utc_offset_minutes: Option<i32>) -> i64 {
+    i64::from(
+        utc_offset_minutes
+            .unwrap_or(0)
+            .clamp(-MAX_UTC_OFFSET_MINUTES, MAX_UTC_OFFSET_MINUTES),
+    ) * MINUTE_MS
+}
+
+fn bucket_floor(timestamp_ms: i64, bucket_ms: i64, offset_ms: i64) -> i64 {
+    timestamp_ms
+        .saturating_add(offset_ms)
+        .div_euclid(bucket_ms)
+        .saturating_mul(bucket_ms)
+        .saturating_sub(offset_ms)
 }
 
 fn non_negative(value: i64) -> i64 {
@@ -288,7 +304,7 @@ mod tests {
         )
         .await;
 
-        let overview = store.overview(None, None, None, None).await.unwrap();
+        let overview = store.overview(None, None, None, None, None).await.unwrap();
 
         assert_eq!(overview.metrics.input_tokens, 70);
         assert_eq!(overview.metrics.cache_read_tokens, 60);
@@ -302,5 +318,91 @@ mod tests {
             .map(|bucket| bucket.input_tokens)
             .sum();
         assert_eq!(series_input, 70);
+    }
+
+    fn ms(timestamp: &str) -> i64 {
+        chrono::DateTime::parse_from_rfc3339(timestamp)
+            .unwrap()
+            .timestamp_millis()
+    }
+
+    #[test]
+    fn one_local_day_is_one_bucket_starting_at_local_midnight() {
+        let start = ms("2026-01-10T03:00:00Z");
+        let end = ms("2026-01-11T03:00:00Z");
+
+        let (granularity, bucket_ms, series_start_ms, bucket_count) =
+            token_usage_buckets(Some(start), Some(end), Some(DAY_MS), -180 * MINUTE_MS);
+
+        assert_eq!(granularity, TokenUsageGranularity::Day);
+        assert_eq!(bucket_ms, DAY_MS);
+        assert_eq!(series_start_ms, start);
+        assert_eq!(bucket_count, 1);
+    }
+
+    #[test]
+    fn half_hour_offsets_start_buckets_on_the_local_boundary() {
+        let start = ms("2026-01-09T18:30:00Z");
+        let end = ms("2026-01-10T18:30:00Z");
+
+        let (_, _, series_start_ms, bucket_count) =
+            token_usage_buckets(Some(start), Some(end), Some(DAY_MS), 330 * MINUTE_MS);
+
+        assert_eq!(series_start_ms, start);
+        assert_eq!(bucket_count, 1);
+    }
+
+    #[test]
+    fn utc_offsets_outside_fourteen_hours_are_clamped() {
+        assert_eq!(utc_offset_ms(None), 0);
+        assert_eq!(utc_offset_ms(Some(-180)), -180 * MINUTE_MS);
+        assert_eq!(utc_offset_ms(Some(100_000)), 840 * MINUTE_MS);
+        assert_eq!(utc_offset_ms(Some(-100_000)), -840 * MINUTE_MS);
+    }
+
+    #[tokio::test]
+    async fn calls_either_side_of_local_midnight_land_in_different_days() {
+        let (_directory, store) = store().await;
+        let usage = |input| Usage {
+            input_tokens: Some(input),
+            ..Default::default()
+        };
+        record(&store, "late-evening", ProviderType::Anthropic, usage(1)).await;
+        record(&store, "after-midnight", ProviderType::Anthropic, usage(2)).await;
+        for (call_id, created_at) in [
+            ("late-evening", ms("2026-01-11T02:30:00Z")),
+            ("after-midnight", ms("2026-01-11T03:30:00Z")),
+        ] {
+            sqlx::query("UPDATE llm_calls SET created_at_ms = ? WHERE call_id = ?")
+                .bind(created_at)
+                .bind(call_id)
+                .execute(&store.pool)
+                .await
+                .unwrap();
+        }
+
+        let overview = store
+            .overview(
+                Some(ms("2026-01-10T03:00:00Z")),
+                Some(ms("2026-01-12T03:00:00Z")),
+                None,
+                Some(DAY_MS),
+                Some(-180),
+            )
+            .await
+            .unwrap();
+
+        let buckets: Vec<(i64, i64)> = overview
+            .token_usage_series
+            .iter()
+            .map(|bucket| (bucket.bucket_start_ms, bucket.input_tokens))
+            .collect();
+        assert_eq!(
+            buckets,
+            vec![
+                (ms("2026-01-10T03:00:00Z"), 1),
+                (ms("2026-01-11T03:00:00Z"), 2),
+            ]
+        );
     }
 }
