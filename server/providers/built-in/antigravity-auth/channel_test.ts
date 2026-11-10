@@ -7,7 +7,13 @@ import type {
 import type { LlmRequest, ModelEvent } from "cursor-byok:channel";
 import type { ResourceSnapshot } from "cursor-byok:resource";
 import { antigravityChannel, antigravitySessionId, isQuotaError } from "./channel.ts";
-import { parseAntigravityModels } from "./models.ts";
+import { parseAntigravityModels, STATIC_ANTIGRAVITY_MODELS } from "./models.ts";
+
+/** The catalog model Cursor would select for this ID, or a bare model for wire IDs. */
+function catalogModel(id: string) {
+  return STATIC_ANTIGRAVITY_MODELS.find((model) => model.id === id) ??
+    { id, displayName: id, privateData: {} };
+}
 import { RESOURCE_TYPE } from "./resources.ts";
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
@@ -63,6 +69,7 @@ function request(): LlmRequest {
     reasoning: { enabled: true, effort: "medium" },
     latency: "standard",
     maxOutputTokens: 65536,
+    contextWindow: null,
     cacheKey: "conv-1",
   };
 }
@@ -157,7 +164,7 @@ Deno.test("Gemini 4 Argon resolves to the medium tier and omits toolConfig", asy
 
   await antigravityChannel.invoke(
     {
-      model: { id: "gemini-4-argon", displayName: "Gemini 4 Argon", privateData: {} },
+      model: catalogModel("gemini-4-argon"),
       resource: snapshot({
         accessToken: "mock-access-token",
         refreshToken: "mock-refresh-token",
@@ -197,7 +204,7 @@ async function captureCall(modelId: string, overrides: Partial<LlmRequest>): Pro
   let headers: Record<string, string> = {};
   await antigravityChannel.invoke(
     {
-      model: { id: modelId, displayName: modelId, privateData: {} },
+      model: catalogModel(modelId),
       resource: snapshot({
         accessToken: "mock-access-token",
         refreshToken: "mock-refresh-token",
@@ -258,21 +265,26 @@ Deno.test("sessionId is stable per cacheKey and omitted without one", async () =
   assert(!("sessionId" in body.request), "sessionId was sent without a cacheKey");
 });
 
-Deno.test("tiered Gemini 4 upstream IDs collapse into one model per family", () => {
+Deno.test("tier siblings collapse into one model whose Effort picks the tier", () => {
   const models = parseAntigravityModels({
     models: {
       "gemini-4-carbon-high": { displayName: "Gemini 4 Carbon (High)" },
       "gemini-4-carbon-low": { displayName: "Gemini 4 Carbon (Low)" },
       "gemini-4-argon-medium": { displayName: "Gemini 4 Argon (Medium)" },
       "gemini-3.8-flash-high": { displayName: "Gemini 3.8 Flash (High)", supportsThinking: true },
+      "gemini-2.5-pro": { displayName: "Gemini 2.5 Pro" },
     },
   });
   const ids = models.map((model) => model.id);
-  assert(!ids.some((id) => /^gemini-4-(carbon|argon)-/.test(id)), `tiered IDs leaked: ${ids}`);
+  assert(!ids.some((id) => /^gemini-.*-(low|medium|high)$/.test(id)), `tiered IDs leaked: ${ids}`);
   const carbon = models.find((model) => model.id === "gemini-4-carbon");
-  assertEquals(carbon?.privateData, { reasoningEfforts: ["low", "medium", "high"] });
+  assertEquals(carbon?.displayName, "Gemini 4 Carbon");
+  assertEquals(carbon?.options, { efforts: ["low", "medium", "high"], fast: true });
+  assertEquals(carbon?.privateData, { tiers: ["low", "medium", "high"] });
+  const flash = models.find((model) => model.id === "gemini-3.8-flash");
+  assertEquals(flash?.options, { efforts: ["low", "medium", "high"] });
   assert(ids.includes("gemini-4-argon"));
-  assert(ids.includes("gemini-3.8-flash-high"));
+  assertEquals(models.find((model) => model.id === "gemini-2.5-pro")?.options, undefined);
 });
 
 Deno.test("isQuotaError identifies rate limits and quota exhaustion", () => {

@@ -79,6 +79,7 @@ function request(): LlmRequest {
     reasoning: { enabled: false, effort: null },
     latency: "standard",
     maxOutputTokens: 128,
+    contextWindow: null,
     cacheKey: "conv-1",
   };
 }

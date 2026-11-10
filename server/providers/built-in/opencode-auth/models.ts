@@ -54,6 +54,12 @@ const CURATED: CatalogEntry[] = [
   { id: "muse-spark-1.3-contributor", name: "Muse Spark 1.3 Contributor", lane: "responses" },
 ];
 
+/** Effort levels each OpenCode Go lane accepts (the chat lane clamps onto low/high/max). */
+export const LANE_EFFORTS: Record<Lane, string[]> = {
+  chat: ["low", "high", "max"],
+  responses: ["low", "medium", "high", "xhigh"],
+};
+
 export function laneForModel(modelId: string): Lane {
   const base = modelId.replace(/\([^()]+\)\s*$/, "").trim();
   for (const family of FAMILIES) {
@@ -76,6 +82,7 @@ function definition(entry: CatalogEntry): ModelDefinition {
   return {
     id: entry.id,
     displayName: entry.name,
+    options: { efforts: LANE_EFFORTS[entry.lane] },
     privateData: { lane: entry.lane },
     ...(entry.images ? { capabilities: { images: true } } : {}),
   };
@@ -92,9 +99,12 @@ async function fetchCatalog(
   });
   if (response.status !== 200) return [];
   const parsed = JSON.parse(response.body) as Record<string, unknown>;
-  const list = Array.isArray(parsed) ? parsed
-    : Array.isArray(parsed.data) ? parsed.data
-    : Array.isArray(parsed.models) ? parsed.models
+  const list = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed.data)
+    ? parsed.data
+    : Array.isArray(parsed.models)
+    ? parsed.models
     : [];
   return list
     .map((item) => (typeof item === "string" ? item : (item as { id?: string }).id))
@@ -107,9 +117,7 @@ export const opencodeModels: ModelSupport = {
       try {
         const ids = await fetchCatalog(input.resource, context);
         if (ids.length) {
-          return ids.map((id) =>
-            definition({ id, name: displayName(id), lane: laneForModel(id) })
-          );
+          return ids.map((id) => definition({ id, name: displayName(id), lane: laneForModel(id) }));
         }
       } catch {
         // Falls back to the fallback list when the catalog endpoint fails.

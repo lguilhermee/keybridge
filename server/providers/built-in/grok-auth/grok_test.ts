@@ -80,6 +80,7 @@ function request(): LlmRequest {
     reasoning: { enabled: true, effort: "medium" },
     latency: "fast",
     maxOutputTokens: 32_000,
+    contextWindow: null,
     cacheKey: "conversation-1",
   };
 }

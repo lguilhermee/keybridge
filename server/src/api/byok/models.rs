@@ -319,6 +319,7 @@ mod tests {
                 max_output_tokens: None,
                 context_window: None,
                 images: true,
+                options: Default::default(),
                 enabled: true,
             };
         let ordered = group_provider_models(vec![

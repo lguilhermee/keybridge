@@ -83,6 +83,7 @@ function request(): LlmRequest {
     reasoning: { enabled: true, effort: "medium" },
     latency: "fast",
     maxOutputTokens: 128_000,
+    contextWindow: null,
     cacheKey: "conversation-1",
   };
 }
@@ -277,6 +278,8 @@ Deno.test("official model discovery excludes hidden models and puts the default 
           { effort: "low", description: "Fast responses" },
           { effort: "medium", description: "Balanced" },
         ],
+        default_reasoning_level: "medium",
+        service_tiers: [{ id: "priority" }],
       },
       {
         slug: "gpt-second",
@@ -293,7 +296,17 @@ Deno.test("official model discovery excludes hidden models and puts the default 
   assertEquals(models[0].contextWindow, 400_000);
   assertEquals(models[1].contextWindow, 272_000);
   assertEquals(models[1].capabilities, { images: true });
-  assertEquals(models[1].privateData, { reasoningEfforts: ["low", "medium"], serviceTiers: [] });
+  assertEquals(models[1].privateData, {
+    reasoningEfforts: ["low", "medium"],
+    serviceTiers: ["priority"],
+  });
+  // The picker offers exactly the upstream efforts, its default, and Fast for the priority tier.
+  assertEquals(models[1].options, {
+    efforts: ["low", "medium"],
+    defaultEffort: "medium",
+    fast: true,
+  });
+  assertEquals(models[0].options, undefined);
 });
 
 Deno.test("model discovery adds a Daybreak Blue model only where the account catalog lists it", () => {

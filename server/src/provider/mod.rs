@@ -25,6 +25,7 @@ pub use registry::{ImportResponse, OAuthBeginResponse, OAuthPollResponse, Provid
 pub use runtime::{
     ProviderRuntime, ProviderRuntimePhase, ProviderRuntimeState, ProviderRuntimeStatus,
 };
+pub use state::ModelOptions;
 
 /// Prevents the Deno child process from popping a console window on Windows (CREATE_NO_WINDOW).
 #[cfg(windows)]

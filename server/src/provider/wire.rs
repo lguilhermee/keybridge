@@ -35,6 +35,7 @@ pub fn llm_request(invocation: &ModelInvocation) -> Result<serde_json::Value> {
             _ => "standard",
         },
         "maxOutputTokens": request.model.max_output_tokens,
+        "contextWindow": request.model.context_window_tokens,
         "cacheKey": invocation.conversation_id,
     }))
 }

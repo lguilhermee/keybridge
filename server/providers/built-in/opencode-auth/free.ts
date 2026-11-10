@@ -1,11 +1,11 @@
 import type { JsonValue, ProviderContext } from "cursor-byok:provider";
 import type { ModelDefinition, ModelSupport } from "cursor-byok:model";
 import type {
+  ChannelOutput,
+  ChannelSupport,
   LlmMessage,
   LlmRequest,
   LlmTool,
-  ChannelOutput,
-  ChannelSupport,
 } from "cursor-byok:channel";
 import {
   HttpError as ChatHttpError,
@@ -252,6 +252,12 @@ function stripReplay(messages: LlmMessage[]): LlmMessage[] {
 }
 
 /** The free lane's chat side accepts the full effort enum; the responses side (OpenAI pool) clamps max to xhigh. */
+/** Effort levels each free lane accepts; matches the clamping in laneEffort. */
+const FREE_LANE_EFFORTS: Record<Lane, string[]> = {
+  chat: ["minimal", "low", "medium", "high", "xhigh", "max"],
+  responses: ["minimal", "low", "medium", "high", "xhigh"],
+};
+
 function laneEffort(effort: string | null, lane: Lane): string | null {
   if (effort === null) return null;
   const normalized = effort.toLowerCase();
@@ -429,6 +435,7 @@ async function fetchFreeCatalog(context: ProviderContext): Promise<ModelDefiniti
       return {
         id,
         displayName: displayName(id),
+        options: { efforts: FREE_LANE_EFFORTS[laneForModel(id)] },
         privateData: { lane: laneForModel(id) },
         ...(supportsImages(item) ? { capabilities: { images: true } } : {}),
       };
@@ -446,6 +453,7 @@ export const freeModels: ModelSupport = {
     return FREE_CATALOG_FALLBACK.map((entry) => ({
       id: entry.id,
       displayName: entry.name,
+      options: { efforts: FREE_LANE_EFFORTS[entry.lane] },
       privateData: { lane: entry.lane },
       ...(entry.images ? { capabilities: { images: true } } : {}),
     }));

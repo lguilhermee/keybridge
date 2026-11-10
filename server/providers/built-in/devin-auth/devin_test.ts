@@ -1,10 +1,5 @@
-import {
-  ConnectError,
-  connectError,
-  decodeFrames,
-  encodeFrame,
-} from "./connect.ts";
-import { parseModels } from "./models.ts";
+import { ConnectError, connectError, decodeFrames, encodeFrame } from "./connect.ts";
+import { parseModels, requestModelId } from "./models.ts";
 import { buildRequest, pairToolResults, ResponseDecoder } from "./request.ts";
 import {
   devinBrowserOAuth,
@@ -73,6 +68,7 @@ function request(): LlmRequest {
     reasoning: { enabled: false, effort: null },
     latency: "standard",
     maxOutputTokens: 128,
+    contextWindow: null,
     cacheKey: "test-conversation",
   };
 }
@@ -161,7 +157,7 @@ Deno.test("Credential import accepts existing CLI TOML and renewable API keys wi
   equal(error instanceof ConnectError, true);
 });
 
-Deno.test("Catalog uses current model limits, images and stable IDs, excluding routers", () => {
+Deno.test("Catalog keeps a family-less model as one model without settings", () => {
   equal(
     parseModels({
       clientModelConfigs: [
@@ -179,11 +175,14 @@ Deno.test("Catalog uses current model limits, images and stable IDs, excluding r
     [{
       id: "m",
       displayName: "Model",
-      description: "Devin - m",
+      description: "Devin - Model",
       maxOutputTokens: 300,
       contextWindow: 500_000,
       capabilities: { images: true },
-      privateData: { contextWindow: 500_000, provider: null },
+      privateData: {
+        members: [{ id: "m", effort: null, fast: false, contextWindow: 500_000 }],
+        defaultId: "m",
+      },
     }],
   );
 });
@@ -191,56 +190,105 @@ Deno.test("Catalog uses current model limits, images and stable IDs, excluding r
 function familyModel(
   modelUid: string,
   family: string,
-  effort: string,
-  fast: boolean | null,
+  settings: { effort?: string; fast?: boolean; thinking?: boolean; window?: number },
+  isDefault = false,
 ): Record<string, unknown> {
+  const toggle = (on: boolean) => ({ ...(on ? { order: 1 } : {}), controlType: "OPTION" });
   return {
     modelUid,
     label: modelUid,
+    maxTokens: settings.window ?? 200_000,
     modelInfo: { modelFamilyUid: family },
     modelFamilyMetadata: {
+      modelFamilyLabel: family.toUpperCase(),
+      isDefaultModelInFamily: isDefault,
       entries: [
-        {
-          key: "Effort",
-          value: { order: 2, name: effort, controlType: "STEPPER" },
-        },
-        ...(fast === null ? [] : [{
-          key: "Fast Mode",
-          value: { ...(fast ? { order: 1 } : {}), controlType: "OPTION" },
-        }]),
+        ...(settings.effort === undefined
+          ? []
+          : [{ key: "Effort", value: { name: settings.effort, controlType: "STEPPER" } }]),
+        ...(settings.thinking === undefined
+          ? []
+          : [{ key: "Thinking", value: toggle(settings.thinking) }]),
+        ...(settings.fast === undefined
+          ? []
+          : [{ key: "Fast Mode", value: toggle(settings.fast) }]),
       ],
     },
   };
 }
 
-Deno.test("Catalog links each model to its Fast Mode sibling in the same family", () => {
+const OPUS_FAMILY = [
+  familyModel("opus-low", "opus", { effort: "Low", fast: false }),
+  familyModel("opus-high", "opus", { effort: "High", fast: false }, true),
+  familyModel("opus-high-fast", "opus", { effort: "High", fast: true }),
+  familyModel("opus-xhigh", "opus", { effort: "XHigh", fast: false }),
+  familyModel("opus-max", "opus", { effort: "Max", fast: false }),
+  familyModel("opus-max-fast", "opus", { effort: "Max", fast: true }),
+];
+
+const SONNET_FAMILY = [
+  familyModel("sonnet", "sonnet", { effort: "High", thinking: false }),
+  familyModel("sonnet-thinking", "sonnet", { effort: "High", thinking: true }, true),
+  familyModel("sonnet-1m", "sonnet", { effort: "High", thinking: false, window: 1_000_000 }),
+  familyModel("sonnet-thinking-1m", "sonnet", {
+    effort: "High",
+    thinking: true,
+    window: 1_000_000,
+  }),
+];
+
+Deno.test("Catalog collapses each family into one model with its Effort and Fast settings", () => {
   const models = parseModels({
     clientModelConfigs: [
-      familyModel("opus-high", "opus", "High", false),
-      familyModel("opus-high-fast", "opus", "High", true),
-      familyModel("opus-max", "opus", "Max", false),
-      familyModel("opus-max-fast", "opus", "Max", true),
-      familyModel("opus-low", "opus", "Low", false),
-      familyModel("glm-high", "glm", "High", null),
+      ...OPUS_FAMILY,
+      ...SONNET_FAMILY,
+      familyModel("glm-none", "glm", { effort: "No Thinking" }),
+      familyModel("glm-high", "glm", { effort: "High" }, true),
     ],
   });
-  const fast = Object.fromEntries(
-    models.map((model) => [
-      model.id,
-      (model.privateData as Record<string, unknown>).fastModelId ?? null,
-    ]),
+  equal(
+    models.map((model) => [model.id, model.displayName, model.contextWindow, model.options]),
+    [
+      ["opus", "OPUS", 200_000, {
+        efforts: ["low", "high", "xhigh", "max"],
+        defaultEffort: "high",
+        fast: true,
+      }],
+      ["sonnet", "SONNET", 1_000_000, { efforts: ["none", "high"], defaultEffort: "high" }],
+      ["glm", "GLM", 200_000, { efforts: ["none", "high"], defaultEffort: "high" }],
+    ],
   );
-  equal(fast, {
-    "opus-high": "opus-high-fast",
-    "opus-high-fast": null,
-    "opus-max": "opus-max-fast",
-    "opus-max-fast": null,
-    "opus-low": null,
-    "glm-high": null,
-  });
 });
 
-Deno.test("Fast latency sends the Fast Mode sibling; models without one stay standard", async () => {
+Deno.test("Calls pick the family member matching Effort, Fast and Context", () => {
+  const [opus, sonnet] = parseModels({ clientModelConfigs: [...OPUS_FAMILY, ...SONNET_FAMILY] });
+  const pick = (
+    model: typeof opus,
+    effort: string | null,
+    latency: "fast" | "standard" = "standard",
+    contextWindow: number | null = 200_000,
+    enabled = true,
+  ) => requestModelId(model, { reasoning: { enabled, effort }, latency, contextWindow });
+
+  equal(pick(opus, "high"), "opus-high");
+  equal(pick(opus, "high", "fast"), "opus-high-fast");
+  equal(pick(opus, "max", "fast"), "opus-max-fast");
+  // No Fast member at this level: stays on the standard one.
+  equal(pick(opus, "xhigh", "fast"), "opus-xhigh");
+  // Missing level: nearest offered one, ties upward.
+  equal(pick(opus, "medium"), "opus-high");
+  // No effort parameter at all: the family default.
+  equal(pick(opus, null), "opus-high");
+  // "none" on a family without a reasoning-off level falls back to the default.
+  equal(pick(opus, null, "standard", 200_000, false), "opus-high");
+
+  equal(pick(sonnet, "high"), "sonnet-thinking");
+  equal(pick(sonnet, null, "standard", 200_000, false), "sonnet");
+  equal(pick(sonnet, "high", "standard", 1_000_000), "sonnet-thinking-1m");
+  equal(pick(sonnet, null, "standard", 500_000, false), "sonnet-1m");
+});
+
+Deno.test("Invoke sends the resolved member model UID", async () => {
   const sent: string[] = [];
   const context: ProviderContext = {
     signal: new AbortController().signal,
@@ -261,13 +309,11 @@ Deno.test("Fast latency sends the Fast Mode sibling; models without one stay sta
       },
     },
   };
-  const invoke = (
-    model: { id: string; displayName: string; privateData?: JsonValue },
-    latency: "fast" | "standard",
-  ) =>
+  const [opus] = parseModels({ clientModelConfigs: OPUS_FAMILY });
+  const invoke = (latency: "fast" | "standard") =>
     devinChannel.invoke(
       {
-        model,
+        model: opus,
         resource: {
           id: "r",
           type: "devin-account",
@@ -275,20 +321,18 @@ Deno.test("Fast latency sends the Fast Mode sibling; models without one stay sta
           privateData: { token: "devin-session-token$t", displayName: "Account" },
           state: { status: "ready" as const },
         },
-        request: { ...request(), latency },
+        request: {
+          ...request(),
+          reasoning: { enabled: true, effort: "max" },
+          latency,
+        },
       },
       { emit: () => {} },
       context,
     );
-  const opus = {
-    id: "opus-high",
-    displayName: "Opus High",
-    privateData: { fastModelId: "opus-high-fast" },
-  };
-  await invoke(opus, "fast");
-  await invoke(opus, "standard");
-  await invoke({ id: "glm-high", displayName: "GLM High" }, "fast");
-  equal(sent, ["opus-high-fast", "opus-high", "glm-high"]);
+  await invoke("fast");
+  await invoke("standard");
+  equal(sent, ["opus-max-fast", "opus-max"]);
 });
 
 Deno.test("Tool history keeps one assistant prompt and pairs parallel results by ID", () => {
@@ -369,7 +413,7 @@ Deno.test("Request translation preserves schemas, aliases, replay, and current-t
     properties: { path: { type: "string" } },
   });
   if (
-    !body.prompt.includes("# tools descriptions\n<tool name=\"") ||
+    !body.prompt.includes('# tools descriptions\n<tool name="') ||
     !body.prompt.includes(">\nRead exactly") ||
     !body.prompt.includes("- path (string): Exact path")
   ) {

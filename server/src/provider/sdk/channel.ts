@@ -59,6 +59,8 @@ export type LlmRequest = {
   reasoning: { enabled: boolean; effort: string | null };
   latency: "fast" | "standard";
   maxOutputTokens: number | null;
+  /** Context size selected in Cursor, in tokens; null when none was selected. */
+  contextWindow: number | null;
   /** Session-level stable cache key for upstream prefix-cache routing affinity (e.g. prompt_cache_key). */
   cacheKey: string | null;
 };

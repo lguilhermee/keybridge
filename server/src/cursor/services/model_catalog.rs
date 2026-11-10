@@ -13,7 +13,7 @@ use crate::{
     api::cursor::proxy::{self, CursorProxy},
     cursor::{protocol::proto::agent::v1 as agent, transport::TransportRegistry},
     model::{format_token_count, parse_token_count, ComboConfig, ModelConfig},
-    provider::ProviderModelDescriptor,
+    provider::{ModelOptions, ProviderModelDescriptor},
     Error, Result,
 };
 
@@ -222,30 +222,92 @@ const CONTEXTS: [(&str, &str); 5] = [
     ("800k", "800K"),
     ("1m", "1M"),
 ];
-const EFFORTS: [(&str, &str); 5] = [
-    ("low", "Low"),
-    ("medium", "Medium"),
-    ("high", "High"),
-    ("xhigh", "Extra High"),
-    ("max", "Max"),
-];
-const DEFAULT_CONTEXT: &str = "200k";
+/// Effort levels manually configured models and combos offer.
+const STANDARD_EFFORTS: [&str; 5] = ["low", "medium", "high", "xhigh", "max"];
 
+/// Settings one picker entry offers: Effort levels (ascending), the preselected effort, and Fast.
+struct PickerOptions {
+    efforts: Vec<String>,
+    default_effort: Option<String>,
+    fast: bool,
+}
+
+impl PickerOptions {
+    fn standard() -> Self {
+        Self {
+            efforts: STANDARD_EFFORTS.map(str::to_owned).to_vec(),
+            default_effort: Some("high".into()),
+            fast: true,
+        }
+    }
+
+    /// Provider models offer exactly the settings they declare.
+    fn provider(options: &ModelOptions) -> Self {
+        let default_effort = options.default_effort.clone().or_else(|| {
+            options
+                .efforts
+                .iter()
+                .find(|effort| *effort == "high")
+                .or(options.efforts.last())
+                .cloned()
+        });
+        Self {
+            efforts: options.efforts.clone(),
+            default_effort,
+            fast: options.fast,
+        }
+    }
+}
+
+fn effort_display_name(effort: &str) -> String {
+    match effort {
+        "xhigh" => "Extra High".into(),
+        other => {
+            let mut chars = other.chars();
+            chars
+                .next()
+                .map(|first| first.to_uppercase().chain(chars).collect())
+                .unwrap_or_default()
+        }
+    }
+}
+
+/// Context choices; the first one is preselected.
 fn context_options(context_window_tokens: Option<u64>) -> Vec<(String, String)> {
     let mut contexts = CONTEXTS
         .into_iter()
         .map(|(value, display_name)| (value.to_owned(), display_name.to_owned()))
         .collect::<Vec<_>>();
     if let Some(tokens) = context_window_tokens {
-        let value = tokens.to_string();
-        let duplicate = contexts
-            .iter()
-            .any(|(existing, _)| parse_token_count(existing) == Some(tokens));
-        if !duplicate {
-            contexts.push((value, format!("{} (Custom)", format_token_count(tokens))));
-        }
+        push_custom_context(&mut contexts, tokens);
     }
     contexts
+}
+
+/// Provider models know their window, so they only offer contexts that fit in it.
+fn provider_context_options(context_window: Option<u64>) -> Vec<(String, String)> {
+    let Some(window) = context_window else {
+        return context_options(None);
+    };
+    let mut contexts = CONTEXTS
+        .into_iter()
+        .filter(|(value, _)| parse_token_count(value).is_some_and(|tokens| tokens <= window))
+        .map(|(value, display_name)| (value.to_owned(), display_name.to_owned()))
+        .collect::<Vec<_>>();
+    push_custom_context(&mut contexts, window);
+    contexts
+}
+
+fn push_custom_context(contexts: &mut Vec<(String, String)>, tokens: u64) {
+    let duplicate = contexts
+        .iter()
+        .any(|(existing, _)| parse_token_count(existing) == Some(tokens));
+    if !duplicate {
+        contexts.push((
+            tokens.to_string(),
+            format!("{} (Custom)", format_token_count(tokens)),
+        ));
+    }
 }
 
 pub async fn available_models(
@@ -473,13 +535,14 @@ fn unary_payload(body: &Bytes) -> Result<(bool, &[u8])> {
 
 fn available_model(model: &ModelConfig) -> AvailableModel {
     let contexts = context_options(model.context_window_tokens);
+    let options = PickerOptions::standard();
     let tooltip = model_tooltip(model);
     let variants = model_variants(
         &model.model_hash,
         &model.display_name,
         &tooltip,
         &contexts,
-        true,
+        &options,
     );
     let legacy_slugs = variants
         .iter()
@@ -503,7 +566,7 @@ fn available_model(model: &ModelConfig) -> AvailableModel {
         inputbox_short_model_name: Some(model.display_name.clone()),
         supports_sandboxing: Some(true),
         supports_cmd_k: Some(false),
-        parameter_definitions: model_parameters(&contexts, true),
+        parameter_definitions: model_parameters(&contexts, &options),
         variants,
         legacy_slugs,
         named_model_section_index: Some(1),
@@ -534,7 +597,7 @@ fn provider_host(base_url: &str) -> String {
 
 fn model_parameters(
     contexts: &[(String, String)],
-    thinking: bool,
+    options: &PickerOptions,
 ) -> Vec<ModelParameterDefinition> {
     let mut parameters = vec![ModelParameterDefinition {
         id: "context".into(),
@@ -554,19 +617,20 @@ fn model_parameters(
         }),
         is_cycleable_by_hotkey: Some(false),
     }];
-    if thinking {
+    if !options.efforts.is_empty() {
         parameters.push(ModelParameterDefinition {
             id: "reasoning".into(),
             name: "Effort".into(),
-            markdown_tooltip: Some("Effort the model uses to generate its response.".into()),
+            markdown_tooltip: Some("Effort the model uses to generate a response.".into()),
             parameter_type: Some(ModelParameterType {
                 boolean_parameter: None,
                 enum_parameter: Some(EnumParameter {
-                    values: EFFORTS
-                        .into_iter()
-                        .map(|(value, display_name)| EnumParameterValue {
-                            value: value.into(),
-                            display_name: Some(display_name.into()),
+                    values: options
+                        .efforts
+                        .iter()
+                        .map(|effort| EnumParameterValue {
+                            value: effort.clone(),
+                            display_name: Some(effort_display_name(effort)),
                         })
                         .collect(),
                 }),
@@ -574,63 +638,70 @@ fn model_parameters(
             is_cycleable_by_hotkey: Some(true),
         });
     }
-    parameters.push(ModelParameterDefinition {
-        id: "fast".into(),
-        name: "Fast".into(),
-        markdown_tooltip: Some("Significantly faster but consumes more usage".into()),
-        parameter_type: Some(ModelParameterType {
-            boolean_parameter: Some(BooleanParameter {
-                values: vec![
-                    BooleanParameterValue {
-                        value: "false".into(),
-                        display_name: None,
-                        increases_model_cost: None,
-                    },
-                    BooleanParameterValue {
-                        value: "true".into(),
-                        display_name: Some("Fast".into()),
-                        increases_model_cost: Some(true),
-                    },
-                ],
+    if options.fast {
+        parameters.push(ModelParameterDefinition {
+            id: "fast".into(),
+            name: "Fast".into(),
+            markdown_tooltip: Some("Significantly faster but consumes more usage".into()),
+            parameter_type: Some(ModelParameterType {
+                boolean_parameter: Some(BooleanParameter {
+                    values: vec![
+                        BooleanParameterValue {
+                            value: "false".into(),
+                            display_name: None,
+                            increases_model_cost: None,
+                        },
+                        BooleanParameterValue {
+                            value: "true".into(),
+                            display_name: Some("Fast".into()),
+                            increases_model_cost: Some(true),
+                        },
+                    ],
+                }),
+                enum_parameter: None,
             }),
-            enum_parameter: None,
-        }),
-        is_cycleable_by_hotkey: Some(false),
-    });
+            is_cycleable_by_hotkey: Some(false),
+        });
+    }
     parameters
 }
 
+/// One variant per Context x Effort x Fast combination the entry offers.
 fn model_variants(
     name: &str,
     display_name: &str,
     tooltip: &TooltipData,
     contexts: &[(String, String)],
-    thinking: bool,
+    options: &PickerOptions,
 ) -> Vec<ModelVariant> {
-    // Non-thinking models have no Effort axis, so the variant grid is just Context x Fast.
-    let efforts: &[Option<(&str, &str)>] = if thinking {
-        &[
-            Some(EFFORTS[0]),
-            Some(EFFORTS[1]),
-            Some(EFFORTS[2]),
-            Some(EFFORTS[3]),
-            Some(EFFORTS[4]),
-        ]
+    let efforts = if options.efforts.is_empty() {
+        vec![None]
     } else {
-        &[None]
+        options
+            .efforts
+            .iter()
+            .map(|effort| Some(effort.as_str()))
+            .collect()
     };
-    let mut variants = Vec::with_capacity(contexts.len() * efforts.len() * 2);
-    for (context, context_name) in contexts {
-        for effort in efforts {
-            for fast in [false, true] {
+    let fasts: &[bool] = if options.fast {
+        &[false, true]
+    } else {
+        &[false]
+    };
+    let mut variants = Vec::with_capacity(contexts.len() * efforts.len() * fasts.len());
+    for (index, (context, context_name)) in contexts.iter().enumerate() {
+        for effort in &efforts {
+            for &fast in fasts {
                 variants.push(model_variant(
-                    name,
-                    display_name,
-                    tooltip,
-                    context,
-                    context_name,
+                    VariantEntry {
+                        name,
+                        display_name,
+                        tooltip,
+                    },
+                    (context, context_name, index == 0),
                     *effort,
                     fast,
+                    options,
                 ));
             }
         }
@@ -638,70 +709,77 @@ fn model_variants(
     variants
 }
 
+struct VariantEntry<'a> {
+    name: &'a str,
+    display_name: &'a str,
+    tooltip: &'a TooltipData,
+}
+
 fn model_variant(
-    name: &str,
-    display_name: &str,
-    tooltip: &TooltipData,
-    context: &str,
-    context_name: &str,
-    effort: Option<(&str, &str)>,
+    entry: VariantEntry<'_>,
+    (context, context_name, default_context): (&str, &str, bool),
+    effort: Option<&str>,
     fast: bool,
+    options: &PickerOptions,
 ) -> ModelVariant {
     let mut suffix = Vec::with_capacity(3);
-    if context != DEFAULT_CONTEXT {
-        suffix.push(context_name);
+    if !default_context {
+        suffix.push(context_name.to_owned());
     }
-    if let Some((_, effort_name)) = effort {
-        suffix.push(effort_name);
+    if let Some(effort) = effort {
+        suffix.push(effort_display_name(effort));
     }
     if fast {
-        suffix.push("Fast");
+        suffix.push("Fast".into());
     }
     let suffix = suffix.join(" ");
     let display_name = if suffix.is_empty() {
-        display_name.to_owned()
+        entry.display_name.to_owned()
     } else {
         format!(
-            "{display_name} <span style=\"color: var(--cursor-text-tertiary);\">{suffix}</span>"
+            "{} <span style=\"color: var(--cursor-text-tertiary);\">{suffix}</span>",
+            entry.display_name
         )
     };
-    let is_default =
-        context == DEFAULT_CONTEXT && !fast && effort.is_none_or(|(effort, _)| effort == "high");
+    let is_default = default_context && !fast && effort == options.default_effort.as_deref();
     let mut parameter_values = vec![ModelParameterValue {
         id: "context".into(),
         value: context.into(),
     }];
-    if let Some((effort, _)) = effort {
+    if let Some(effort) = effort {
         parameter_values.push(ModelParameterValue {
             id: "reasoning".into(),
             value: effort.into(),
         });
     }
-    parameter_values.push(ModelParameterValue {
-        id: "fast".into(),
-        value: fast.to_string(),
-    });
+    if options.fast {
+        parameter_values.push(ModelParameterValue {
+            id: "fast".into(),
+            value: fast.to_string(),
+        });
+    }
+    let representation = parameter_values
+        .iter()
+        .map(|parameter| format!("{}={}", parameter.id, parameter.value))
+        .collect::<Vec<_>>()
+        .join(",");
     ModelVariant {
+        variant_string_representation: Some(format!("{}[{representation}]", entry.name)),
+        legacy_slug: Some(format!(
+            "{}-{context}{}{}",
+            entry.name,
+            effort
+                .map(|effort| format!("-{effort}"))
+                .unwrap_or_default(),
+            if fast { "-fast" } else { "" }
+        )),
         parameter_values,
         display_name: display_name.clone(),
         is_max_mode: false,
         is_default_max_config: is_default.then_some(true),
         is_default_non_max_config: is_default.then_some(true),
-        tooltip_data: Some(tooltip.clone()),
+        tooltip_data: Some(entry.tooltip.clone()),
         display_name_outside_picker: Some(display_name),
-        variant_string_representation: Some(match effort {
-            Some((effort, _)) => {
-                format!("{name}[context={context},reasoning={effort},fast={fast}]")
-            }
-            None => format!("{name}[context={context},fast={fast}]"),
-        }),
-        legacy_slug: Some(format!(
-            "{name}-{context}{}{}",
-            effort
-                .map(|(effort, _)| format!("-{effort}"))
-                .unwrap_or_default(),
-            if fast { "-fast" } else { "" }
-        )),
     }
 }
 
@@ -715,9 +793,15 @@ fn available_provider_model(model: &ProviderModelDescriptor) -> AvailableModel {
     let tooltip = TooltipData {
         markdown_content: model.description.clone(),
     };
-    // Effort and context tiers are provided uniformly by the host, matching built-in models; providers no longer declare them.
-    let contexts = context_options(None);
-    let variants = model_variants(&model.id, &model.display_name, &tooltip, &contexts, true);
+    let contexts = provider_context_options(model.context_window);
+    let options = PickerOptions::provider(&model.options);
+    let variants = model_variants(
+        &model.id,
+        &model.display_name,
+        &tooltip,
+        &contexts,
+        &options,
+    );
     let legacy_slugs = variants
         .iter()
         .filter_map(|variant| variant.legacy_slug.clone())
@@ -740,7 +824,7 @@ fn available_provider_model(model: &ProviderModelDescriptor) -> AvailableModel {
         inputbox_short_model_name: Some(model.display_name.clone()),
         supports_sandboxing: Some(true),
         supports_cmd_k: Some(false),
-        parameter_definitions: model_parameters(&contexts, true),
+        parameter_definitions: model_parameters(&contexts, &options),
         variants,
         legacy_slugs,
         named_model_section_index: Some(1),
@@ -769,12 +853,13 @@ fn available_combo(combo: &ComboConfig, member_names: &HashMap<&str, &str>) -> A
         markdown_content: Some(format!("Combo ({}): {members}", combo.strategy.as_str())),
     };
     let contexts = context_options(None);
+    let options = PickerOptions::standard();
     let variants = model_variants(
         &combo.combo_id,
         &combo.display_name,
         &tooltip,
         &contexts,
-        true,
+        &options,
     );
     let legacy_slugs = variants
         .iter()
@@ -798,7 +883,7 @@ fn available_combo(combo: &ComboConfig, member_names: &HashMap<&str, &str>) -> A
         inputbox_short_model_name: Some(combo.display_name.clone()),
         supports_sandboxing: Some(true),
         supports_cmd_k: Some(false),
-        parameter_definitions: model_parameters(&contexts, true),
+        parameter_definitions: model_parameters(&contexts, &options),
         variants,
         legacy_slugs,
         named_model_section_index: Some(1),
@@ -923,6 +1008,7 @@ mod tests {
             max_output_tokens: None,
             context_window: None,
             images: false,
+            options: Default::default(),
             enabled: true,
         });
         assert_eq!(details.model_id, "provider:test/channel/model");
@@ -949,6 +1035,108 @@ mod tests {
         assert_eq!(
             nudge.models_with_no_default_switch,
             vec!["local-model-hash"]
+        );
+    }
+
+    fn provider_model(
+        options: ModelOptions,
+        context_window: Option<u64>,
+    ) -> ProviderModelDescriptor {
+        ProviderModelDescriptor {
+            id: "provider:test/channel/family".into(),
+            provider_id: "test".into(),
+            provider_name: "Test Provider".into(),
+            channel_id: "channel".into(),
+            model_id: "family".into(),
+            display_name: "Family".into(),
+            description: None,
+            icon: String::new(),
+            brand: "test".into(),
+            max_output_tokens: None,
+            context_window,
+            images: false,
+            options,
+            enabled: true,
+        }
+    }
+
+    #[test]
+    fn provider_picker_offers_only_declared_settings() {
+        let model = available_provider_model(&provider_model(
+            ModelOptions {
+                efforts: vec!["none".into(), "low".into(), "xhigh".into()],
+                default_effort: None,
+                fast: false,
+            },
+            Some(500_000),
+        ));
+
+        let parameters = model
+            .parameter_definitions
+            .iter()
+            .map(|parameter| parameter.id.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(parameters, ["context", "reasoning"]);
+        let efforts = model.parameter_definitions[1]
+            .parameter_type
+            .as_ref()
+            .and_then(|kind| kind.enum_parameter.as_ref())
+            .unwrap()
+            .values
+            .iter()
+            .map(|value| (value.value.as_str(), value.display_name.as_deref().unwrap()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            efforts,
+            [("none", "None"), ("low", "Low"), ("xhigh", "Extra High")]
+        );
+
+        // Contexts stop at the model window: 200K, 356K, 500K.
+        assert_eq!(model.variants.len(), 3 * 3);
+        // Without a declared default the highest level is preselected.
+        let defaults = model
+            .variants
+            .iter()
+            .filter(|variant| variant.is_default_non_max_config == Some(true))
+            .map(|variant| variant.variant_string_representation.as_deref().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            defaults,
+            ["provider:test/channel/family[context=200k,reasoning=xhigh]"]
+        );
+    }
+
+    #[test]
+    fn provider_picker_without_options_is_a_single_context_choice() {
+        let model = available_provider_model(&provider_model(ModelOptions::default(), None));
+        assert_eq!(model.parameter_definitions.len(), 1);
+        assert_eq!(model.variants.len(), CONTEXTS.len());
+        assert_eq!(
+            model.variants[0].variant_string_representation.as_deref(),
+            Some("provider:test/channel/family[context=200k]")
+        );
+        assert_eq!(model.variants[0].is_default_non_max_config, Some(true));
+    }
+
+    #[test]
+    fn provider_picker_fast_toggle_doubles_variants() {
+        let model = available_provider_model(&provider_model(
+            ModelOptions {
+                efforts: vec!["low".into(), "high".into()],
+                default_effort: Some("low".into()),
+                fast: true,
+            },
+            Some(200_000),
+        ));
+        assert_eq!(model.variants.len(), 2 * 2);
+        let default = model
+            .variants
+            .iter()
+            .find(|variant| variant.is_default_non_max_config == Some(true))
+            .unwrap();
+        assert_eq!(
+            default.variant_string_representation.as_deref(),
+            Some("provider:test/channel/family[context=200k,reasoning=low,fast=false]")
         );
     }
 }

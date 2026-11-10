@@ -1,7 +1,7 @@
 //! Defines serializable provider capability definitions and desktop descriptors.
 use serde::{Deserialize, Serialize};
 
-use super::state::{ResourceRecord, ResourceState, StoredModel};
+use super::state::{ModelOptions, ResourceRecord, ResourceState, StoredModel};
 
 /// Capability summary produced by collect.ts; contains no executable content.
 #[derive(Clone, Debug, Deserialize)]
@@ -140,6 +140,8 @@ pub struct ProviderModelDescriptor {
     /// Total prompt window in tokens; serialized as `contextWindow`. Null when unknown — the UI hides the context meter.
     pub context_window: Option<u64>,
     pub images: bool,
+    /// Effort levels and Fast toggle Cursor's picker offers for this model.
+    pub options: ModelOptions,
     pub enabled: bool,
 }
 
@@ -298,6 +300,7 @@ impl ProviderModelDescriptor {
             max_output_tokens: model.max_output_tokens,
             context_window: model.context_window,
             images: model.images,
+            options: model.options.clone(),
             enabled: model.enabled,
         }
     }

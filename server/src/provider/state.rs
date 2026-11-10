@@ -141,6 +141,8 @@ pub struct StoredModel {
     pub context_window: Option<u64>,
     #[serde(default)]
     pub images: bool,
+    #[serde(default)]
+    pub options: ModelOptions,
     #[serde(default = "default_model_enabled")]
     pub enabled: bool,
     #[serde(default)]
@@ -149,6 +151,43 @@ pub struct StoredModel {
 
 fn default_model_enabled() -> bool {
     true
+}
+
+/// Picker settings a provider model declares (the SDK's ModelOptions); the channel maps the
+/// chosen values onto upstream model IDs or request fields.
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ModelOptions {
+    /// Effort levels in ascending order; empty means no Effort setting.
+    pub efforts: Vec<String>,
+    pub default_effort: Option<String>,
+    pub fast: bool,
+}
+
+impl ModelOptions {
+    fn from_definition(value: Option<&serde_json::Value>) -> Result<Self> {
+        let Some(value) = value.filter(|value| !value.is_null()) else {
+            return Ok(Self::default());
+        };
+        let raw: Self = serde_json::from_value(value.clone())
+            .map_err(|error| Error::Protocol(format!("invalid provider model options: {error}")))?;
+        let mut efforts = Vec::with_capacity(raw.efforts.len());
+        for effort in raw.efforts {
+            let effort = effort.trim().to_ascii_lowercase();
+            if !effort.is_empty() && !efforts.contains(&effort) {
+                efforts.push(effort);
+            }
+        }
+        let default_effort = raw
+            .default_effort
+            .map(|effort| effort.trim().to_ascii_lowercase())
+            .filter(|effort| efforts.contains(effort));
+        Ok(Self {
+            efforts,
+            default_effort,
+            fast: raw.fast,
+        })
+    }
 }
 
 impl StoredModel {
@@ -191,6 +230,7 @@ impl StoredModel {
                 .get("contextWindow")
                 .and_then(serde_json::Value::as_u64),
             images: capability("images"),
+            options: ModelOptions::from_definition(object.get("options"))?,
             enabled: true,
             private_data: object
                 .get("privateData")
@@ -208,6 +248,7 @@ impl StoredModel {
             "maxOutputTokens": self.max_output_tokens,
             "contextWindow": self.context_window,
             "capabilities": { "images": self.images },
+            "options": self.options,
             "privateData": self.private_data,
         })
     }
@@ -525,5 +566,46 @@ mod tests {
         .unwrap();
         assert_eq!(unknown.context_window, None);
         assert!(unknown.snapshot()["contextWindow"].is_null());
+    }
+
+    #[test]
+    fn model_definitions_normalize_declared_picker_options() {
+        let model = StoredModel::from_definition(&serde_json::json!({
+            "id": "family",
+            "displayName": "Family",
+            "options": {
+                "efforts": [" Low", "high", "HIGH", ""],
+                "defaultEffort": "High",
+                "fast": true,
+            },
+        }))
+        .unwrap();
+        assert_eq!(
+            model.options,
+            ModelOptions {
+                efforts: vec!["low".into(), "high".into()],
+                default_effort: Some("high".into()),
+                fast: true,
+            }
+        );
+        assert_eq!(
+            model.snapshot()["options"]["efforts"],
+            serde_json::json!(["low", "high"])
+        );
+
+        // A default outside the declared levels is dropped; no options means no settings.
+        let stray = StoredModel::from_definition(&serde_json::json!({
+            "id": "m",
+            "displayName": "M",
+            "options": { "efforts": ["low"], "defaultEffort": "max" },
+        }))
+        .unwrap();
+        assert_eq!(stray.options.default_effort, None);
+        let plain = StoredModel::from_definition(&serde_json::json!({
+            "id": "p",
+            "displayName": "P",
+        }))
+        .unwrap();
+        assert_eq!(plain.options, ModelOptions::default());
     }
 }

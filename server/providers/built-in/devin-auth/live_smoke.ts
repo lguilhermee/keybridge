@@ -81,6 +81,7 @@ const request: LlmRequest = {
   reasoning: { enabled: false, effort: null },
   latency: "standard",
   maxOutputTokens: 1024,
+  contextWindow: null,
   cacheKey: crypto.randomUUID(),
 };
 async function generate(request: LlmRequest): Promise<ModelEvent[]> {

@@ -71,8 +71,14 @@ const CATALOG: ModelDefinition[] = [
   },
 ];
 
+/** Effort levels the subscription endpoint accepts as `output_config.effort`. */
+const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+
 export const claudeModels: ModelSupport = {
   async list() {
-    return CATALOG;
+    return CATALOG.map((model) => ({
+      ...model,
+      options: { efforts: EFFORTS, ...(FAST_MODE_MODELS.has(model.id) ? { fast: true } : {}) },
+    }));
   },
 };

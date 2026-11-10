@@ -22,16 +22,24 @@ export const ANTIGRAVITY_CLIENT_HEADERS: Record<string, string> = {};
 
 const ANTIGRAVITY_DENYLIST = new Set(["chat_20706", "chat_23310"]);
 
-/** Gemini 4 families whose thinking tier is a wire-ID suffix rather than a request field. */
-const GEMINI_4_TIERED = /^(gemini-4-(?:carbon|argon))(?:-(?:low|medium|high))?$/;
+/** Gemini 4 families serve priority inference; matches both base and tiered IDs. */
+const GEMINI_4 = /^(gemini-4-(?:carbon|argon))(?:-(?:low|medium|high))?$/;
 
-/** Returns the Gemini 4 family (`gemini-4-carbon` / `gemini-4-argon`) for a base or tiered ID. */
+/** Returns the Gemini 4 family (`gemini-4-carbon` / `gemini-4-argon`) of a base or tiered ID. */
 export function gemini4Family(id: string): string | null {
-  return GEMINI_4_TIERED.exec(id.trim().toLowerCase())?.[1] ?? null;
+  return GEMINI_4.exec(id.trim().toLowerCase())?.[1] ?? null;
 }
 
-/** Maps Cursor's Effort (low…max) onto the three Gemini 4 wire tiers. */
-export function gemini4Tier(effort: string | null): "low" | "medium" | "high" {
+/**
+ * Antigravity lists thinking tiers as separate wire IDs (`<base>-low`, `-medium`, `-high`).
+ * Keybridge publishes one model per base and Cursor's Effort picks the tier.
+ */
+const TIER_SUFFIX = /^(.+)-(low|medium|high)$/;
+const TIERS = ["low", "medium", "high"] as const;
+type Tier = typeof TIERS[number];
+
+/** Maps Cursor's Effort onto the three wire tiers; no effort means medium. */
+function effortTier(effort: string | null): Tier {
   switch (effort?.toLowerCase()) {
     case "none":
     case "minimal":
@@ -40,10 +48,59 @@ export function gemini4Tier(effort: string | null): "low" | "medium" | "high" {
     case "high":
     case "xhigh":
     case "max":
+    case "ultra":
       return "high";
     default:
       return "medium";
   }
+}
+
+/** Collapses tier siblings into one model; a standalone `<base>` model is replaced by its tiers. */
+export function groupTiers(models: ModelDefinition[]): ModelDefinition[] {
+  const tiers = new Map<string, Tier[]>();
+  for (const model of models) {
+    const match = TIER_SUFFIX.exec(model.id);
+    if (match) tiers.set(match[1], [...(tiers.get(match[1]) ?? []), match[2] as Tier]);
+  }
+  const familyOf = (id: string): string | null => {
+    const base = TIER_SUFFIX.exec(id)?.[1];
+    if (base && (tiers.get(base)?.length ?? 0) > 1) return base;
+    return (tiers.get(id)?.length ?? 0) > 1 ? id : null;
+  };
+  const grouped: ModelDefinition[] = [];
+  const emitted = new Set<string>();
+  for (const model of models) {
+    const family = familyOf(model.id);
+    if (family === null) {
+      grouped.push(model);
+      continue;
+    }
+    if (emitted.has(family)) continue;
+    emitted.add(family);
+    const levels = TIERS.filter((tier) => tiers.get(family)!.includes(tier));
+    const first = models.find((candidate) => candidate.id === `${family}-${levels[0]}`) ?? model;
+    grouped.push({
+      ...first,
+      id: family,
+      displayName: first.displayName.replace(/\s*\((?:low|medium|high)\)\s*$/i, ""),
+      options: { efforts: [...levels], ...(gemini4Family(family) !== null ? { fast: true } : {}) },
+      privateData: { tiers: [...levels] },
+    });
+  }
+  return grouped;
+}
+
+/** Wire model ID for a call: the tier matching Effort (or the nearest offered), else the ID. */
+export function tierModelId(model: ModelSnapshot, effort: string | null): string {
+  const tiers = object(model.privateData)?.tiers;
+  if (!Array.isArray(tiers) || tiers.length === 0) return model.id;
+  const wanted = TIERS.indexOf(effortTier(effort));
+  const tier = (tiers as Tier[]).reduce((best, candidate) =>
+    Math.abs(TIERS.indexOf(candidate) - wanted) < Math.abs(TIERS.indexOf(best) - wanted)
+      ? candidate
+      : best
+  );
+  return `${model.id}-${tier}`;
 }
 
 /**
@@ -60,20 +117,47 @@ function contextWindowFor(id: string): number | undefined {
 }
 
 const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
-  // Gemini 4 Series: Cursor's Effort selects the -low/-medium/-high wire tier.
+  // Gemini 4 Series
   {
-    id: "gemini-4-carbon",
-    displayName: "Gemini 4 Carbon",
+    id: "gemini-4-carbon-low",
+    displayName: "Gemini 4 Carbon (Low)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
+
   {
-    id: "gemini-4-argon",
-    displayName: "Gemini 4 Argon",
+    id: "gemini-4-carbon-medium",
+    displayName: "Gemini 4 Carbon (Medium)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
+  },
+
+  {
+    id: "gemini-4-carbon-high",
+    displayName: "Gemini 4 Carbon (High)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+  },
+
+  {
+    id: "gemini-4-argon-low",
+    displayName: "Gemini 4 Argon (Low)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+  },
+
+  {
+    id: "gemini-4-argon-medium",
+    displayName: "Gemini 4 Argon (Medium)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+  },
+
+  {
+    id: "gemini-4-argon-high",
+    displayName: "Gemini 4 Argon (High)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
   },
 
   // Gemini 3.8 Series
@@ -82,28 +166,24 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     displayName: "Gemini 3.8 Flash (High)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gemini-3.8-flash-medium",
     displayName: "Gemini 3.8 Flash (Medium)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gemini-3.8-flash-low",
     displayName: "Gemini 3.8 Flash (Low)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gemini-3.8-flash-tiered",
     displayName: "Gemini 3.8 Flash (Tiered)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
 
   // Gemini 3.7 Series
@@ -112,42 +192,36 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     displayName: "Gemini 3.7 Flash",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gemini-3.7-flash-high",
     displayName: "Gemini 3.7 Flash (High)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.7-flash-medium",
     displayName: "Gemini 3.7 Flash (Medium)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.7-flash-low",
     displayName: "Gemini 3.7 Flash (Low)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.7-flash-tiered",
     displayName: "Gemini 3.7 Flash (Tiered)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.7-flash-thinking",
     displayName: "Gemini 3.7 Flash (Thinking)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
 
   // Gemini 3.6 Series
@@ -156,21 +230,18 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     displayName: "Gemini 3.6 Flash (High)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.6-flash-medium",
     displayName: "Gemini 3.6 Flash (Medium)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.6-flash-low",
     displayName: "Gemini 3.6 Flash (Low)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
 
   // Gemini 3.1 Pro Series
@@ -179,28 +250,24 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     displayName: "Gemini 3.1 Pro Preview",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gemini-3.1-pro-high",
     displayName: "Gemini 3.1 Pro (High)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.1-pro-medium",
     displayName: "Gemini 3.1 Pro (Medium)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.1-pro-low",
     displayName: "Gemini 3.1 Pro (Low)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
 
   // Gemini 2.5 / 2.0 Series
@@ -209,42 +276,36 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     displayName: "Gemini 2.5 Pro",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gemini-2.5-flash",
     displayName: "Gemini 2.5 Flash",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gemini-2.5-flash-thinking",
     displayName: "Gemini 2.5 Flash Thinking",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-2.5-flash-lite",
     displayName: "Gemini 2.5 Flash Lite",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-2.0-flash",
     displayName: "Gemini 2.0 Flash",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-2.0-flash-lite",
     displayName: "Gemini 2.0 Flash Lite",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
 
   // Claude Series (via Antigravity)
@@ -253,42 +314,36 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     displayName: "Claude Sonnet 4.6 (Antigravity)",
     capabilities: { images: true },
     maxOutputTokens: 64000,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "claude-sonnet-4-6-thinking",
     displayName: "Claude Sonnet 4.6 Thinking (Antigravity)",
     capabilities: { images: true },
     maxOutputTokens: 64000,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "claude-opus-4-6-thinking",
     displayName: "Claude 3.7 Opus Thinking (Antigravity)",
     capabilities: { images: true },
     maxOutputTokens: 64000,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "claude-3-7-sonnet",
     displayName: "Claude 3.7 Sonnet (Antigravity)",
     capabilities: { images: true },
     maxOutputTokens: 64000,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "claude-3-5-sonnet",
     displayName: "Claude 3.5 Sonnet (Antigravity)",
     capabilities: { images: true },
     maxOutputTokens: 64000,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "claude-3-5-haiku",
     displayName: "Claude 3.5 Haiku (Antigravity)",
     capabilities: { images: true },
     maxOutputTokens: 64000,
-    privateData: { reasoningEfforts: [] },
   },
 
   // Other Models
@@ -297,33 +352,32 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     displayName: "GPT-4o (Antigravity / Gemini)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: ["low", "medium", "high"] },
   },
   {
     id: "gpt-4o-mini",
     displayName: "GPT-4o Mini (Antigravity / Gemini)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gpt-oss-120b-medium",
     displayName: "GPT OSS 120B Medium",
     capabilities: { images: false },
     maxOutputTokens: 32768,
-    privateData: { reasoningEfforts: [] },
   },
   {
     id: "gemini-3.1-flash-image",
     displayName: "Gemini 3.1 Flash Image",
     capabilities: { images: true },
     maxOutputTokens: 65536,
-    privateData: { reasoningEfforts: [] },
   },
 ];
 
-export const STATIC_ANTIGRAVITY_MODELS: ModelDefinition[] = STATIC_ANTIGRAVITY_CATALOG.map(
-  (model) => ({ ...model, contextWindow: contextWindowFor(model.id) }),
+export const STATIC_ANTIGRAVITY_MODELS: ModelDefinition[] = groupTiers(
+  STATIC_ANTIGRAVITY_CATALOG.map((model) => ({
+    ...model,
+    contextWindow: contextWindowFor(model.id),
+  })),
 );
 
 function object(value: unknown): Record<string, unknown> | null {
@@ -355,8 +409,6 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
 
   for (const [modelId, raw] of Object.entries(rawModels)) {
     if (ANTIGRAVITY_DENYLIST.has(modelId)) continue;
-    // Tiered Gemini 4 IDs collapse into one static model per family; Effort picks the tier.
-    if (gemini4Family(modelId) !== null) continue;
     const model = object(raw);
     if (!model) continue;
 
@@ -365,8 +417,6 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
     seen.add(id);
 
     const displayName = text(model.displayName) ?? id;
-    const supportsThinking = model.supportsThinking === true;
-    const reasoningEfforts = supportsThinking ? ["low", "medium", "high"] : [];
     const maxOutputTokens = typeof model.maxOutputTokens === "number" && model.maxOutputTokens > 0
       ? model.maxOutputTokens
       : 65_536;
@@ -382,25 +432,17 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
       },
       maxOutputTokens,
       ...(contextWindow !== undefined ? { contextWindow } : {}),
-      privateData: { reasoningEfforts },
     });
   }
 
-  // Merge static models from Antigravity catalog that might not be dynamically returned
-  for (const staticModel of STATIC_ANTIGRAVITY_MODELS) {
+  // Static wire IDs fill in what discovery did not return, then tiers collapse per model.
+  for (const staticModel of STATIC_ANTIGRAVITY_CATALOG) {
     if (!seen.has(staticModel.id)) {
       seen.add(staticModel.id);
-      models.push(staticModel);
+      models.push({ ...staticModel, contextWindow: contextWindowFor(staticModel.id) });
     }
   }
-
-  return models;
-}
-
-export function reasoningEfforts(model: ModelSnapshot): string[] {
-  const data = object(model.privateData);
-  const efforts = data?.reasoningEfforts;
-  return Array.isArray(efforts) ? efforts.filter((item) => typeof item === "string") : [];
+  return groupTiers(models);
 }
 
 export const antigravityModels: ModelSupport = {

@@ -264,6 +264,7 @@ const request: LlmRequest = {
   reasoning: { enabled: false, effort: null },
   latency: "standard",
   maxOutputTokens: 256,
+  contextWindow: null,
   cacheKey: crypto.randomUUID(),
 };
 

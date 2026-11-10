@@ -33,7 +33,7 @@ export const devinChannel: ChannelSupport = {
       };
     }
     const data = { ...accountData(input.resource) };
-    const model = requestModelId(input.model, input.request.latency);
+    const model = requestModelId(input.model, input.request);
     let emitted = false;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {

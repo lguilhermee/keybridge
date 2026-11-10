@@ -1,11 +1,11 @@
 import type {
-  LlmContentPart,
-  LlmMessage,
-  LlmRequest,
   ChannelInvokeInput,
   ChannelOutput,
   ChannelResult,
   ChannelSupport,
+  LlmContentPart,
+  LlmMessage,
+  LlmRequest,
 } from "cursor-byok:channel";
 import type { JsonValue, ProviderContext } from "cursor-byok:provider";
 import { HttpError } from "cursor-byok:protocol/openai-chat";
@@ -15,7 +15,7 @@ import {
   ANTIGRAVITY_USER_AGENT,
   antigravityModels,
   gemini4Family,
-  gemini4Tier,
+  tierModelId,
 } from "./models.ts";
 import {
   type AccountData,
@@ -65,12 +65,9 @@ async function readBody(lines: AsyncIterable<string>): Promise<string> {
   return collected.join("\n");
 }
 
-function resolveAntigravityModel(modelId: string, effort: string | null): string {
+function resolveAntigravityModel(modelId: string): string {
   const raw = modelId.trim();
   const lower = raw.toLowerCase();
-
-  const family = gemini4Family(lower);
-  if (family !== null) return `${family}-${gemini4Tier(effort)}`;
 
   // 1. If explicit tier is already specified in the model ID, pass it directly!
   if (
@@ -340,7 +337,9 @@ async function streamCloudCode(
   output: ChannelOutput,
   context: ProviderContext,
 ): Promise<void> {
-  const actualModel = resolveAntigravityModel(modelId, input.request.reasoning.effort);
+  const actualModel = resolveAntigravityModel(
+    tierModelId({ ...input.model, id: modelId }, input.request.reasoning.effort),
+  );
   const { contents, systemInstruction } = convertToCloudCodeContents(
     input.request.instructions,
     input.request.messages,

@@ -100,13 +100,24 @@ export function parseOfficialModels(body: unknown): ModelDefinition[] {
     ) ?? CODEX_CONTEXT_WINDOW;
     const displayName =
       text(model.display_name ?? model.displayName ?? model.title ?? model.name) ?? id;
+    const serviceTiers = serviceTierIds(model);
+    const defaultEffort = text(model.default_reasoning_level ?? model.defaultReasoningLevel);
+    const options = {
+      ...(efforts.length
+        ? {
+          efforts,
+          ...(defaultEffort && efforts.includes(defaultEffort) ? { defaultEffort } : {}),
+        }
+        : {}),
+      ...(serviceTiers.includes("priority") ? { fast: true } : {}),
+    };
     const shared = {
       ...(description ? { description } : {}),
       ...(maxOutputTokens !== null ? { maxOutputTokens } : {}),
       contextWindow,
       capabilities: { images: true },
+      ...(Object.keys(options).length ? { options } : {}),
     };
-    const serviceTiers = serviceTierIds(model);
     models.push({
       id,
       displayName,
