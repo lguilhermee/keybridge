@@ -22,7 +22,7 @@ pub(crate) fn estimate_projected_messages_tokens(messages: &[ProjectedMessage]) 
     })
 }
 
-fn estimate_message_tokens(message: &ProjectedMessage) -> u64 {
+pub(crate) fn estimate_message_tokens(message: &ProjectedMessage) -> u64 {
     let content = match &message.content {
         ProjectedContent::Parts(parts) => estimate_parts_tokens(parts),
         ProjectedContent::Assistant {

@@ -4,8 +4,8 @@ use std::collections::HashSet;
 
 use crate::{
     model::{
-        estimate_context_tokens, estimate_projected_messages_tokens, CanonicalMessage, PreparedRun,
-        ProjectedContent, ProjectedMessage, Role,
+        estimate_context_tokens, estimate_message_tokens, estimate_projected_messages_tokens,
+        CanonicalMessage, PreparedRun, ProjectedContent, ProjectedMessage, Role,
     },
     store::ContextUsageAnchor,
 };
@@ -92,15 +92,19 @@ fn trim_to_context(
     if estimate_projected_messages_tokens(&history) <= budget {
         return history;
     }
-    // Walk back from the newest turn, keeping whole user-delimited turns.
+    // Walk back from the newest turn, keeping whole user-delimited turns. The
+    // per-message estimate is additive, so a running suffix sum decides the same
+    // boundaries as re-estimating history[index..] each time.
     let mut kept = 0;
     let mut newest_turn = None;
+    let mut suffix_tokens = 0_u64;
     for (index, message) in history.iter().enumerate().rev() {
+        suffix_tokens = suffix_tokens.saturating_add(estimate_message_tokens(message));
         if !is_turn_boundary(message) {
             continue;
         }
         newest_turn.get_or_insert(index);
-        if estimate_projected_messages_tokens(&history[index..]) > budget {
+        if suffix_tokens > budget {
             break;
         }
         kept = history.len() - index;
@@ -357,7 +361,7 @@ mod tests {
     fn compaction_history_is_trimmed_to_fit_the_context_window() {
         // Compaction runs because the conversation is too large, so the
         // summarize call must not replay a prompt that is over the window.
-        let big = "x".repeat(400_000);
+        let big = "x ".repeat(80_000);
         let history = vec![
             user("u1", &big),
             assistant("a1", &big),
@@ -384,11 +388,26 @@ mod tests {
         let history = vec![
             user("u1", "old"),
             assistant("a1", "old answer"),
-            user("u2", &"x".repeat(400_000)),
+            user("u2", &"x ".repeat(50_000)),
             assistant("a2", "answer"),
         ];
         let prepared = compaction_history(history, Some(50_000));
         assert_eq!(prepared[0].message_id, "u2");
+        assert_eq!(prepared.last().unwrap().role, Role::User);
+    }
+
+    #[test]
+    fn trim_keeps_whole_turns_by_running_suffix_sum() {
+        // u1+rest ≈ 30k+overhead over, u2.. ≈ 20k+under. Newest fitting suffix keeps u2 onward.
+        let history = vec![
+            user("u1", &"x ".repeat(30_000)),
+            assistant("a1", "answer"),
+            user("u2", "small"),
+            assistant("a2", "answer"),
+            user("u3", &"x ".repeat(20_000)),
+        ];
+        let prepared = compaction_history(history, Some(50_000));
+        assert_eq!(prepared.first().unwrap().message_id, "u2");
         assert_eq!(prepared.last().unwrap().role, Role::User);
     }
 
