@@ -35,22 +35,19 @@ struct Measure {
 }
 
 impl Measure {
+    /// Text whose token estimate feeds a special (fitted) category.
     fn add(&mut self, text: &str) {
+        self.add_characters(text);
+        self.token_units += bpe_openai::o200k_base().count(text) as u64;
+    }
+
+    /// Text whose tokens are discarded by the remainder formula — characters only.
+    fn add_characters(&mut self, text: &str) {
         self.characters += text.encode_utf16().count() as u64;
-        let mut units = 0_u64;
-        for character in text.chars() {
-            let width = character.len_utf16() as u64;
-            units += if character.is_ascii() {
-                width * 273
-            } else {
-                width * 550
-            };
-        }
-        self.token_units += units;
     }
 
     fn estimated_tokens(self) -> u64 {
-        self.token_units.div_ceil(1_000)
+        self.token_units
     }
 }
 
@@ -130,7 +127,7 @@ fn measure_message(message: &CanonicalMessage, measures: &mut [Measure; 8]) -> R
                     if message.origin == Origin::Runtime {
                         measure_runtime(text, measures);
                     } else {
-                        measures[CONVERSATION].add(text);
+                        measures[CONVERSATION].add_characters(text);
                     }
                 }
             }
@@ -141,12 +138,12 @@ fn measure_message(message: &CanonicalMessage, measures: &mut [Measure; 8]) -> R
             tool_calls,
             ..
         } => {
-            measures[CONVERSATION].add(text);
-            measures[CONVERSATION].add(thinking);
-            measures[CONVERSATION].add(&serde_json::to_string(tool_calls)?);
+            measures[CONVERSATION].add_characters(text);
+            measures[CONVERSATION].add_characters(thinking);
+            measures[CONVERSATION].add_characters(&serde_json::to_string(tool_calls)?);
         }
         MessageContent::ToolResult(result) => {
-            measures[CONVERSATION].add(&serde_json::to_string(result)?);
+            measures[CONVERSATION].add_characters(&serde_json::to_string(result)?);
         }
     }
     Ok(())
@@ -168,11 +165,11 @@ fn measure_runtime(text: &str, measures: &mut [Measure; 8]) {
         if start < cursor {
             continue;
         }
-        measures[CONVERSATION].add(&text[cursor..start]);
+        measures[CONVERSATION].add_characters(&text[cursor..start]);
         measures[category].add(&text[start..end]);
         cursor = end;
     }
-    measures[CONVERSATION].add(&text[cursor..]);
+    measures[CONVERSATION].add_characters(&text[cursor..]);
 }
 
 fn collect_ranges(text: &str, tag: &str, category: usize, output: &mut Vec<(usize, usize, usize)>) {
@@ -215,5 +212,43 @@ fn fit_special_estimates(estimates: &mut [u64; 8], total: u64) {
         }
         estimates[index] += 1;
         remainder -= 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn special_categories_use_real_token_counts() {
+        let snapshot = breakdown(
+            1_000,
+            200_000,
+            None,
+            "hello world",
+            &[],
+            &HashSet::new(),
+            &[CanonicalMessage::text(
+                "m1",
+                crate::model::Role::User,
+                Origin::Runtime,
+                "x ".repeat(500),
+            )],
+        )
+        .unwrap();
+        let by_id = |id: &str| {
+            snapshot
+                .categories
+                .iter()
+                .find(|category| category.id == id)
+                .unwrap()
+        };
+        // "hello world" = 2 o200k tokens; the old heuristic gave ~0.273 per char.
+        assert_eq!(by_id("system_prompt").estimated_tokens, 2);
+        // Conversation is the remainder, not a measured value.
+        assert_eq!(by_id("conversation").estimated_tokens, 998);
+        // Character counts still report UTF-16 length.
+        assert_eq!(by_id("system_prompt").character_count, Some(11));
+        assert_eq!(by_id("conversation").character_count, Some(1_000));
     }
 }
