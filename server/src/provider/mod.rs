@@ -7,6 +7,7 @@ mod definition;
 mod descriptor;
 mod installation;
 mod manifest;
+mod migrate;
 mod oauth_callback;
 mod protocol;
 mod registry;
@@ -19,6 +20,7 @@ pub use descriptor::{
     parse_model_id, ChannelDescriptor, ProviderDescriptor, ProviderModelDescriptor,
     ProviderResourceDescriptor, ProviderResourceView, ADAPTER_ID_PREFIX,
 };
+pub(crate) use migrate::migrate_legacy_plugin_dir;
 pub use registry::{ImportResponse, OAuthBeginResponse, OAuthPollResponse, ProviderRegistry};
 pub use runtime::{
     ProviderRuntime, ProviderRuntimePhase, ProviderRuntimeState, ProviderRuntimeStatus,

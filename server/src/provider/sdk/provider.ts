@@ -1,135 +1,124 @@
-import type { JsonValue, LocalizedText, PluginContext } from "./plugin.ts";
-import type { ModelSnapshot, ModelSupport } from "./model.ts";
-import type { ResourcePatch, ResourceSnapshot } from "./resource.ts";
+import type { ChannelSupport } from "./channel.ts";
+import type { ResourceSupport } from "./resource.ts";
+
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
 /**
- * LLM request contract. The host projects its canonical conversation (ProjectedMessage) into this shape;
- * the plugin adapts it to the upstream Provider's protocol.
+ * Localizable text: a plain string or a locale -> text map.
+ * (如 { "zh-CN": "账号", "en-US": "Accounts" })。
+ * The host passes it through and the UI resolves it for the current language; upstream-sourced data like model names stays a plain string.
  */
-export type LlmContentPart =
-  | { type: "text"; text: string }
-  | { type: "image"; mediaType: string; dataBase64: string };
+export type LocalizedText = string | { [locale: string]: string };
 
-/** Opaque Provider replay state (e.g. encrypted reasoning items); filtered by protocolKind during replay. */
-export type LlmReplayState = {
-  protocolKind: string;
-  value: JsonValue;
+export type NetworkRequestInit = {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  /** Binary request body, encoded for transport through the sandbox boundary. */
+  bodyBase64?: string;
 };
 
-export type LlmToolCall = {
-  /** Stable ordinal within the same turn. */
-  index: number;
-  callId: string;
-  name: string;
-  /** Parsed JSON arguments. */
-  arguments: JsonValue;
+export type NetworkResponse = {
+  status: number;
+  headers: Record<string, string>;
+  body: string;
 };
 
-export type LlmMessage =
-  | { role: "system" | "user"; content: LlmContentPart[] }
-  | {
-    role: "assistant";
-    text: string;
-    thinking: string;
-    replayState: LlmReplayState | null;
-    toolCalls: LlmToolCall[];
-  }
-  | {
-    role: "tool";
-    callId: string;
-    name: string;
-    content: string;
-    isError: boolean;
-    /** Takes precedence over content when non-empty, carrying rich tool results like images. */
-    parts: LlmContentPart[];
+/** Streaming response body delivered line by line as it arrives (for SSE). */
+export type NetworkEventStream = {
+  status: number;
+  headers: Record<string, string>;
+  lines: AsyncIterable<string>;
+};
+
+/** Raw response chunks for framed protocols such as Connect RPC. */
+export type NetworkBinaryStream = {
+  status: number;
+  headers: Record<string, string>;
+  chunks: AsyncIterable<Uint8Array>;
+};
+
+/**
+ * Host services handed to each capability call. Network requests are limited to the HTTPS hosts declared in provider.json;
+ * the host aborts via `signal` when it cancels the call.
+ */
+export type ProviderContext = {
+  network: {
+    fetch(url: string, init?: NetworkRequestInit): Promise<NetworkResponse>;
+    stream(url: string, init?: NetworkRequestInit): Promise<NetworkEventStream>;
+    streamBytes(url: string, init?: NetworkRequestInit): Promise<NetworkBinaryStream>;
   };
-
-export type LlmTool = {
-  name: string;
-  description: string;
-  /** JSON Schema for the tool's arguments. */
-  parameters: JsonValue;
-};
-
-export type LlmRequest = {
-  /** System instruction; empty string means none. */
-  instructions: string;
-  messages: LlmMessage[];
-  tools: LlmTool[];
-  reasoning: { enabled: boolean; effort: string | null };
-  latency: "fast" | "standard";
-  maxOutputTokens: number | null;
-  /** Session-level stable cache key for upstream prefix-cache routing affinity (e.g. prompt_cache_key). */
-  cacheKey: string | null;
+  signal: AbortSignal;
 };
 
 /**
- * Token counts for one model call. `inputTokens` is the input that was neither read from nor
- * written to the prompt cache; the host adds `cacheReadTokens` and `cacheWriteTokens` to it to
- * get the full prompt size. Upstreams that report a prompt total including cached tokens must
- * subtract them before emitting.
+ * Provider definition: a set of capability implementations. Providers hold no persistent state -
+ * resources and the model catalog are stored by the host, and everything a call needs arrives via parameters.
  */
-export type ModelUsage = {
-  inputTokens: number | null;
-  outputTokens: number | null;
-  totalTokens: number | null;
-  cacheReadTokens: number | null;
-  cacheWriteTokens: number | null;
-  reasoningTokens: number | null;
+export type ProviderDefinition = {
+  channels: ChannelSupport[];
+  resources?: ResourceSupport[];
 };
 
-/**
- * Normalized output contract matching the host's unified stream events one to one. The plugin emits events as upstream data arrives;
- * text, thinking, and each tool call have explicit start/end boundaries, and tool arguments arrive as deltas.
- * Replay state is emitted once before the stream ends; the host stores it on the assistant message for the next turn's replay.
- */
-export type ModelEvent =
-  | { type: "text-start" }
-  | { type: "text-delta"; text: string }
-  | { type: "text-end" }
-  | { type: "thinking-start" }
-  | { type: "thinking-delta"; text: string }
-  | { type: "thinking-end" }
-  | { type: "tool-call-start"; index: number; callId: string; name: string }
-  | { type: "tool-call-arguments-delta"; index: number; delta: string }
-  | { type: "tool-call-end"; index: number }
-  | { type: "replay-state"; protocolKind: string; value: JsonValue }
-  | { type: "usage"; usage: ModelUsage }
-  | { type: "done"; reason: "stop" | "length" | "tool-use" };
+let registered: ProviderDefinition | undefined;
 
-export type ProviderOutput = {
-  emit(event: ModelEvent): void;
-};
+/** Registers a provider; each provider entry may call it once. */
+export function defineProvider(definition: ProviderDefinition): ProviderDefinition {
+  if (registered) throw new Error("defineProvider can only be called once");
+  registered = definition;
+  return definition;
+}
 
-export type ProviderInvokeInput = {
-  model: ModelSnapshot;
-  /** The resource the host selected for this call; null for resource-less Providers. */
-  resource: ResourceSnapshot | null;
-  request: LlmRequest;
-};
+export function __getRegisteredProvider(): ProviderDefinition {
+  if (!registered) throw new Error("provider entry must call defineProvider");
+  return registered;
+}
 
-/**
- * `resource-error` attributes the failure to the selected resource so the host updates its state,
- * and may (in future) retry with a different resource when no events were emitted yet. `patch` also persists
- * side effects of a successful call, like a refreshed access token.
- */
-export type ProviderResult =
-  | { status: "completed"; patch?: ResourcePatch }
-  | { status: "resource-error"; message: string; patch: ResourcePatch }
-  | { status: "request-error"; message: string; patch?: ResourcePatch };
-
-export type ProviderSupport = {
-  id: string;
-  displayName: LocalizedText;
-  description?: LocalizedText;
-  /** Product identity used for grouping and icons, e.g. "openai". */
-  providerType: string;
-  /** Resource type consumed per call; omittable for resource-less Providers. */
-  resourceType?: string;
-  models?: ModelSupport;
-  invoke(
-    input: ProviderInvokeInput,
-    output: ProviderOutput,
-    context: PluginContext,
-  ): Promise<ProviderResult>;
-};
+/** Serializable capability summary; the host collects it without invoking any capability method. */
+export function __descriptor(definition: ProviderDefinition) {
+  return {
+    channels: definition.channels.map((channel) => ({
+      id: channel.id,
+      displayName: channel.displayName,
+      description: channel.description ?? null,
+      brand: channel.brand,
+      resourceType: channel.resourceType ?? null,
+      hasModels: channel.models !== undefined,
+    })),
+    resources: (definition.resources ?? []).map((resource) => ({
+      type: resource.type,
+      displayName: resource.displayName,
+      add: (resource.add ?? []).map((method) => ({
+        type: method.type,
+        id: method.id,
+        displayName: method.displayName,
+        description: method.description ?? null,
+        callback: method.type === "oauth2.authorization-code"
+          ? {
+            port: method.callback?.port ?? null,
+            path: method.callback?.path ?? "/oauth-callback",
+          }
+          : null,
+      })),
+      import: resource.import
+        ? {
+          displayName: resource.import.displayName,
+          description: resource.import.description ?? null,
+          accept: resource.import.accept,
+          multiple: resource.import.multiple ?? false,
+          helpUrl: resource.import.helpUrl ?? null,
+        }
+        : null,
+      actions: (resource.actions ?? []).map((action) => ({
+        id: action.id,
+        displayName: action.displayName,
+        description: action.description ?? null,
+        target: action.target ?? "resource",
+        destructive: action.destructive ?? false,
+      })),
+      canRefresh: resource.refresh !== undefined,
+      canRemove: resource.remove !== undefined,
+    })),
+  };
+}

@@ -1,7 +1,7 @@
 {
   "imports": {
-    "cursor-byok:plugin": "./plugin.ts",
     "cursor-byok:provider": "./provider.ts",
+    "cursor-byok:channel": "./channel.ts",
     "cursor-byok:model": "./model.ts",
     "cursor-byok:resource": "./resource.ts",
     "cursor-byok:protocol/openai-responses": "./protocol/openai_responses.ts",

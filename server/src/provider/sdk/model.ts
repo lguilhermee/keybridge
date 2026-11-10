@@ -1,4 +1,4 @@
-import type { JsonValue, PluginContext } from "./plugin.ts";
+import type { JsonValue, ProviderContext } from "./provider.ts";
 import type { ResourceSnapshot } from "./resource.ts";
 
 export type ModelCapabilities = {
@@ -24,6 +24,6 @@ export type ModelListInput = {
 };
 
 export type ModelSupport = {
-  /** After a successful list, the host replaces this Provider's whole model catalog with the return value. */
-  list(input: ModelListInput, context: PluginContext): Promise<ModelDefinition[]>;
+  /** After a successful list, the host replaces this channel's whole model catalog with the return value. */
+  list(input: ModelListInput, context: ProviderContext): Promise<ModelDefinition[]>;
 };

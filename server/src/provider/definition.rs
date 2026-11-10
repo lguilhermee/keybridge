@@ -25,12 +25,12 @@ pub struct ProviderDefinitionLoader {
 
 impl ProviderDefinitionLoader {
     pub fn managed() -> Result<Self> {
-        Self::in_directory(config::managed_data_dir()?.join("plugins/runtime/sdk/v1"))
+        Self::in_directory(config::managed_data_dir()?.join("providers/runtime/sdk/v1"))
     }
 
     #[cfg(test)]
     pub(super) fn for_test(root: &Path) -> Result<Self> {
-        Self::in_directory(root.join(".plugin-sdk"))
+        Self::in_directory(root.join(".provider-sdk"))
     }
 
     fn in_directory(sdk_dir: PathBuf) -> Result<Self> {
@@ -45,11 +45,11 @@ impl ProviderDefinitionLoader {
             (&import_map, include_str!("sdk/import-map.json")),
             (&collector, include_str!("sdk/collect.ts")),
             (&worker, include_str!("sdk/worker.ts")),
-            (&sdk_dir.join("plugin.ts"), include_str!("sdk/plugin.ts")),
             (
                 &sdk_dir.join("provider.ts"),
                 include_str!("sdk/provider.ts"),
             ),
+            (&sdk_dir.join("channel.ts"), include_str!("sdk/channel.ts")),
             (&sdk_dir.join("model.ts"), include_str!("sdk/model.ts")),
             (
                 &sdk_dir.join("resource.ts"),

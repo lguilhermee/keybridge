@@ -1,10 +1,10 @@
-import { __getRegisteredPlugin, type JsonValue, type NetworkBinaryStream, type NetworkEventStream, type PluginContext } from "cursor-byok:plugin";
-import type { ModelEvent, ProviderSupport } from "cursor-byok:provider";
+import { __getRegisteredProvider, type JsonValue, type NetworkBinaryStream, type NetworkEventStream, type ProviderContext } from "cursor-byok:provider";
+import type { ChannelSupport, ModelEvent } from "cursor-byok:channel";
 import type { ResourceAddMethod, ResourceSupport } from "cursor-byok:resource";
 
-if (Deno.args.length !== 1) throw new Error("plugin entry URL is required");
+if (Deno.args.length !== 1) throw new Error("provider entry URL is required");
 await import(Deno.args[0]);
-const plugin = __getRegisteredPlugin();
+const provider = __getRegisteredProvider();
 const encoder = new TextEncoder();
 const writer = Deno.stdout.writable.getWriter();
 const pendingHost = new Map<string, { resolve(value: unknown): void; reject(error: Error): void }>();
@@ -42,10 +42,10 @@ async function* streamLines(requestId: string, streamId: string): AsyncGenerator
   }
 }
 
-function contextFor(requestId: string, signal: AbortSignal): PluginContext {
+function contextFor(requestId: string, signal: AbortSignal): ProviderContext {
   return {
     network: {
-      fetch: (url, init = {}) => hostCall(requestId, "network.fetch", { url, ...init }) as ReturnType<PluginContext["network"]["fetch"]>,
+      fetch: (url, init = {}) => hostCall(requestId, "network.fetch", { url, ...init }) as ReturnType<ProviderContext["network"]["fetch"]>,
       stream: async (url, init = {}): Promise<NetworkEventStream> => {
         const opened = await hostCall(requestId, "network.stream.open", { url, ...init }) as {
           streamId: string;
@@ -76,21 +76,21 @@ function contextFor(requestId: string, signal: AbortSignal): PluginContext {
   };
 }
 
-function provider(id: unknown): ProviderSupport {
-  const found = plugin.providers.find((provider) => provider.id === id);
-  if (!found) throw new Error(`unknown plugin provider: ${id}`);
+function channel(id: unknown): ChannelSupport {
+  const found = provider.channels.find((channel) => channel.id === id);
+  if (!found) throw new Error(`unknown provider channel: ${id}`);
   return found;
 }
 
 function resourceSupport(type: unknown): ResourceSupport {
-  const found = (plugin.resources ?? []).find((resource) => resource.type === type);
-  if (!found) throw new Error(`unknown plugin resource type: ${type}`);
+  const found = (provider.resources ?? []).find((resource) => resource.type === type);
+  if (!found) throw new Error(`unknown provider resource type: ${type}`);
   return found;
 }
 
 function addMethod(support: ResourceSupport, methodId: unknown): ResourceAddMethod {
   const found = (support.add ?? []).find((method) => method.id === methodId);
-  if (!found) throw new Error(`unknown plugin add method: ${methodId}`);
+  if (!found) throw new Error(`unknown provider add method: ${methodId}`);
   return found;
 }
 
@@ -106,7 +106,7 @@ async function dispatch(message: { id: string; method: string; params?: JsonValu
         const output = {
           emit: (event: ModelEvent) => void send({ type: "event", id: message.id, event }),
         };
-        result = await provider(params.channelId).invoke(
+        result = await channel(params.channelId).invoke(
           {
             model: params.model as never,
             resource: (params.resource ?? null) as never,
@@ -118,7 +118,7 @@ async function dispatch(message: { id: string; method: string; params?: JsonValu
         break;
       }
       case "models.list": {
-        const models = provider(params.channelId).models;
+        const models = channel(params.channelId).models;
         if (!models) throw new Error(`provider channel ${params.channelId} has no models`);
         result = await models.list({ resource: (params.resource ?? null) as never }, context);
         break;
@@ -186,7 +186,7 @@ async function dispatch(message: { id: string; method: string; params?: JsonValu
         break;
       }
       default:
-        throw new Error(`unknown plugin method: ${message.method}`);
+        throw new Error(`unknown provider method: ${message.method}`);
     }
     await send({ type: "result", id: message.id, result: result ?? null });
   } catch (error) {

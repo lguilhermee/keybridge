@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{config, Error, Result};
 
-const MANIFEST_FILE_NAME: &str = "plugin.json";
+const MANIFEST_FILE_NAME: &str = "provider.json";
 const MAX_ICON_BYTES: u64 = 1024 * 1024;
 
 #[derive(Clone)]
@@ -35,7 +35,7 @@ pub(crate) struct ProviderEntry {
 
 impl ProviderCatalog {
     pub fn managed(app_version: String) -> Result<Self> {
-        let installed = config::managed_data_dir()?.join("plugins/installed");
+        let installed = config::managed_data_dir()?.join("providers/installed");
         fs::create_dir_all(&installed)?;
         #[cfg(unix)]
         {
@@ -48,7 +48,7 @@ impl ProviderCatalog {
         // release builds only have the installed root.
         #[cfg(debug_assertions)]
         let roots = vec![
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("plugins/build-in"),
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("providers/built-in"),
             installed,
         ];
         #[cfg(not(debug_assertions))]
@@ -214,7 +214,7 @@ fn validate_definition(provider_id: &str, definition: &ProviderModuleDefinition)
         )?;
         if channel.brand.trim().is_empty() {
             return Err(Error::Config(format!(
-                "provider '{provider_id}' channel '{}' requires providerType",
+                "provider '{provider_id}' channel '{}' requires brand",
                 channel.id
             )));
         }
@@ -336,7 +336,7 @@ mod tests {
     use super::*;
     #[test]
     fn repository_examples_have_valid_static_manifests() {
-        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("plugins/build-in");
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("providers/built-in");
         let sdk = tempfile::tempdir().unwrap();
         let catalog = ProviderCatalog {
             roots: vec![root],

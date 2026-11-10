@@ -1,5 +1,5 @@
-import type { JsonValue, PluginContext } from "../plugin.ts";
-import type { LlmContentPart, LlmRequest, ModelEvent, ProviderOutput } from "../provider.ts";
+import type { JsonValue, ProviderContext } from "../provider.ts";
+import type { ChannelOutput, LlmContentPart, LlmRequest, ModelEvent } from "../channel.ts";
 
 /** Replay-state kinds this protocol produces; identical to the host's built-in Responses Provider so they can replay each other. */
 export const REPLAY_KIND = "openai_responses";
@@ -232,8 +232,8 @@ async function readBody(lines: AsyncIterable<string>): Promise<string> {
  */
 export async function streamOpenAiResponses(
   call: OpenAiResponsesCall,
-  output: ProviderOutput,
-  context: PluginContext,
+  output: ChannelOutput,
+  context: ProviderContext,
 ): Promise<void> {
   const response = await context.network.stream(call.url, {
     method: "POST",

@@ -39,6 +39,8 @@ impl App {
         }
         let assets = PromptAssets::embedded()?;
         let compiler = PromptCompiler::new(assets);
+        // Moves the legacy `plugins/` data tree before any provider directory is created.
+        crate::provider::migrate_legacy_plugin_dir()?;
         let provider_runtime = ProviderRuntime::managed()?;
         let clients = crate::network::NetworkClients::new(store.clone());
         let headroom = crate::headroom::HeadroomRuntime::new(store.clone(), clients.clone());

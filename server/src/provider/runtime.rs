@@ -101,7 +101,11 @@ impl ProviderRuntimeStatus {
 
 impl ProviderRuntime {
     pub fn managed() -> Result<Self> {
-        Self::new(config::managed_data_dir()?.join("plugins").join("runtime"))
+        Self::new(
+            config::managed_data_dir()?
+                .join("providers")
+                .join("runtime"),
+        )
     }
 
     fn new(root: PathBuf) -> Result<Self> {

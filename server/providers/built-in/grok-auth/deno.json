@@ -1,0 +1,13 @@
+{
+  "imports": {
+    "cursor-byok:provider": "../../../src/provider/sdk/provider.ts",
+    "cursor-byok:channel": "../../../src/provider/sdk/channel.ts",
+    "cursor-byok:model": "../../../src/provider/sdk/model.ts",
+    "cursor-byok:resource": "../../../src/provider/sdk/resource.ts",
+    "cursor-byok:protocol/openai-chat": "../../../src/provider/sdk/protocol/openai_chat.ts"
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "exclude": ["assets"]
+  }
+}

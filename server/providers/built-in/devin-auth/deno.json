@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "cursor-byok:provider": "../../../src/provider/sdk/provider.ts",
+    "cursor-byok:channel": "../../../src/provider/sdk/channel.ts",
+    "cursor-byok:model": "../../../src/provider/sdk/model.ts",
+    "cursor-byok:resource": "../../../src/provider/sdk/resource.ts"
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "exclude": ["assets"]
+  }
+}

@@ -7,265 +7,265 @@ use crate::Result;
 /// Built-in provider files packaged into the binary; release builds have no source directory, so they are preinstalled from here.
 const CODEX_AUTH: &[(&str, &str)] = &[
     (
-        "plugin.json",
+        "provider.json",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/codex-auth/plugin.json"
+            "/providers/built-in/codex-auth/provider.json"
         )),
     ),
     (
         "main.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/codex-auth/main.ts"
+            "/providers/built-in/codex-auth/main.ts"
         )),
     ),
     (
-        "provider.ts",
+        "channel.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/codex-auth/provider.ts"
+            "/providers/built-in/codex-auth/channel.ts"
         )),
     ),
     (
         "models.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/codex-auth/models.ts"
+            "/providers/built-in/codex-auth/models.ts"
         )),
     ),
     (
         "oauth.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/codex-auth/oauth.ts"
+            "/providers/built-in/codex-auth/oauth.ts"
         )),
     ),
     (
         "resources.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/codex-auth/resources.ts"
+            "/providers/built-in/codex-auth/resources.ts"
         )),
     ),
     (
         "assets/codex.svg",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/codex-auth/assets/codex.svg"
+            "/providers/built-in/codex-auth/assets/codex.svg"
         )),
     ),
 ];
 
 const GROK_AUTH: &[(&str, &str)] = &[
     (
-        "plugin.json",
+        "provider.json",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/grok-auth/plugin.json"
+            "/providers/built-in/grok-auth/provider.json"
         )),
     ),
     (
         "main.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/grok-auth/main.ts"
+            "/providers/built-in/grok-auth/main.ts"
         )),
     ),
     (
-        "provider.ts",
+        "channel.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/grok-auth/provider.ts"
+            "/providers/built-in/grok-auth/channel.ts"
         )),
     ),
     (
         "models.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/grok-auth/models.ts"
+            "/providers/built-in/grok-auth/models.ts"
         )),
     ),
     (
         "oauth.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/grok-auth/oauth.ts"
+            "/providers/built-in/grok-auth/oauth.ts"
         )),
     ),
     (
         "resources.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/grok-auth/resources.ts"
+            "/providers/built-in/grok-auth/resources.ts"
         )),
     ),
     (
         "assets/grok.svg",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/grok-auth/assets/grok.svg"
+            "/providers/built-in/grok-auth/assets/grok.svg"
         )),
     ),
 ];
 
 const ANTIGRAVITY_AUTH: &[(&str, &str)] = &[
     (
-        "plugin.json",
+        "provider.json",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/plugin.json"
+            "/providers/built-in/antigravity-auth/provider.json"
         )),
     ),
     (
         "main.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/main.ts"
+            "/providers/built-in/antigravity-auth/main.ts"
         )),
     ),
     (
-        "provider.ts",
+        "channel.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/provider.ts"
+            "/providers/built-in/antigravity-auth/channel.ts"
         )),
     ),
     (
         "models.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/models.ts"
+            "/providers/built-in/antigravity-auth/models.ts"
         )),
     ),
     (
         "oauth.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/oauth.ts"
+            "/providers/built-in/antigravity-auth/oauth.ts"
         )),
     ),
     (
         "google_oauth.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/google_oauth.ts"
+            "/providers/built-in/antigravity-auth/google_oauth.ts"
         )),
     ),
     (
         "resources.ts",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/resources.ts"
+            "/providers/built-in/antigravity-auth/resources.ts"
         )),
     ),
     (
         "assets/antigravity.svg",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/plugins/build-in/antigravity-auth/assets/antigravity.svg"
+            "/providers/built-in/antigravity-auth/assets/antigravity.svg"
         )),
     ),
 ];
 
 const DEVIN_AUTH: &[(&str, &str)] = &[
     (
-        "plugin.json",
-        include_str!("../../plugins/build-in/devin-auth/plugin.json"),
+        "provider.json",
+        include_str!("../../providers/built-in/devin-auth/provider.json"),
     ),
     (
         "main.ts",
-        include_str!("../../plugins/build-in/devin-auth/main.ts"),
+        include_str!("../../providers/built-in/devin-auth/main.ts"),
     ),
     (
         "connect.ts",
-        include_str!("../../plugins/build-in/devin-auth/connect.ts"),
+        include_str!("../../providers/built-in/devin-auth/connect.ts"),
     ),
     (
         "resources.ts",
-        include_str!("../../plugins/build-in/devin-auth/resources.ts"),
+        include_str!("../../providers/built-in/devin-auth/resources.ts"),
     ),
     (
         "models.ts",
-        include_str!("../../plugins/build-in/devin-auth/models.ts"),
+        include_str!("../../providers/built-in/devin-auth/models.ts"),
     ),
     (
         "request.ts",
-        include_str!("../../plugins/build-in/devin-auth/request.ts"),
+        include_str!("../../providers/built-in/devin-auth/request.ts"),
     ),
     (
-        "provider.ts",
-        include_str!("../../plugins/build-in/devin-auth/provider.ts"),
+        "channel.ts",
+        include_str!("../../providers/built-in/devin-auth/channel.ts"),
     ),
     (
         "README.md",
-        include_str!("../../plugins/build-in/devin-auth/README.md"),
+        include_str!("../../providers/built-in/devin-auth/README.md"),
     ),
     (
         "NOTICE",
-        include_str!("../../plugins/build-in/devin-auth/NOTICE"),
+        include_str!("../../providers/built-in/devin-auth/NOTICE"),
     ),
     (
         "assets/devin.svg",
-        include_str!("../../plugins/build-in/devin-auth/assets/devin.svg"),
+        include_str!("../../providers/built-in/devin-auth/assets/devin.svg"),
     ),
 ];
 
 const CLAUDE_AUTH: &[(&str, &str)] = &[
     (
-        "plugin.json",
-        include_str!("../../plugins/build-in/claude-auth/plugin.json"),
+        "provider.json",
+        include_str!("../../providers/built-in/claude-auth/provider.json"),
     ),
     (
         "main.ts",
-        include_str!("../../plugins/build-in/claude-auth/main.ts"),
+        include_str!("../../providers/built-in/claude-auth/main.ts"),
     ),
     (
         "resources.ts",
-        include_str!("../../plugins/build-in/claude-auth/resources.ts"),
+        include_str!("../../providers/built-in/claude-auth/resources.ts"),
     ),
     (
         "models.ts",
-        include_str!("../../plugins/build-in/claude-auth/models.ts"),
+        include_str!("../../providers/built-in/claude-auth/models.ts"),
     ),
     (
         "request.ts",
-        include_str!("../../plugins/build-in/claude-auth/request.ts"),
+        include_str!("../../providers/built-in/claude-auth/request.ts"),
     ),
     (
-        "provider.ts",
-        include_str!("../../plugins/build-in/claude-auth/provider.ts"),
+        "channel.ts",
+        include_str!("../../providers/built-in/claude-auth/channel.ts"),
     ),
     (
         "assets/claude.svg",
-        include_str!("../../plugins/build-in/claude-auth/assets/claude.svg"),
+        include_str!("../../providers/built-in/claude-auth/assets/claude.svg"),
     ),
 ];
 
 const OPENCODE_AUTH: &[(&str, &str)] = &[
     (
-        "plugin.json",
-        include_str!("../../plugins/build-in/opencode-auth/plugin.json"),
+        "provider.json",
+        include_str!("../../providers/built-in/opencode-auth/provider.json"),
     ),
     (
         "main.ts",
-        include_str!("../../plugins/build-in/opencode-auth/main.ts"),
+        include_str!("../../providers/built-in/opencode-auth/main.ts"),
     ),
     (
         "resources.ts",
-        include_str!("../../plugins/build-in/opencode-auth/resources.ts"),
+        include_str!("../../providers/built-in/opencode-auth/resources.ts"),
     ),
     (
         "models.ts",
-        include_str!("../../plugins/build-in/opencode-auth/models.ts"),
+        include_str!("../../providers/built-in/opencode-auth/models.ts"),
     ),
     (
-        "provider.ts",
-        include_str!("../../plugins/build-in/opencode-auth/provider.ts"),
+        "channel.ts",
+        include_str!("../../providers/built-in/opencode-auth/channel.ts"),
     ),
     (
         "assets/opencode.svg",
-        include_str!("../../plugins/build-in/opencode-auth/assets/opencode.svg"),
+        include_str!("../../providers/built-in/opencode-auth/assets/opencode.svg"),
     ),
 ];
 
@@ -294,9 +294,9 @@ pub(super) fn install(installed: &Path) -> Result<()> {
 fn embedded_version(files: &[(&str, &str)]) -> Result<String> {
     let manifest = files
         .iter()
-        .find(|(name, _)| *name == "plugin.json")
+        .find(|(name, _)| *name == "provider.json")
         .map(|(_, content)| *content)
-        .expect("built-in provider bundles plugin.json");
+        .expect("built-in provider bundles provider.json");
     let value: serde_json::Value = serde_json::from_str(manifest)?;
     value
         .get("version")
@@ -306,7 +306,7 @@ fn embedded_version(files: &[(&str, &str)]) -> Result<String> {
 }
 
 fn disk_version(directory: &Path) -> Option<String> {
-    let manifest = std::fs::read_to_string(directory.join("plugin.json")).ok()?;
+    let manifest = std::fs::read_to_string(directory.join("provider.json")).ok()?;
     let value: serde_json::Value = serde_json::from_str(&manifest).ok()?;
     Some(value.get("version")?.as_str()?.to_owned())
 }
@@ -380,7 +380,7 @@ mod tests {
             .path()
             .join("antigravity-auth/assets/antigravity.svg")
             .is_file());
-        assert!(root.path().join("devin-auth/provider.ts").is_file());
+        assert!(root.path().join("devin-auth/channel.ts").is_file());
 
         // Version identical: local edits and extra files are left alone and nothing is written.
         std::fs::write(provider.join("main.ts"), "edited").unwrap();
@@ -393,10 +393,10 @@ mod tests {
         assert!(provider.join("stale.ts").exists());
 
         // Version changed: the whole directory is synced back to the embedded content and leftovers are cleaned up.
-        let manifest = std::fs::read_to_string(provider.join("plugin.json")).unwrap();
+        let manifest = std::fs::read_to_string(provider.join("provider.json")).unwrap();
         let mut value: serde_json::Value = serde_json::from_str(&manifest).unwrap();
         value["version"] = serde_json::Value::String("0.0.1".into());
-        std::fs::write(provider.join("plugin.json"), value.to_string()).unwrap();
+        std::fs::write(provider.join("provider.json"), value.to_string()).unwrap();
         install(root.path()).unwrap();
         assert_eq!(
             std::fs::read_to_string(provider.join("main.ts")).unwrap(),

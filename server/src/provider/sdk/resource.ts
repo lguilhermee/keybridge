@@ -1,8 +1,8 @@
-import type { JsonValue, LocalizedText, PluginContext } from "./plugin.ts";
+import type { JsonValue, LocalizedText, ProviderContext } from "./provider.ts";
 
 /**
- * A resource is a plugin-defined private record (usually an upstream account) consumed by the Provider.
- * The host owns persistence, listing, and per-call resource selection; the plugin only creates, projects, and interprets resources.
+ * A resource is a provider-defined private record (usually an upstream account) consumed by the channel.
+ * The host owns persistence, listing, and per-call resource selection; the provider only creates, projects, and interprets resources.
  */
 export type ResourceState =
   | { status: "ready" }
@@ -13,7 +13,7 @@ export type ResourceState =
 export type ResourceDraft = {
   /** Dedupe key: the host upserts by (resource type, key). */
   key: string;
-  /** Credentials and plugin-private fields; never shown to the user. */
+  /** Credentials and provider-private fields; never shown to the user. */
   privateData: JsonValue;
   /** Defaults to ready. */
   state?: ResourceState;
@@ -21,7 +21,7 @@ export type ResourceDraft = {
 
 /** One resource persisted by the host. */
 export type ResourceSnapshot = {
-  /** Host-assigned identifier, distinct from the plugin's dedupe key. */
+  /** Host-assigned identifier, distinct from the provider's dedupe key. */
   id: string;
   type: string;
   key: string;
@@ -55,7 +55,7 @@ export type ResourceAction = {
   run(
     resource: ResourceSnapshot,
     input: JsonValue,
-    context: PluginContext,
+    context: ProviderContext,
   ): Promise<ResourceActionResult>;
 };
 
@@ -93,15 +93,15 @@ export type ResourceView = {
 /**
  * OAuth 2.0 device-code add flow. The host renders the UI, drives the polling loop
  * (interval, slow-down backoff, timeout), and keeps `session` in memory for the
- * flow's lifetime; the plugin only implements the two HTTP state transitions.
+ * flow's lifetime; the provider only implements the two HTTP state transitions.
  */
 export type OAuth2AddMethod = {
   type: "oauth2.0";
   id: string;
   displayName: LocalizedText;
   description?: LocalizedText;
-  begin(context: PluginContext): Promise<OAuth2Begin>;
-  poll(session: JsonValue, context: PluginContext): Promise<OAuth2Poll>;
+  begin(context: ProviderContext): Promise<OAuth2Begin>;
+  poll(session: JsonValue, context: ProviderContext): Promise<OAuth2Poll>;
 };
 
 export type OAuth2Begin = {
@@ -135,7 +135,7 @@ export type OAuth2AuthorizationCodeAddMethod = {
       state: string;
       codeChallenge: string;
     },
-    context: PluginContext,
+    context: ProviderContext,
   ): Promise<OAuth2AuthorizationCodeBegin>;
   complete(
     session: JsonValue,
@@ -144,7 +144,7 @@ export type OAuth2AuthorizationCodeAddMethod = {
       redirectUri: string;
       codeVerifier: string;
     },
-    context: PluginContext,
+    context: ProviderContext,
   ): Promise<ResourceDraft[]>;
 };
 
@@ -159,7 +159,7 @@ export type ResourceAddMethod = OAuth2AddMethod | OAuth2AuthorizationCodeAddMeth
 
 export type ResourceImportFile = {
   name: string;
-  /** Raw file content; parsing and validation are the plugin's job. */
+  /** Raw file content; parsing and validation are the provider's job. */
   content: string;
 };
 
@@ -171,7 +171,7 @@ export type ResourceImportSupport = {
   multiple?: boolean;
   /** Optional web URL; the host shows a "Get key" button that opens it in a browser. */
   helpUrl?: string;
-  parse(files: ResourceImportFile[], context: PluginContext): Promise<ResourceImportResult>;
+  parse(files: ResourceImportFile[], context: ProviderContext): Promise<ResourceImportResult>;
 };
 
 export type ResourceImportResult = {
@@ -188,7 +188,7 @@ export type ResourceSupport = {
   present(resource: ResourceSnapshot): ResourceView;
   actions?: ResourceAction[];
   /** Re-reads upstream state (quota, credential validity) when the user explicitly triggers it. */
-  refresh?(resource: ResourceSnapshot, context: PluginContext): Promise<ResourcePatch>;
+  refresh?(resource: ResourceSnapshot, context: ProviderContext): Promise<ResourcePatch>;
   /** Optional upstream revoke; the host deletes the local record afterwards. */
-  remove?(resource: ResourceSnapshot, context: PluginContext): Promise<void>;
+  remove?(resource: ResourceSnapshot, context: ProviderContext): Promise<void>;
 };

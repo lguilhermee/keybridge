@@ -18,7 +18,7 @@ pub struct ProviderDataStore {
 
 impl ProviderDataStore {
     pub fn managed() -> Result<Self> {
-        Self::new(config::managed_data_dir()?.join("plugins/data"))
+        Self::new(config::managed_data_dir()?.join("providers/data"))
     }
 
     #[cfg(test)]
