@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   api,
-  pluginText,
-  type PluginAddMethod,
-  type PluginDescriptor,
-  type PluginImportDescriptor,
-  type PluginImportFile,
-  type PluginOAuthBegin,
-  type PluginProviderDescriptor,
-  type PluginResourceAction,
-  type PluginResourceActionCard,
-  type PluginResourceActionResult,
-  type PluginResourceDescriptor,
-  type PluginResourceView,
+  providerText,
+  type ProviderAddMethod,
+  type ProviderDescriptor,
+  type ProviderImportDescriptor,
+  type ProviderImportFile,
+  type ProviderOAuthBegin,
+  type ChannelDescriptor,
+  type ProviderResourceAction,
+  type ProviderResourceActionCard,
+  type ProviderResourceActionResult,
+  type ProviderResourceDescriptor,
+  type ProviderResourceView,
 } from "../../shared/api";
 import { useI18n } from "../../i18n/store";
 import { appStore } from "../../shared/store/appStore";
@@ -23,38 +23,38 @@ import { FormField, TextInput } from "../../shared/ui/FormControls";
 import { useMessage } from "../../shared/ui/message";
 import { Modal } from "../../shared/ui/Modal";
 import { Switch } from "../../shared/ui/Switch";
-import styles from "./PluginResourcePanels.module.scss";
+import styles from "./ProviderResourcePanels.module.scss";
 
 const PAGE_SIZE = 10;
 
-export function PluginAddPanel({ plugin, onConfigured }: { plugin: PluginDescriptor; onConfigured: () => void }) {
-  const hasAddOptions = plugin.resources.some((resource) => resource.add.length > 0 || resource.import !== null);
+export function ProviderAddPanel({ provider, onConfigured }: { provider: ProviderDescriptor; onConfigured: () => void }) {
+  const hasAddOptions = provider.resources.some((resource) => resource.add.length > 0 || resource.import !== null);
   return <div className={styles.panel}>
-    {plugin.resources.map((resource) => <ResourceAddSection
+    {provider.resources.map((resource) => <ResourceAddSection
       key={resource.type}
-      plugin={plugin}
+      provider={provider}
       resource={resource}
       onConfigured={onConfigured}
     />)}
-    {!hasAddOptions && <span className={styles.empty}>{t("This plugin does not need any resources.")}</span>}
+    {!hasAddOptions && <span className={styles.empty}>{t("This provider does not need any resources.")}</span>}
   </div>;
 }
 
-function ResourceAddSection({ plugin, resource, onConfigured }: {
-  plugin: PluginDescriptor;
-  resource: PluginResourceDescriptor;
+function ResourceAddSection({ provider, resource, onConfigured }: {
+  provider: ProviderDescriptor;
+  resource: ProviderResourceDescriptor;
   onConfigured: () => void;
 }) {
   return <>
     {resource.add.map((method) => <OAuthMethodCard
       key={method.id}
-      pluginId={plugin.id}
+      providerId={provider.id}
       resourceType={resource.type}
       method={method}
       onConfigured={onConfigured}
     />)}
     {resource.import && <ImportMethodCard
-      pluginId={plugin.id}
+      providerId={provider.id}
       resourceType={resource.type}
       descriptor={resource.import}
       onConfigured={onConfigured}
@@ -62,10 +62,10 @@ function ResourceAddSection({ plugin, resource, onConfigured }: {
   </>;
 }
 
-function ImportMethodCard({ pluginId, resourceType, descriptor, onConfigured }: {
-  pluginId: string;
+function ImportMethodCard({ providerId, resourceType, descriptor, onConfigured }: {
+  providerId: string;
   resourceType: string;
-  descriptor: PluginImportDescriptor;
+  descriptor: ProviderImportDescriptor;
   onConfigured: () => void;
 }) {
   const { locale } = useI18n();
@@ -75,9 +75,9 @@ function ImportMethodCard({ pluginId, resourceType, descriptor, onConfigured }: 
   const [pasted, setPasted] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const finishImport = async (entries: PluginImportFile[]) => {
-    const result = await api.importPluginResources(pluginId, resourceType, entries);
-    await appStore.refreshPlugins();
+  const finishImport = async (entries: ProviderImportFile[]) => {
+    const result = await api.importProviderResources(providerId, resourceType, entries);
+    await appStore.refreshProviders();
     const summary = t("Import finished: {added} added, {updated} updated", { added: result.added, updated: result.updated });
     if (result.modelSyncError) {
       message(t("The account was saved, but model sync failed: {error}", { error: result.modelSyncError }), { duration: 5000 });
@@ -94,7 +94,7 @@ function ImportMethodCard({ pluginId, resourceType, descriptor, onConfigured }: 
     setImporting(true);
     setError(null);
     try {
-      const entries: PluginImportFile[] = await Promise.all(
+      const entries: ProviderImportFile[] = await Promise.all(
         [...files].map(async (file) => ({ name: file.name, content: await file.text() })),
       );
       await finishImport(entries);
@@ -122,8 +122,8 @@ function ImportMethodCard({ pluginId, resourceType, descriptor, onConfigured }: 
   };
 
   return <Card className={styles.methodCard}>
-    <strong>{pluginText(descriptor.displayName, locale)}</strong>
-    {descriptor.description && <span>{pluginText(descriptor.description, locale)}</span>}
+    <strong>{providerText(descriptor.displayName, locale)}</strong>
+    {descriptor.description && <span>{providerText(descriptor.description, locale)}</span>}
     <div className={styles.actions}>
       <TextInput
         aria-label={t("Paste credential")}
@@ -154,15 +154,15 @@ function ImportMethodCard({ pluginId, resourceType, descriptor, onConfigured }: 
   </Card>;
 }
 
-function OAuthMethodCard({ pluginId, resourceType, method, onConfigured }: {
-  pluginId: string;
+function OAuthMethodCard({ providerId, resourceType, method, onConfigured }: {
+  providerId: string;
   resourceType: string;
-  method: PluginAddMethod;
+  method: ProviderAddMethod;
   onConfigured: () => void;
 }) {
   const { locale } = useI18n();
   const [status, setStatus] = useState<"idle" | "starting" | "polling" | "success" | "error">("idle");
-  const [begun, setBegun] = useState<PluginOAuthBegin | null>(null);
+  const [begun, setBegun] = useState<ProviderOAuthBegin | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const stopped = useRef(false);
@@ -181,14 +181,14 @@ function OAuthMethodCard({ pluginId, resourceType, method, onConfigured }: {
     const poll = async (intervalMs: number) => {
       if (stopped.current) return;
       try {
-        const result = await api.pluginOAuthPoll(begun.sessionId);
+        const result = await api.providerOAuthPoll(begun.sessionId);
         if (stopped.current) return;
         if (result.status === "pending") {
           timer = window.setTimeout(() => void poll(result.pollIntervalMs), Math.max(1000, result.pollIntervalMs));
           return;
         }
         if (result.status === "completed") {
-          await appStore.refreshPlugins();
+          await appStore.refreshProviders();
           if (result.modelSyncError) {
             setStatus("error");
             setError(t("The account was saved, but model sync failed: {error}", { error: result.modelSyncError }));
@@ -214,7 +214,7 @@ function OAuthMethodCard({ pluginId, resourceType, method, onConfigured }: {
     setStatus("starting");
     setError(null);
     try {
-      const next = await api.pluginOAuthBegin(pluginId, resourceType, method.id);
+      const next = await api.providerOAuthBegin(providerId, resourceType, method.id);
       setBegun(next);
       setStatus("polling");
       if (next.userCode) await api.copyCursorText(next.userCode).catch(() => undefined);
@@ -227,8 +227,8 @@ function OAuthMethodCard({ pluginId, resourceType, method, onConfigured }: {
 
   const userCode = begun?.userCode;
   return <Card className={styles.methodCard}>
-    <strong>{pluginText(method.displayName, locale)}</strong>
-    {method.description && <span>{pluginText(method.description, locale)}</span>}
+    <strong>{providerText(method.displayName, locale)}</strong>
+    {method.description && <span>{providerText(method.description, locale)}</span>}
     {userCode && status === "polling" && <div className={styles.deviceCode}>
       <small>{t("Device code")}</small>
       <button type="button" onClick={() => void copyCode(userCode)}>{userCode}</button>
@@ -247,24 +247,24 @@ function OAuthMethodCard({ pluginId, resourceType, method, onConfigured }: {
   </Card>;
 }
 
-export function PluginSettingsPanel({ plugin }: { plugin: PluginDescriptor }) {
+export function ProviderSettingsPanel({ provider }: { provider: ProviderDescriptor }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [modelProviderId, setModelProviderId] = useState<string | null>(null);
+  const [modelChannelId, setModelChannelId] = useState<string | null>(null);
   const [resourceAction, setResourceAction] = useState<{
-    resource: PluginResourceDescriptor;
-    item: PluginResourceView;
+    resource: ProviderResourceDescriptor;
+    item: ProviderResourceView;
   } | null>(null);
-  const [resourceActionResult, setResourceActionResult] = useState<PluginResourceActionResult | null>(null);
+  const [resourceActionResult, setResourceActionResult] = useState<ProviderResourceActionResult | null>(null);
   const [resourceActionError, setResourceActionError] = useState<string | null>(null);
-  const modelProvider = modelProviderId ? plugin.providers.find((provider) => provider.id === modelProviderId) ?? null : null;
+  const modelChannel = modelChannelId ? provider.channels.find((channel) => channel.id === modelChannelId) ?? null : null;
 
   const run = async (key: string, task: () => Promise<void>) => {
     setBusy(key);
     setError(null);
     try {
       await task();
-      await appStore.refreshPlugins();
+      await appStore.refreshProviders();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -273,23 +273,23 @@ export function PluginSettingsPanel({ plugin }: { plugin: PluginDescriptor }) {
   };
 
   const executeResourceAction = async (
-    target: { resource: PluginResourceDescriptor; item: PluginResourceView },
-    action: PluginResourceAction,
+    target: { resource: ProviderResourceDescriptor; item: ProviderResourceView },
+    action: ProviderResourceAction,
     input: unknown = {},
   ) => {
     const key = `action:${target.item.id}:${action.id}`;
     setBusy(key);
     setResourceActionError(null);
     try {
-      const result = await api.pluginResourceAction(
-        plugin.id,
+      const result = await api.providerResourceAction(
+        provider.id,
         target.resource.type,
         target.item.id,
         action.id,
         input,
       );
       setResourceActionResult(result);
-      await appStore.refreshPlugins();
+      await appStore.refreshProviders();
     } catch (cause) {
       setResourceActionError(errorText(cause));
     } finally {
@@ -297,7 +297,7 @@ export function PluginSettingsPanel({ plugin }: { plugin: PluginDescriptor }) {
     }
   };
 
-  const openResourceAction = (resource: PluginResourceDescriptor, item: PluginResourceView, action: PluginResourceAction) => {
+  const openResourceAction = (resource: ProviderResourceDescriptor, item: ProviderResourceView, action: ProviderResourceAction) => {
     setResourceAction({ resource, item });
     setResourceActionResult(null);
     setResourceActionError(null);
@@ -305,37 +305,37 @@ export function PluginSettingsPanel({ plugin }: { plugin: PluginDescriptor }) {
   };
 
   return <div className={styles.panel}>
-    {plugin.providers.map((provider) => <ProviderRow
-      key={provider.id}
-      provider={provider}
+    {provider.channels.map((channel) => <ChannelRow
+      key={channel.id}
+      channel={channel}
       busy={busy !== null}
-      syncing={busy === `sync:${provider.id}`}
-      onManageModels={() => setModelProviderId(provider.id)}
-      onSync={() => void run(`sync:${provider.id}`, async () => {
-        await api.syncPluginModels(plugin.id, provider.id);
+      syncing={busy === `sync:${channel.id}`}
+      onManageModels={() => setModelChannelId(channel.id)}
+      onSync={() => void run(`sync:${channel.id}`, async () => {
+        await api.syncChannelModels(provider.id, channel.id);
       })}
     />)}
-    {plugin.resources.map((resource) => <ResourceList
+    {provider.resources.map((resource) => <ResourceList
       key={resource.type}
       resource={resource}
       busy={busy !== null}
       onAction={(item, action) => openResourceAction(resource, item, action)}
       onRefresh={(item) => void run(`refresh:${item.id}`, async () => {
-        await api.refreshPluginResource(plugin.id, resource.type, item.id);
+        await api.refreshProviderResource(provider.id, resource.type, item.id);
       })}
       onDelete={(item) => void run(`delete:${item.id}`, async () => {
-        await api.deletePluginResource(plugin.id, resource.type, item.id);
+        await api.deleteProviderResource(provider.id, resource.type, item.id);
       })}
     />)}
     {error && <span className={styles.error} role="alert">{error}</span>}
-    {modelProvider && <ModelManagementModal
-      provider={modelProvider}
+    {modelChannel && <ModelManagementModal
+      channel={modelChannel}
       busy={busy !== null}
-      onClose={() => setModelProviderId(null)}
+      onClose={() => setModelChannelId(null)}
       onSubmit={(enabledByModel) => void run("models", async () => {
-        for (const model of modelProvider.models) {
+        for (const model of modelChannel.models) {
           const enabled = enabledByModel[model.id] ?? model.enabled;
-          if (model.enabled !== enabled) await api.setPluginModelEnabled(plugin.id, modelProvider.id, model.modelId, enabled);
+          if (model.enabled !== enabled) await api.setChannelModelEnabled(provider.id, modelChannel.id, model.modelId, enabled);
         }
       })}
     />}
@@ -351,27 +351,27 @@ export function PluginSettingsPanel({ plugin }: { plugin: PluginDescriptor }) {
   </div>;
 }
 
-function ProviderRow({ provider, busy, syncing, onManageModels, onSync }: {
-  provider: PluginProviderDescriptor;
+function ChannelRow({ channel, busy, syncing, onManageModels, onSync }: {
+  channel: ChannelDescriptor;
   busy: boolean;
   syncing: boolean;
   onManageModels: () => void;
   onSync: () => void;
 }) {
   const { locale } = useI18n();
-  return <Card className={styles.providerRow}>
+  return <Card className={styles.channelRow}>
     <div>
-      <strong>{pluginText(provider.displayName, locale)}</strong>
+      <strong>{providerText(channel.displayName, locale)}</strong>
       <span>
-        {provider.providerType}
+        {channel.brand}
         {" - "}
-        {provider.models.length > 0 ? t("{count} models", { count: provider.models.length }) : t("Models not synced yet")}
+        {channel.models.length > 0 ? t("{count} models", { count: channel.models.length }) : t("Models not synced yet")}
         {" - "}
-        {provider.configured ? t("Callable") : t("Not ready")}
+        {channel.configured ? t("Callable") : t("Not ready")}
       </span>
     </div>
-    {provider.hasModels && <div className={styles.actions}>
-      <Button size="small" disabled={busy || provider.models.length === 0} onClick={onManageModels}>{t("Model management")}</Button>
+    {channel.hasModels && <div className={styles.actions}>
+      <Button size="small" disabled={busy || channel.models.length === 0} onClick={onManageModels}>{t("Model management")}</Button>
       <Button size="small" disabled={busy} onClick={onSync}>
         {syncing ? t("Syncing...") : t("Sync models")}
       </Button>
@@ -379,8 +379,8 @@ function ProviderRow({ provider, busy, syncing, onManageModels, onSync }: {
   </Card>;
 }
 
-function ModelManagementModal({ provider, busy, onClose, onSubmit }: {
-  provider: PluginProviderDescriptor;
+function ModelManagementModal({ channel, busy, onClose, onSubmit }: {
+  channel: ChannelDescriptor;
   busy: boolean;
   onClose: () => void;
   onSubmit: (enabledByModel: Record<string, boolean>) => void;
@@ -389,31 +389,31 @@ function ModelManagementModal({ provider, busy, onClose, onSubmit }: {
   const [enabledByModel, setEnabledByModel] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    setEnabledByModel(Object.fromEntries(provider.models.map((model) => [model.id, model.enabled])));
-  }, [provider.models]);
+    setEnabledByModel(Object.fromEntries(channel.models.map((model) => [model.id, model.enabled])));
+  }, [channel.models]);
 
   const setAll = (enabled: boolean) => {
-    setEnabledByModel(Object.fromEntries(provider.models.map((model) => [model.id, enabled])));
+    setEnabledByModel(Object.fromEntries(channel.models.map((model) => [model.id, enabled])));
   };
 
   return <Modal
     fullHeight
     open
-    title={t("{name} model management", { name: pluginText(provider.displayName, locale) })}
+    title={t("{name} model management", { name: providerText(channel.displayName, locale) })}
     busy={busy}
     onClose={onClose}
     onSubmit={() => onSubmit(enabledByModel)}
     submitLabel={t("Confirm")}
   >
     <div className={styles.modelToolbar}>
-      <Button size="small" disabled={busy || provider.models.length === 0} onClick={() => setAll(true)}>{t("Select all")}</Button>
-      <Button size="small" disabled={busy || provider.models.length === 0} onClick={() => setAll(false)}>{t("Deselect all")}</Button>
+      <Button size="small" disabled={busy || channel.models.length === 0} onClick={() => setAll(true)}>{t("Select all")}</Button>
+      <Button size="small" disabled={busy || channel.models.length === 0} onClick={() => setAll(false)}>{t("Deselect all")}</Button>
     </div>
     <div className={styles.modelTableWrap}>
       <table className={styles.modelTable}>
         <thead><tr><th scope="col">{t("Model name")}</th><th scope="col">{t("Enabled")}</th></tr></thead>
         <tbody>
-          {provider.models.map((model) => <tr key={model.id}>
+          {channel.models.map((model) => <tr key={model.id}>
             <td><div className={styles.modelName}>
               <strong>{model.displayName}</strong>
               {model.description && <span>{model.description}</span>}
@@ -427,17 +427,17 @@ function ModelManagementModal({ provider, busy, onClose, onSubmit }: {
           </tr>)}
         </tbody>
       </table>
-      {provider.models.length === 0 && <span className={styles.empty}>{t("Models not synced yet")}</span>}
+      {channel.models.length === 0 && <span className={styles.empty}>{t("Models not synced yet")}</span>}
     </div>
   </Modal>;
 }
 
 function ResourceList({ resource, busy, onAction, onRefresh, onDelete }: {
-  resource: PluginResourceDescriptor;
+  resource: ProviderResourceDescriptor;
   busy: boolean;
-  onAction: (item: PluginResourceView, action: PluginResourceAction) => void;
-  onRefresh: (item: PluginResourceView) => void;
-  onDelete: (item: PluginResourceView) => void;
+  onAction: (item: ProviderResourceView, action: ProviderResourceAction) => void;
+  onRefresh: (item: ProviderResourceView) => void;
+  onDelete: (item: ProviderResourceView) => void;
 }) {
   const { locale } = useI18n();
   const [query, setQuery] = useState("");
@@ -451,7 +451,7 @@ function ResourceList({ resource, busy, onAction, onRefresh, onDelete }: {
 
   useEffect(() => setPage(1), [query]);
 
-  return <FormField label={pluginText(resource.displayName, locale)}>
+  return <FormField label={providerText(resource.displayName, locale)}>
     <div className={styles.resourceSection}>
       {resource.resources.length > PAGE_SIZE && <div className={styles.toolbar}>
         <TextInput aria-label={t("Search resources")} placeholder={t("Search resources")} value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -479,11 +479,11 @@ function ResourceList({ resource, busy, onAction, onRefresh, onDelete }: {
 }
 
 function ResourceRow({ item, actions, canRefresh, disabled, onAction, onRefresh, onDelete }: {
-  item: PluginResourceView;
-  actions: PluginResourceAction[];
+  item: ProviderResourceView;
+  actions: ProviderResourceAction[];
   canRefresh: boolean;
   disabled: boolean;
-  onAction: (action: PluginResourceAction) => void;
+  onAction: (action: ProviderResourceAction) => void;
   onRefresh: () => void;
   onDelete: () => void;
 }) {
@@ -491,16 +491,16 @@ function ResourceRow({ item, actions, canRefresh, disabled, onAction, onRefresh,
   return <Card className={styles.resourceRow}>
     <div>
       <strong>{item.displayName}</strong>
-      {item.description && <span>{pluginText(item.description, locale)}</span>}
+      {item.description && <span>{providerText(item.description, locale)}</span>}
       {item.metrics.map((metric) => <span key={metric.id}>
         {metric.unit === "percent"
-          ? t("{label}: {percent}% left", { label: pluginText(metric.label, locale), percent: Math.round(metric.value) })
-          : `${pluginText(metric.label, locale)}: ${metric.value}`}
+          ? t("{label}: {percent}% left", { label: providerText(metric.label, locale), percent: Math.round(metric.value) })
+          : `${providerText(metric.label, locale)}: ${metric.value}`}
       </span>)}
     </div>
     <div className={styles.actions}>
       <StateBadge state={item.state} />
-      {actions.map((action) => <Button key={action.id} size="small" disabled={disabled} onClick={() => onAction(action)}>{pluginText(action.displayName, locale)}</Button>)}
+      {actions.map((action) => <Button key={action.id} size="small" disabled={disabled} onClick={() => onAction(action)}>{providerText(action.displayName, locale)}</Button>)}
       {canRefresh && <Button size="small" disabled={disabled} onClick={onRefresh}>{t("Refresh")}</Button>}
       <Button size="small" disabled={disabled} onClick={onDelete}>{t("Delete")}</Button>
     </div>
@@ -508,34 +508,34 @@ function ResourceRow({ item, actions, canRefresh, disabled, onAction, onRefresh,
 }
 
 function ResourceActionModal({ action, cardAction, result, busy, error, onClose, onCardAction }: {
-  action: PluginResourceAction | null;
-  cardAction: PluginResourceAction | null;
-  result: PluginResourceActionResult | null;
+  action: ProviderResourceAction | null;
+  cardAction: ProviderResourceAction | null;
+  result: ProviderResourceActionResult | null;
   busy: boolean;
   error: string | null;
   onClose: () => void;
-  onCardAction: (action: PluginResourceAction, card: PluginResourceActionCard) => void;
+  onCardAction: (action: ProviderResourceAction, card: ProviderResourceActionCard) => void;
 }) {
   const { locale } = useI18n();
-  const [pendingCard, setPendingCard] = useState<PluginResourceActionCard | null>(null);
-  const title = result ? pluginText(result.title, locale) : action ? pluginText(action.displayName, locale) : t("Resource details");
+  const [pendingCard, setPendingCard] = useState<ProviderResourceActionCard | null>(null);
+  const title = result ? providerText(result.title, locale) : action ? providerText(action.displayName, locale) : t("Resource details");
   const cardActions = cardAction ? [cardAction] : [];
 
   return <>
     <Modal compact open title={title} busy={busy} onClose={onClose} submitLabel={t("Close")} onSubmit={onClose}>
       <div className={styles.actionBody}>
-        {result?.description && <span className={styles.actionDescription}>{pluginText(result.description, locale)}</span>}
+        {result?.description && <span className={styles.actionDescription}>{providerText(result.description, locale)}</span>}
         {busy && <span className={styles.empty}>{t("Loading...")}</span>}
         {error && <span className={styles.error} role="alert">{error}</span>}
         {!busy && !error && result && result.cards.length === 0 && <span className={styles.empty}>{t("No reset cards available.")}</span>}
         {!busy && !error && result && <div className={styles.actionCardList}>
         {result.cards.map((card) => <Card key={card.id} className={styles.actionCard}>
           <div className={styles.actionCardMain}>
-            <strong>{pluginText(card.title, locale)}</strong>
+            <strong>{providerText(card.title, locale)}</strong>
             {card.status && <span>{formatActionStatus(card.status, locale)}</span>}
             {card.grantedAtMs !== null && card.grantedAtMs !== undefined && <span>{t("Granted: {time}", { time: formatActionDate(card.grantedAtMs, locale) })}</span>}
             {card.expiresAtMs !== null && card.expiresAtMs !== undefined && <span>{t("Expires: {time}", { time: formatActionDate(card.expiresAtMs, locale) })}</span>}
-            {card.fields.map((field) => <span key={field.id}>{pluginText(field.label, locale)}: {field.value}</span>)}
+            {card.fields.map((field) => <span key={field.id}>{providerText(field.label, locale)}: {field.value}</span>)}
           </div>
           {cardActions.length > 0 && <div className={styles.actions}>
             {cardActions.map((cardActionItem) => <Button
@@ -543,7 +543,7 @@ function ResourceActionModal({ action, cardAction, result, busy, error, onClose,
               size="small"
               disabled={busy || card.status !== "available"}
               onClick={() => cardActionItem.destructive ? setPendingCard(card) : onCardAction(cardActionItem, card)}
-            >{pluginText(cardActionItem.displayName, locale)}</Button>)}
+            >{providerText(cardActionItem.displayName, locale)}</Button>)}
           </div>}
         </Card>)}
       </div>}
@@ -562,13 +562,13 @@ function ResourceActionModal({ action, cardAction, result, busy, error, onClose,
       }}
     >
       <p>{t("Using this card consumes it immediately and cannot be undone. Continue?")}</p>
-      <strong>{pluginText(pendingCard.title, locale)}</strong>
+      <strong>{providerText(pendingCard.title, locale)}</strong>
     </ConfirmDialog>}
   </>;
 }
 
-function formatActionStatus(status: PluginResourceActionCard["status"], locale: string) {
-  const value = typeof status === "string" ? status : pluginText(status, locale);
+function formatActionStatus(status: ProviderResourceActionCard["status"], locale: string) {
+  const value = typeof status === "string" ? status : providerText(status, locale);
   switch (value.toLowerCase()) {
     case "available": return t("Ready");
     case "redeemed":
@@ -582,7 +582,7 @@ function formatActionDate(value: number, locale: string) {
   return new Date(value).toLocaleString(locale);
 }
 
-function StateBadge({ state }: { state: PluginResourceView["state"] }) {
+function StateBadge({ state }: { state: ProviderResourceView["state"] }) {
   if (state.status === "cooling") {
     return <span className={styles.cooling} title={state.message ?? undefined}>{t("Cooling down")}</span>;
   }

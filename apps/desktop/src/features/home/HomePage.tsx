@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, pluginText, type Overview } from "../../shared/api";
+import { api, providerText, type Overview } from "../../shared/api";
 import { ContributionCalendarChart } from "./charts/ContributionCalendarChart";
 import { DailyTokenUsageChart } from "./charts/DailyTokenUsageChart";
 import { HomeMetrics } from "./metrics/HomeMetrics";
@@ -59,7 +59,7 @@ function presetRange(preset: Exclude<OverviewRangePreset, "custom">, now = new D
 }
 
 export function HomePage() {
-  const { overview, busy, models, plugins } = useAppStore();
+  const { overview, busy, models, providers } = useAppStore();
   const { locale } = useI18n();
   const [preset, setPreset] = useState<OverviewRangePreset>("month");
   const [quick, setQuick] = useState<QuickPreset | null>(null);
@@ -153,11 +153,11 @@ export function HomePage() {
       group: modelProviderName(model),
       icon: iconFor(model.type),
     })),
-    ...plugins.flatMap((plugin) => plugin.providers.flatMap((provider) =>
-      provider.configured ? provider.models.filter((model) => model.enabled).map((model) => ({
+    ...providers.flatMap((provider) => provider.channels.flatMap((channel) =>
+      channel.configured ? channel.models.filter((model) => model.enabled).map((model) => ({
         value: model.id,
         label: model.displayName,
-        group: pluginText(provider.displayName, locale) || model.pluginName,
+        group: providerText(channel.displayName, locale) || model.providerName,
         iconSrc: model.icon || undefined,
         icon: model.icon ? undefined : flatColorOrganizationIcon,
       })) : [],

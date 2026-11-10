@@ -67,10 +67,8 @@ export function CallTable({ calls, onDetails }: { calls: LlmCall[]; onDetails: (
     },
 
     // { key: "model_hash", header: "Model Hash", render: (call) => value(call.model_hash), title: (call) => call.model_hash ?? undefined },
-    // { key: "provider_type", header: t("Provider type"), render: (call) => call.provider_type },
-    // { key: "provider_url", header: t("Provider URL"), render: (call) => call.provider_url, title: (call) => call.provider_url },
-    // { key: "request_type", header: t("Final request type"), render: (call) => call.request_type },
-    // { key: "request_url", header: t("Final request URL"), render: (call) => call.request_url, title: (call) => call.request_url },
+    // { key: "protocol_type", header: t("Protocol type"), render: (call) => call.protocol_type },
+    // { key: "endpoint_url", header: t("Endpoint URL"), render: (call) => call.endpoint_url, title: (call) => call.endpoint_url },
     {
       key: "finish_reason",
       header: "Finish Reason",

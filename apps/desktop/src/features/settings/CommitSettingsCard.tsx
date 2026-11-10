@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, pluginText, type CommitSettingsView } from "../../shared/api";
+import { api, providerText, type CommitSettingsView } from "../../shared/api";
 import { commitPromptLocale } from "../../i18n/runtime";
 import { useI18n } from "../../i18n/store";
 import { useAppStore } from "../../shared/store/appStore";
@@ -18,7 +18,7 @@ function errorText(cause: unknown) {
 }
 
 export function CommitSettingsCard() {
-  const { models, plugins } = useAppStore();
+  const { models, providers } = useAppStore();
   const { locale } = useI18n();
   const message = useMessage();
   const [view, setView] = useState<CommitSettingsView | null>(null);
@@ -69,11 +69,11 @@ export function CommitSettingsCard() {
         icon: model.type === "anthropic" ? claudeIcon : openAiIcon,
       });
     }
-    for (const plugin of plugins) {
-      for (const provider of plugin.providers) {
-        if (!provider.configured) continue;
-        const group = pluginText(provider.displayName, locale) || plugin.name;
-        for (const model of provider.models.filter((model) => model.enabled)) {
+    for (const provider of providers) {
+      for (const channel of provider.channels) {
+        if (!channel.configured) continue;
+        const group = providerText(channel.displayName, locale) || provider.name;
+        for (const model of channel.models.filter((model) => model.enabled)) {
           seen.add(model.id);
           options.push({
             value: model.id,
@@ -89,7 +89,7 @@ export function CommitSettingsCard() {
       options.push({ value: view.model_id, label: view.model_id, group: "Cursor" });
     }
     return options;
-  }, [locale, models, plugins, view]);
+  }, [locale, models, providers, view]);
 
   const persist = useCallback(
     async (modelId: string, prompt: string) => {

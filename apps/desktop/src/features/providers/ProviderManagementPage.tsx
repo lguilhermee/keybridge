@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api, pluginText, type PluginDescriptor, type PluginImportFile, type PluginRuntimePhase, type PluginRuntimeStatus } from "../../shared/api";
+import { api, providerText, type ProviderDescriptor, type ProviderImportFile, type ProviderRuntimePhase, type ProviderRuntimeStatus } from "../../shared/api";
 import { useI18n } from "../../i18n/store";
 import { PageContent } from "../../shell/layout/PageContent";
 import { appStore, useAppStore } from "../../shared/store/appStore";
@@ -9,151 +9,151 @@ import { Card } from "../../shared/ui/Card";
 import { Modal } from "../../shared/ui/Modal";
 import { useMessage } from "../../shared/ui/message";
 import { TruncatedButton } from "../../shared/ui/TruncatedButton";
-import { PluginAddPanel, PluginSettingsPanel } from "./PluginResourcePanels";
-import styles from "./PluginManagementPage.module.scss";
+import { ProviderAddPanel, ProviderSettingsPanel } from "./ProviderResourcePanels";
+import styles from "./ProviderManagementPage.module.scss";
 
-export function PluginManagementPage() {
-  const { pluginRuntime, plugins } = useAppStore();
+export function ProviderManagementPage() {
+  const { providerRuntime, providers } = useAppStore();
   const [progressOpen, setProgressOpen] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [selected, setSelected] = useState<{ pluginId: string; mode: "add" | "settings" } | null>(null);
+  const [selected, setSelected] = useState<{ providerId: string; mode: "add" | "settings" } | null>(null);
   const cancelRequested = useRef(false);
-  const selectedPlugin = selected ? plugins.find((plugin) => plugin.id === selected.pluginId) ?? null : null;
+  const selectedProvider = selected ? providers.find((provider) => provider.id === selected.providerId) ?? null : null;
 
   useEffect(() => {
-    if (!pluginRuntime) void appStore.refreshPluginRuntime();
-  }, [pluginRuntime]);
+    if (!providerRuntime) void appStore.refreshProviderRuntime();
+  }, [providerRuntime]);
 
   useEffect(() => {
-    if (pluginRuntime?.state !== "initializing") return;
+    if (providerRuntime?.state !== "initializing") return;
     if (!cancelRequested.current) setProgressOpen(true);
-    const timer = window.setInterval(() => void appStore.refreshPluginRuntime(), 300);
+    const timer = window.setInterval(() => void appStore.refreshProviderRuntime(), 300);
     return () => window.clearInterval(timer);
-  }, [pluginRuntime?.state]);
+  }, [providerRuntime?.state]);
 
   const initialize = async () => {
     if (starting) return;
     cancelRequested.current = false;
     setStarting(true);
     setProgressOpen(true);
-    const status = await appStore.initializePluginRuntime();
+    const status = await appStore.initializeProviderRuntime();
     setStarting(false);
     if (!status) {
       setProgressOpen(false);
     } else if (cancelRequested.current && status.state === "initializing") {
-      void appStore.cancelPluginRuntimeInitialization();
+      void appStore.cancelProviderRuntimeInitialization();
     }
   };
 
   const closeProgress = () => {
     setProgressOpen(false);
     cancelRequested.current = true;
-    if (pluginRuntime?.state === "initializing") {
-      void appStore.cancelPluginRuntimeInitialization();
+    if (providerRuntime?.state === "initializing") {
+      void appStore.cancelProviderRuntimeInitialization();
     }
   };
 
-  const content = pluginRuntime?.state === "ready"
-    ? <PluginCards plugins={plugins} onOpen={(pluginId, mode) => setSelected({ pluginId, mode })} />
-    : <RuntimeGate status={pluginRuntime} starting={starting} onInitialize={() => void initialize()} />;
-  const estimatedHeight = plugins.length > 0
-    ? Math.max(320, Math.ceil(plugins.length / 3) * 180)
+  const content = providerRuntime?.state === "ready"
+    ? <ProviderCards providers={providers} onOpen={(providerId, mode) => setSelected({ providerId, mode })} />
+    : <RuntimeGate status={providerRuntime} starting={starting} onInitialize={() => void initialize()} />;
+  const estimatedHeight = providers.length > 0
+    ? Math.max(320, Math.ceil(providers.length / 3) * 180)
     : 320;
 
   return <>
     <PageContent
-      title={t("Plugins")}
-      sections={[{ key: "installed-plugins", estimatedHeight, content }]}
+      title={t("Providers")}
+      sections={[{ key: "installed-providers", estimatedHeight, content }]}
     />
     <RuntimeProgressModal
       open={progressOpen}
-      status={pluginRuntime}
+      status={providerRuntime}
       starting={starting}
       onClose={closeProgress}
     />
     <Modal
       fullHeight
-      open={selectedPlugin !== null}
+      open={selectedProvider !== null}
       title={selected?.mode === "settings"
-        ? t("{name} accounts", { name: selectedPlugin?.name ?? "" })
-        : t("Add {name} account", { name: selectedPlugin?.name ?? "" })}
+        ? t("{name} accounts", { name: selectedProvider?.name ?? "" })
+        : t("Add {name} account", { name: selectedProvider?.name ?? "" })}
       onClose={() => setSelected(null)}
       onSubmit={() => setSelected(null)}
       submitLabel={t("Confirm")}
     >
-      {selected?.mode === "add" && selectedPlugin && <PluginAddPanel plugin={selectedPlugin} onConfigured={() => setSelected(null)} />}
-      {selected?.mode === "settings" && selectedPlugin && <PluginSettingsPanel plugin={selectedPlugin} />}
+      {selected?.mode === "add" && selectedProvider && <ProviderAddPanel provider={selectedProvider} onConfigured={() => setSelected(null)} />}
+      {selected?.mode === "settings" && selectedProvider && <ProviderSettingsPanel provider={selectedProvider} />}
     </Modal>
   </>;
 }
 
-function RuntimeGate({ status, starting, onInitialize }: { status: PluginRuntimeStatus | null; starting: boolean; onInitialize: () => void }) {
+function RuntimeGate({ status, starting, onInitialize }: { status: ProviderRuntimeStatus | null; starting: boolean; onInitialize: () => void }) {
   const checking = status === null;
   const initializing = starting || status?.state === "initializing";
   const failed = status?.state === "failed";
   const unsupported = status?.state === "unsupported";
   const title = checking
-    ? t("Checking the plugin runtime")
+    ? t("Checking the provider runtime")
     : failed
-      ? t("Plugin runtime initialization failed")
+      ? t("Provider runtime initialization failed")
       : unsupported
-        ? t("Plugin runtime is not supported on this system")
-        : t("Initialize the plugin runtime first");
+        ? t("Provider runtime is not supported on this system")
+        : t("Initialize the provider runtime first");
   const description = failed
     ? t("Try initializing again")
     : unsupported
       ? status.error ?? t("This operating system or CPU architecture is not currently supported")
-      : t("Initialization downloads and installs the plugin runtime.");
+      : t("Initialization downloads and installs the provider runtime.");
 
   return <div className={styles.gate}>
     <strong>{title}</strong>
     <span>{description}</span>
     {!unsupported && <Button variant="primary" disabled={checking || initializing} onClick={onInitialize}>
-      {checking ? t("Checking...") : initializing ? t("Initializing...") : failed ? t("Reinitialize plugins") : t("Initialize plugins")}
+      {checking ? t("Checking...") : initializing ? t("Initializing...") : failed ? t("Reinitialize providers") : t("Initialize providers")}
     </Button>}
   </div>;
 }
 
-function PluginCards({ plugins, onOpen }: {
-  plugins: PluginDescriptor[];
-  onOpen: (pluginId: string, mode: "add" | "settings") => void;
+function ProviderCards({ providers, onOpen }: {
+  providers: ProviderDescriptor[];
+  onOpen: (providerId: string, mode: "add" | "settings") => void;
 }) {
-  if (plugins.length === 0) {
+  if (providers.length === 0) {
     return <div className={styles.empty}>
-      <strong>{t("No plugins installed")}</strong>
-      <span>{t("Installed plugins will appear here.")}</span>
+      <strong>{t("No providers installed")}</strong>
+      <span>{t("Installed providers will appear here.")}</span>
     </div>;
   }
-  return <div className={styles.pluginGrid}>
-    {plugins.map((plugin) => <PluginCard key={plugin.id} plugin={plugin} onOpen={onOpen} />)}
+  return <div className={styles.providerGrid}>
+    {providers.map((provider) => <ProviderCard key={provider.id} provider={provider} onOpen={onOpen} />)}
   </div>;
 }
 
-function PluginCard({ plugin, onOpen }: {
-  plugin: PluginDescriptor;
-  onOpen: (pluginId: string, mode: "add" | "settings") => void;
+function ProviderCard({ provider, onOpen }: {
+  provider: ProviderDescriptor;
+  onOpen: (providerId: string, mode: "add" | "settings") => void;
 }) {
   const { locale } = useI18n();
   const { ports } = useAppStore();
   const message = useMessage();
   const importInput = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
-  const configured = plugin.providers.some((provider) => provider.configured);
-  const accountCount = plugin.resources.reduce((count, resource) => count + resource.resources.length, 0);
-  const modelCount = plugin.providers.reduce((count, provider) => count + provider.models.length, 0);
-  const subtitle = plugin.providers.map((provider) => pluginText(provider.displayName, locale)).join(" - ") || plugin.id;
-  const importResource = plugin.resources.find((resource) => resource.import);
-  const exportResource = plugin.resources.find((resource) => resource.resources.length > 0);
+  const configured = provider.channels.some((channel) => channel.configured);
+  const accountCount = provider.resources.reduce((count, resource) => count + resource.resources.length, 0);
+  const modelCount = provider.channels.reduce((count, channel) => count + channel.models.length, 0);
+  const subtitle = provider.channels.map((channel) => providerText(channel.displayName, locale)).join(" - ") || provider.id;
+  const importResource = provider.resources.find((resource) => resource.import);
+  const exportResource = provider.resources.find((resource) => resource.resources.length > 0);
 
   const importFiles = async (files: FileList | null) => {
     if (!files?.length || !importResource) return;
     setImporting(true);
     try {
-      const entries: PluginImportFile[] = await Promise.all(
+      const entries: ProviderImportFile[] = await Promise.all(
         [...files].map(async (file) => ({ name: file.name, content: await file.text() })),
       );
-      const result = await api.importPluginResources(plugin.id, importResource.type, entries);
-      await appStore.refreshPlugins();
+      const result = await api.importProviderResources(provider.id, importResource.type, entries);
+      await appStore.refreshProviders();
       const summary = t("Import finished: {added} added, {updated} updated", { added: result.added, updated: result.updated });
       if (result.modelSyncError) {
         message(t("The account was saved, but model sync failed: {error}", { error: result.modelSyncError }), { duration: 5000 });
@@ -188,27 +188,27 @@ function PluginCard({ plugin, onOpen }: {
             label: t("Bulk export"),
             onSelect: () =>
               void api.openExternalUrl(
-                api.pluginResourceExportUrl(
+                api.providerResourceExportUrl(
                   ports.service_port,
-                  plugin.id,
+                  provider.id,
                   exportResource.type,
                 ),
               ),
           },
         ]
       : []),
-    ...(plugin.version
-      ? [{ id: "version", type: "text" as const, label: `v${plugin.version}` }]
+    ...(provider.version
+      ? [{ id: "version", type: "text" as const, label: `v${provider.version}` }]
       : []),
   ];
 
   return (
-    <Card className={styles.pluginCard}>
-      <div className={styles.pluginCardTop}>
-        <img className={styles.pluginIcon} src={plugin.icon} />
-        <div className={styles.pluginIdentity}>
-          <span className={styles.pluginName}>{plugin.name}</span>
-          <span className={styles.pluginId}>{subtitle}</span>
+    <Card className={styles.providerCard}>
+      <div className={styles.providerCardTop}>
+        <img className={styles.providerIcon} src={provider.icon} />
+        <div className={styles.providerIdentity}>
+          <span className={styles.providerName}>{provider.name}</span>
+          <span className={styles.providerId}>{subtitle}</span>
         </div>
         <span
           className={`${styles.stateBadge} ${configured ? styles.stateReady : ""}`}
@@ -216,15 +216,15 @@ function PluginCard({ plugin, onOpen }: {
           {configured ? t("Configured") : t("Not configured")}
         </span>
       </div>
-      <div className={styles.pluginMeta}>
+      <div className={styles.providerMeta}>
         <span>
           {t("{accounts} accounts - {models} models", {
             accounts: accountCount,
             models: modelCount,
           })}
         </span>
-        {plugin.author && (
-          <span className={styles.pluginAuthor}>{plugin.author}</span>
+        {provider.author && (
+          <span className={styles.providerAuthor}>{provider.author}</span>
         )}
       </div>
       <div className={styles.cardActions}>
@@ -232,13 +232,13 @@ function PluginCard({ plugin, onOpen }: {
           size="small"
           variant="primary"
           label={t("Add account")}
-          onClick={() => onOpen(plugin.id, "add")}
+          onClick={() => onOpen(provider.id, "add")}
         />
         {configured && (
           <TruncatedButton
             size="small"
             label={t("Manage accounts")}
-            onClick={() => onOpen(plugin.id, "settings")}
+            onClick={() => onOpen(provider.id, "settings")}
           />
         )}
         {moreItems.length > 0 && (
@@ -261,20 +261,20 @@ function PluginCard({ plugin, onOpen }: {
   );
 }
 
-function RuntimeProgressModal({ open, status, starting, onClose }: { open: boolean; status: PluginRuntimeStatus | null; starting: boolean; onClose: () => void }) {
+function RuntimeProgressModal({ open, status, starting, onClose }: { open: boolean; status: ProviderRuntimeStatus | null; starting: boolean; onClose: () => void }) {
   const initializing = starting || status?.state === "initializing";
   const downloaded = status?.downloaded_bytes ?? 0;
   const total = status?.total_bytes ?? null;
   const percent = total && total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : null;
   const stage = status?.state === "ready"
-    ? t("Plugin runtime initialized")
+    ? t("Provider runtime initialized")
     : status?.state === "failed"
-      ? t("Plugin runtime initialization failed")
+      ? t("Provider runtime initialization failed")
       : phaseText(status?.phase ?? null);
 
   return <Modal
     open={open}
-    title={t("Initialize plugin runtime")}
+    title={t("Initialize provider runtime")}
     closeLabel={status?.state === "ready" ? t("Done") : initializing ? t("Cancel") : t("Close")}
     onClose={onClose}
   >
@@ -299,19 +299,19 @@ function RuntimeProgressModal({ open, status, starting, onClose }: { open: boole
         </span>
       </>}
       {status?.state === "failed" && <span className={styles.error}>{t("Try initializing again")}</span>}
-      {status?.state === "ready" && <span>{t("Plugin runtime {version} is installed and ready to use.", { version: status.version })}</span>}
+      {status?.state === "ready" && <span>{t("Provider runtime {version} is installed and ready to use.", { version: status.version })}</span>}
     </div>
   </Modal>;
 }
 
-function phaseText(phase: PluginRuntimePhase | null) {
+function phaseText(phase: ProviderRuntimePhase | null) {
   switch (phase) {
-    case "checking": return t("Checking the plugin runtime");
-    case "downloading": return t("Downloading the plugin runtime");
-    case "verifying": return t("Verifying the plugin runtime download");
-    case "installing": return t("Installing the plugin runtime");
-    case "validating": return t("Validating the plugin runtime");
-    default: return t("Preparing the plugin runtime");
+    case "checking": return t("Checking the provider runtime");
+    case "downloading": return t("Downloading the provider runtime");
+    case "verifying": return t("Verifying the provider runtime download");
+    case "installing": return t("Installing the provider runtime");
+    case "validating": return t("Validating the provider runtime");
+    default: return t("Preparing the provider runtime");
   }
 }
 

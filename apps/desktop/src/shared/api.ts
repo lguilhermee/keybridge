@@ -184,23 +184,23 @@ export interface TokenPricingSettings {
   cache_write_per_million: number;
 }
 
-export type PluginRuntimeState = "uninitialized" | "initializing" | "ready" | "failed" | "unsupported";
-export type PluginRuntimePhase = "checking" | "downloading" | "verifying" | "installing" | "validating";
+export type ProviderRuntimeState = "uninitialized" | "initializing" | "ready" | "failed" | "unsupported";
+export type ProviderRuntimePhase = "checking" | "downloading" | "verifying" | "installing" | "validating";
 
-export interface PluginRuntimeStatus {
-  state: PluginRuntimeState;
+export interface ProviderRuntimeStatus {
+  state: ProviderRuntimeState;
   version: string;
   target: string | null;
-  phase: PluginRuntimePhase | null;
+  phase: ProviderRuntimePhase | null;
   downloaded_bytes: number;
   total_bytes: number | null;
   error: string | null;
 }
 
-/** Display text provided by a plugin: a plain string or a locale -> text map. */
-export type PluginLocalizedText = string | Record<string, string>;
+/** Display text provided by a provider: a plain string or a locale -> text map. */
+export type ProviderLocalizedText = string | Record<string, string>;
 
-export function pluginText(value: PluginLocalizedText | null | undefined, locale: string): string {
+export function providerText(value: ProviderLocalizedText | null | undefined, locale: string): string {
   if (!value) return "";
   if (typeof value === "string") return value;
   if (value[locale]) return value[locale];
@@ -212,123 +212,123 @@ export function pluginText(value: PluginLocalizedText | null | undefined, locale
   return value["en-US"] ?? value["en"] ?? Object.values(value)[0] ?? "";
 }
 
-export interface PluginResourceState {
+export interface ProviderResourceState {
   status: "ready" | "cooling" | "invalid";
   retryAtMs?: number | null;
   message?: string | null;
 }
 
-export interface PluginResourceMetric {
+export interface ProviderResourceMetric {
   id: string;
-  label: PluginLocalizedText;
+  label: ProviderLocalizedText;
   unit: "percent" | "count";
   value: number;
   resetAtMs?: number | null;
 }
 
-export interface PluginResourceView {
+export interface ProviderResourceView {
   id: string;
-  state: PluginResourceState;
+  state: ProviderResourceState;
   displayName: string;
-  description: PluginLocalizedText | null;
-  metrics: PluginResourceMetric[];
+  description: ProviderLocalizedText | null;
+  metrics: ProviderResourceMetric[];
   createdAtMs: number;
 }
 
-export interface PluginAddMethod {
+export interface ProviderAddMethod {
   type: "oauth2.0" | "oauth2.authorization-code";
   id: string;
-  displayName: PluginLocalizedText;
-  description: PluginLocalizedText | null;
+  displayName: ProviderLocalizedText;
+  description: ProviderLocalizedText | null;
   callback?: { port: number | null; path: string | null };
 }
 
-export interface PluginImportDescriptor {
-  displayName: PluginLocalizedText;
-  description: PluginLocalizedText | null;
+export interface ProviderImportDescriptor {
+  displayName: ProviderLocalizedText;
+  description: ProviderLocalizedText | null;
   accept: string[];
   multiple: boolean;
   helpUrl: string | null;
 }
 
-export interface PluginResourceAction {
+export interface ProviderResourceAction {
   id: string;
-  displayName: PluginLocalizedText;
-  description: PluginLocalizedText | null;
+  displayName: ProviderLocalizedText;
+  description: ProviderLocalizedText | null;
   target: "resource" | "card";
   destructive: boolean;
 }
 
-export interface PluginResourceActionField {
+export interface ProviderResourceActionField {
   id: string;
-  label: PluginLocalizedText;
+  label: ProviderLocalizedText;
   value: string;
 }
 
-export interface PluginResourceActionCard {
+export interface ProviderResourceActionCard {
   id: string;
-  title: PluginLocalizedText;
-  status: PluginLocalizedText | null;
+  title: ProviderLocalizedText;
+  status: ProviderLocalizedText | null;
   grantedAtMs: number | null;
   expiresAtMs: number | null;
-  fields: PluginResourceActionField[];
+  fields: ProviderResourceActionField[];
 }
 
-export interface PluginResourceActionResult {
-  title: PluginLocalizedText;
-  description: PluginLocalizedText | null;
-  cards: PluginResourceActionCard[];
+export interface ProviderResourceActionResult {
+  title: ProviderLocalizedText;
+  description: ProviderLocalizedText | null;
+  cards: ProviderResourceActionCard[];
 }
 
-export interface PluginResourceDescriptor {
+export interface ProviderResourceDescriptor {
   type: string;
-  displayName: PluginLocalizedText;
-  add: PluginAddMethod[];
-  import: PluginImportDescriptor | null;
+  displayName: ProviderLocalizedText;
+  add: ProviderAddMethod[];
+  import: ProviderImportDescriptor | null;
   canRefresh: boolean;
   canRemove: boolean;
-  actions: PluginResourceAction[];
-  resources: PluginResourceView[];
+  actions: ProviderResourceAction[];
+  resources: ProviderResourceView[];
 }
 
-export interface PluginModelDescriptor {
+export interface ProviderModelDescriptor {
   id: string;
-  pluginId: string;
-  pluginName: string;
   providerId: string;
+  providerName: string;
+  channelId: string;
   modelId: string;
   displayName: string;
   description: string | null;
   icon: string;
-  providerType: string;
+  brand: string;
   maxOutputTokens: number | null;
   images: boolean;
   enabled: boolean;
 }
 
-export interface PluginProviderDescriptor {
+export interface ChannelDescriptor {
   id: string;
-  pluginId: string;
-  displayName: PluginLocalizedText;
-  description: PluginLocalizedText | null;
-  providerType: string;
+  providerId: string;
+  displayName: ProviderLocalizedText;
+  description: ProviderLocalizedText | null;
+  brand: string;
   resourceType: string | null;
   hasModels: boolean;
   configured: boolean;
-  models: PluginModelDescriptor[];
+  models: ProviderModelDescriptor[];
 }
 
-export interface PluginDescriptor {
+export interface ProviderDescriptor {
   id: string;
   name: string;
   version: string;
   author: string | null;
   icon: string;
-  providers: PluginProviderDescriptor[];
-  resources: PluginResourceDescriptor[];
+  channels: ChannelDescriptor[];
+  resources: ProviderResourceDescriptor[];
 }
 
-export interface PluginOAuthBegin {
+export interface ProviderOAuthBegin {
   sessionId: string;
   userCode: string | null;
   verificationUrl: string;
@@ -337,27 +337,27 @@ export interface PluginOAuthBegin {
   pollIntervalMs: number;
 }
 
-export type PluginOAuthPoll =
+export type ProviderOAuthPoll =
   | { status: "pending"; pollIntervalMs: number }
   | { status: "completed"; added: number; updated: number; modelSyncError: string | null }
   | { status: "denied"; message: string | null }
   | { status: "failed"; message: string };
 
-export interface PluginImportFile {
+export interface ProviderImportFile {
   name: string;
   content: string;
 }
 
-export interface PluginImportResult {
+export interface ProviderImportResult {
   added: number;
   updated: number;
   warnings: string[];
   modelSyncError: string | null;
 }
 
-export function configuredPluginModels(plugins: PluginDescriptor[]): PluginModelDescriptor[] {
-  return plugins.flatMap((plugin) =>
-    plugin.providers.flatMap((provider) => provider.configured ? provider.models.filter((model) => model.enabled) : []));
+export function configuredProviderModels(providers: ProviderDescriptor[]): ProviderModelDescriptor[] {
+  return providers.flatMap((provider) =>
+    provider.channels.flatMap((channel) => channel.configured ? channel.models.filter((model) => model.enabled) : []));
 }
 
 export interface OverviewMetrics {
@@ -396,10 +396,8 @@ export interface LlmCall {
   conversation_id: string;
   provider_call_index: number;
   model_hash: string | null;
-  provider_type: string;
-  provider_url: string;
-  request_type: string;
-  request_url: string;
+  protocol_type: string;
+  endpoint_url: string;
   model_id: string;
   display_name: string;
   reasoning_effort: string | null;
@@ -511,20 +509,20 @@ export const api = {
   },
   cursorHarness: () => request<CursorHarnessStatus>("/harness/cursor/status"),
   initializeCursorCa: () => request<CursorHarnessStatus>("/harness/cursor/ca/initialize", { method: "POST" }),
-  plugins: () => request<PluginDescriptor[]>("/plugins"),
-  pluginOAuthBegin: (pluginId: string, resourceType: string, methodId: string) => request<PluginOAuthBegin>(`/plugins/${encodeURIComponent(pluginId)}/resources/${encodeURIComponent(resourceType)}/add/${encodeURIComponent(methodId)}/begin`, { method: "POST" }),
-  pluginOAuthPoll: (sessionId: string, signal?: AbortSignal) => request<PluginOAuthPoll>(`/plugins/oauth/${encodeURIComponent(sessionId)}/poll`, { method: "POST", signal }),
-  importPluginResources: (pluginId: string, resourceType: string, files: PluginImportFile[]) => request<PluginImportResult>(`/plugins/${encodeURIComponent(pluginId)}/resources/${encodeURIComponent(resourceType)}/import`, { method: "POST", body: JSON.stringify(files) }),
-  refreshPluginResource: (pluginId: string, resourceType: string, resourceId: string) => request<void>(`/plugins/${encodeURIComponent(pluginId)}/resources/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}/refresh`, { method: "POST" }),
-  pluginResourceAction: (pluginId: string, resourceType: string, resourceId: string, actionId: string, input: unknown = {}) => request<PluginResourceActionResult>(`/plugins/${encodeURIComponent(pluginId)}/resources/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}/actions/${encodeURIComponent(actionId)}`, { method: "POST", body: JSON.stringify(input) }),
-  deletePluginResource: (pluginId: string, resourceType: string, resourceId: string) => request<void>(`/plugins/${encodeURIComponent(pluginId)}/resources/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}`, { method: "DELETE" }),
-  syncPluginModels: (pluginId: string, providerId: string) => request<{ models: number }>(`/plugins/${encodeURIComponent(pluginId)}/providers/${encodeURIComponent(providerId)}/models/sync`, { method: "POST" }),
-  setPluginModelEnabled: (pluginId: string, providerId: string, modelId: string, enabled: boolean) => request<void>(`/plugins/${encodeURIComponent(pluginId)}/providers/${encodeURIComponent(providerId)}/models/enabled`, { method: "PUT", body: JSON.stringify({ modelId, enabled }) }),
-  pluginResourceExportUrl: (servicePort: number, pluginId: string, resourceType: string) => `http://127.0.0.1:${servicePort}${API_ROOT}/plugins/${encodeURIComponent(pluginId)}/resources/${encodeURIComponent(resourceType)}/export`,
-  removePluginConfiguration: (pluginId: string) => request<void>(`/plugins/${encodeURIComponent(pluginId)}`, { method: "DELETE" }),
-  pluginRuntime: () => request<PluginRuntimeStatus>("/plugins/runtime"),
-  initializePluginRuntime: () => request<PluginRuntimeStatus>("/plugins/runtime", { method: "POST" }),
-  cancelPluginRuntimeInitialization: () => request<PluginRuntimeStatus>("/plugins/runtime", { method: "DELETE" }),
+  providers: () => request<ProviderDescriptor[]>("/providers"),
+  providerOAuthBegin: (providerId: string, resourceType: string, methodId: string) => request<ProviderOAuthBegin>(`/providers/${encodeURIComponent(providerId)}/resources/${encodeURIComponent(resourceType)}/add/${encodeURIComponent(methodId)}/begin`, { method: "POST" }),
+  providerOAuthPoll: (sessionId: string, signal?: AbortSignal) => request<ProviderOAuthPoll>(`/providers/oauth/${encodeURIComponent(sessionId)}/poll`, { method: "POST", signal }),
+  importProviderResources: (providerId: string, resourceType: string, files: ProviderImportFile[]) => request<ProviderImportResult>(`/providers/${encodeURIComponent(providerId)}/resources/${encodeURIComponent(resourceType)}/import`, { method: "POST", body: JSON.stringify(files) }),
+  refreshProviderResource: (providerId: string, resourceType: string, resourceId: string) => request<void>(`/providers/${encodeURIComponent(providerId)}/resources/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}/refresh`, { method: "POST" }),
+  providerResourceAction: (providerId: string, resourceType: string, resourceId: string, actionId: string, input: unknown = {}) => request<ProviderResourceActionResult>(`/providers/${encodeURIComponent(providerId)}/resources/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}/actions/${encodeURIComponent(actionId)}`, { method: "POST", body: JSON.stringify(input) }),
+  deleteProviderResource: (providerId: string, resourceType: string, resourceId: string) => request<void>(`/providers/${encodeURIComponent(providerId)}/resources/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}`, { method: "DELETE" }),
+  syncChannelModels: (providerId: string, channelId: string) => request<{ models: number }>(`/providers/${encodeURIComponent(providerId)}/channels/${encodeURIComponent(channelId)}/models/sync`, { method: "POST" }),
+  setChannelModelEnabled: (providerId: string, channelId: string, modelId: string, enabled: boolean) => request<void>(`/providers/${encodeURIComponent(providerId)}/channels/${encodeURIComponent(channelId)}/models/enabled`, { method: "PUT", body: JSON.stringify({ modelId, enabled }) }),
+  providerResourceExportUrl: (servicePort: number, providerId: string, resourceType: string) => `http://127.0.0.1:${servicePort}${API_ROOT}/providers/${encodeURIComponent(providerId)}/resources/${encodeURIComponent(resourceType)}/export`,
+  removeProviderConfiguration: (providerId: string) => request<void>(`/providers/${encodeURIComponent(providerId)}`, { method: "DELETE" }),
+  providerRuntime: () => request<ProviderRuntimeStatus>("/providers/runtime"),
+  initializeProviderRuntime: () => request<ProviderRuntimeStatus>("/providers/runtime", { method: "POST" }),
+  cancelProviderRuntimeInitialization: () => request<ProviderRuntimeStatus>("/providers/runtime", { method: "DELETE" }),
   openCursorCaInstallTerminal: async (command: string) => {
     if (!packagedDesktop) throw new Error(t("Open a terminal from the desktop app to install the CA"));
     const { invoke } = await import("@tauri-apps/api/core");

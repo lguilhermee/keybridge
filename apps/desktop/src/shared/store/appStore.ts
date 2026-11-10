@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { api, type CursorHarnessStatus, type LlmCall, type Model, type ModelInput, type Overview, type PluginDescriptor, type PluginRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
+import { api, type CursorHarnessStatus, type LlmCall, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type TokenPricingSettings } from "../api";
 import { applyTheme, isThemeId, type ThemeId } from "../theme/theme";
 
 export const DEFAULT_TOKEN_PRICING: TokenPricingSettings = {
@@ -21,8 +21,8 @@ export type AppSnapshot = {
   theme: ThemeId;
   cursorHarness: CursorHarnessStatus | null;
   cursorBusy: boolean;
-  pluginRuntime: PluginRuntimeStatus | null;
-  plugins: PluginDescriptor[];
+  providerRuntime: ProviderRuntimeStatus | null;
+  providers: ProviderDescriptor[];
 };
 
 const savedTheme = (): ThemeId => {
@@ -56,8 +56,8 @@ let snapshot: AppSnapshot = {
   theme: savedTheme(),
   cursorHarness: null,
   cursorBusy: false,
-  pluginRuntime: null,
-  plugins: [],
+  providerRuntime: null,
+  providers: [],
 };
 
 const listeners = new Set<() => void>();
@@ -86,7 +86,7 @@ export const appStore = {
   async refresh() {
     update({ busy: true, error: null });
     try {
-      const [models, calls, overview, settings, ports, pricing, cursorHarness, pluginRuntime, plugins] = await Promise.all([
+      const [models, calls, overview, settings, ports, pricing, cursorHarness, providerRuntime, providers] = await Promise.all([
         api.models(),
         api.calls(),
         api.overview(),
@@ -94,10 +94,10 @@ export const appStore = {
         api.ports(),
         api.pricingSettings(),
         api.cursorHarness(),
-        api.pluginRuntime(),
-        api.plugins(),
+        api.providerRuntime(),
+        api.providers(),
       ]);
-      update({ models, calls, overview, detailed: settings.detailed, ports, pricing, cursorHarness, pluginRuntime, plugins });
+      update({ models, calls, overview, detailed: settings.detailed, ports, pricing, cursorHarness, providerRuntime, providers });
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
     } finally {
@@ -123,53 +123,53 @@ export const appStore = {
       return null;
     } finally { update({ cursorBusy: false }); }
   },
-  async initializePluginRuntime() {
+  async initializeProviderRuntime() {
     update({ error: null });
     try {
-      const pluginRuntime = await api.initializePluginRuntime();
-      update({ pluginRuntime });
-      return pluginRuntime;
+      const providerRuntime = await api.initializeProviderRuntime();
+      update({ providerRuntime });
+      return providerRuntime;
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
       return null;
     }
   },
-  async refreshPluginRuntime() {
+  async refreshProviderRuntime() {
     try {
-      const wasReady = snapshot.pluginRuntime?.state === "ready";
-      const pluginRuntime = await api.pluginRuntime();
-      update({ pluginRuntime });
-      if (!wasReady && pluginRuntime.state === "ready") {
-        const plugins = await api.plugins();
-        update({ plugins });
+      const wasReady = snapshot.providerRuntime?.state === "ready";
+      const providerRuntime = await api.providerRuntime();
+      update({ providerRuntime });
+      if (!wasReady && providerRuntime.state === "ready") {
+        const providers = await api.providers();
+        update({ providers });
       }
-      return pluginRuntime;
+      return providerRuntime;
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
       return null;
     }
   },
-  async cancelPluginRuntimeInitialization() {
+  async cancelProviderRuntimeInitialization() {
     try {
-      const pluginRuntime = await api.cancelPluginRuntimeInitialization();
-      update({ pluginRuntime });
-      return pluginRuntime;
+      const providerRuntime = await api.cancelProviderRuntimeInitialization();
+      update({ providerRuntime });
+      return providerRuntime;
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
       return null;
     }
   },
-  async refreshPlugins() {
+  async refreshProviders() {
     try {
-      update({ plugins: await api.plugins() });
+      update({ providers: await api.providers() });
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
     }
   },
-  async removePluginConfiguration(pluginId: string) {
+  async removeProviderConfiguration(providerId: string) {
     await perform(async () => {
-      await api.removePluginConfiguration(pluginId);
-      update({ plugins: await api.plugins() });
+      await api.removeProviderConfiguration(providerId);
+      update({ providers: await api.providers() });
     });
   },
   async setCursorEnabled(enabled: boolean) {

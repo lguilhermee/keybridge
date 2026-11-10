@@ -44,7 +44,7 @@ export function ExternalApiSettingsCard({ servicePort }: { servicePort: number }
       <div className={styles.row}>
         <div className={styles.description}>
           <strong>{t("Enable external API")}</strong>
-          <small>{t("Allow local apps to call configured models, including plugin models, with an API key.")}</small>
+          <small>{t("Allow local apps to call configured models, including provider models, with an API key.")}</small>
         </div>
         <Switch label={t("Enable external API")} checked={draft.enabled} disabled={!saved || saving}
           onChange={(enabled) => setDraft((current) => ({ ...current, enabled }))} />

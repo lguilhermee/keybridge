@@ -19,7 +19,7 @@ type MenuItem =
   | { kind: "page"; path: string; label: string; icon: IconifyIcon | string }
   | { kind: "group"; label: string };
 
-const keptAlivePages = ["/", "/calls", "/settings", "/harness/cursor", "/plugins"];
+const keptAlivePages = ["/", "/calls", "/settings", "/harness/cursor", "/providers"];
 
 export function AppLayout() {
   const { busy, cursorHarness } = useAppStore();
@@ -33,7 +33,7 @@ export function AppLayout() {
     { kind: "group", label: t("Models") },
     { kind: "page", path: "/harness/cursor", label: "Cursor", icon: cursorIconUrl },
     { kind: "group", label: t("Settings") },
-    { kind: "page", path: "/plugins", label: t("Plugins"), icon: flatColorCrystalOscillatorIcon },
+    { kind: "page", path: "/providers", label: t("Providers"), icon: flatColorCrystalOscillatorIcon },
     { kind: "page", path: "/settings", label: t("System settings"), icon: flatColorSettingsIcon },
   ];
 

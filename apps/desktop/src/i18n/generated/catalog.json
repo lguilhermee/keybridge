@@ -34,6 +34,18 @@
         }
       ]
     },
+    "007fa2a15c22efce": {
+      "source": "Installing the provider runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 312,
+          "column": 31
+        }
+      ]
+    },
     "01e93bf5df3af78e": {
       "source": "{name} accounts",
       "kind": "template",
@@ -42,21 +54,21 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 78,
           "column": 11
         }
       ]
     },
-    "023b0cd290862624": {
-      "source": "Initialize plugins",
+    "02278c7303d1646a": {
+      "source": "Installed providers will appear here.",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 112,
-          "column": 113
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 124,
+          "column": 14
         }
       ]
     },
@@ -100,7 +112,7 @@
           "column": 70
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 236,
           "column": 33
         }
@@ -113,12 +125,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 43,
+          "line": 41,
           "column": 6
         },
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 132,
+          "line": 130,
           "column": 15
         }
       ]
@@ -141,7 +153,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 241,
           "column": 34
         }
@@ -228,7 +240,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 65,
+          "line": 63,
           "column": 44
         }
       ]
@@ -304,7 +316,7 @@
           "column": 94
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 504,
           "column": 84
         },
@@ -417,7 +429,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 278,
           "column": 45
         }
@@ -441,7 +453,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 473,
           "column": 102
         },
@@ -514,18 +526,6 @@
           "file": "features/settings/HeadroomSettingsCard.tsx",
           "line": 130,
           "column": 17
-        }
-      ]
-    },
-    "1411b824310b9a07": {
-      "source": "No plugins installed",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 123,
-          "column": 16
         }
       ]
     },
@@ -652,7 +652,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 376,
           "column": 20
         }
@@ -727,7 +727,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 474,
+          "line": 472,
           "column": 21
         }
       ]
@@ -770,7 +770,7 @@
           "column": 20
         },
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 278,
           "column": 72
         },
@@ -849,12 +849,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 178,
           "column": 52
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 142,
           "column": 42
         }
@@ -866,9 +866,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 370,
-          "column": 32
+          "column": 31
         }
       ]
     },
@@ -922,12 +922,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 28,
+          "line": 26,
           "column": 63
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 45,
+          "line": 43,
           "column": 56
         },
         {
@@ -937,7 +937,7 @@
         },
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 143,
+          "line": 141,
           "column": 53
         }
       ]
@@ -960,7 +960,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 202,
           "column": 36
         }
@@ -972,26 +972,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 409,
-          "column": 106
+          "column": 105
         },
         {
           "file": "shared/ui/ModelSelect.tsx",
           "line": 232,
           "column": 102
-        }
-      ]
-    },
-    "1fe40a442aa28589": {
-      "source": "Installed plugins will appear here.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 124,
-          "column": 14
         }
       ]
     },
@@ -1070,12 +1058,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 103,
           "column": 7
         },
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 301,
           "column": 70
         }
@@ -1098,13 +1086,25 @@
         }
       ]
     },
+    "2578179d177903e1": {
+      "source": "Endpoint URL",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 22,
+          "column": 6
+        }
+      ]
+    },
     "276fcdb7e5918158": {
       "source": "Account saved and the model catalog is synced.",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 245,
           "column": 64
         }
@@ -1118,7 +1118,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 536,
           "column": 84
         }
@@ -1165,7 +1165,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 26,
+          "line": 24,
           "column": 6
         },
         {
@@ -1177,6 +1177,20 @@
           "file": "features/models/CursorModelEditor.tsx",
           "line": 161,
           "column": 25
+        }
+      ]
+    },
+    "2b8fea37429ff37d": {
+      "source": "Provider runtime {version} is installed and ready to use.",
+      "kind": "template",
+      "placeholders": [
+        "version"
+      ],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 302,
+          "column": 44
         }
       ]
     },
@@ -1211,7 +1225,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 51,
+          "line": 49,
           "column": 29
         }
       ]
@@ -1234,7 +1248,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 112,
           "column": 19
         },
@@ -1277,7 +1291,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 537,
           "column": 84
         }
@@ -1291,17 +1305,17 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 159,
           "column": 17
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 83,
           "column": 15
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 194,
           "column": 22
         }
@@ -1326,7 +1340,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 71,
+          "line": 69,
           "column": 55
         }
       ]
@@ -1350,7 +1364,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 27,
+          "line": 25,
           "column": 6
         },
         {
@@ -1386,9 +1400,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 370,
-          "column": 48
+          "column": 47
         }
       ]
     },
@@ -1523,7 +1537,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 474,
           "column": 16
         }
@@ -1591,12 +1605,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 69,
+          "line": 67,
           "column": 62
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 74,
+          "line": 72,
           "column": 20
         }
       ]
@@ -1610,7 +1624,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 298,
           "column": 20
         }
@@ -1639,7 +1653,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 576,
           "column": 28
         }
@@ -1663,7 +1677,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 188,
           "column": 20
         }
@@ -1678,6 +1692,18 @@
           "file": "features/settings/SettingsPage.tsx",
           "line": 281,
           "column": 26
+        }
+      ]
+    },
+    "44aa60631c24cf14": {
+      "source": "Validating the provider runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 313,
+          "column": 31
         }
       ]
     },
@@ -1823,7 +1849,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 528,
           "column": 50
         },
@@ -1907,18 +1933,6 @@
         }
       ]
     },
-    "48e81f4eb2da6e78": {
-      "source": "Validating the plugin runtime",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 313,
-          "column": 31
-        }
-      ]
-    },
     "494ca78f7374e46f": {
       "source": "Custom",
       "kind": "text",
@@ -1969,9 +1983,21 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 564,
           "column": 11
+        }
+      ]
+    },
+    "4b3be95de6eaac51": {
+      "source": "Downloading the provider runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 310,
+          "column": 32
         }
       ]
     },
@@ -1984,18 +2010,6 @@
           "file": "features/home/metrics/HomeMetrics.tsx",
           "line": 54,
           "column": 17
-        }
-      ]
-    },
-    "4bfd5b85c670a196": {
-      "source": "Plugin runtime initialized",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 270,
-          "column": 7
         }
       ]
     },
@@ -2018,6 +2032,18 @@
           "file": "features/settings/TabSettingsCard.tsx",
           "line": 84,
           "column": 20
+        }
+      ]
+    },
+    "4c3f9f90ccf0d000": {
+      "source": "Initialize the provider runtime first",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 101,
+          "column": 11
         }
       ]
     },
@@ -2052,12 +2078,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 56,
+          "line": 54,
           "column": 39
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 63,
+          "line": 61,
           "column": 72
         }
       ]
@@ -2069,7 +2095,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 59,
+          "line": 57,
           "column": 44
         }
       ]
@@ -2083,23 +2109,6 @@
           "file": "features/settings/CommitSettingsCard.tsx",
           "line": 185,
           "column": 26
-        }
-      ]
-    },
-    "4f3264a549f645bc": {
-      "source": "Plugin runtime initialization failed",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 98,
-          "column": 9
-        },
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 272,
-          "column": 9
         }
       ]
     },
@@ -2122,12 +2131,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 33,
+          "line": 31,
           "column": 6
         },
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 82,
+          "line": 80,
           "column": 15
         }
       ]
@@ -2144,23 +2153,6 @@
         }
       ]
     },
-    "519c55c94d3b48ee": {
-      "source": "Checking the plugin runtime",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 96,
-          "column": 7
-        },
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 309,
-          "column": 29
-        }
-      ]
-    },
     "519f32d716ba891f": {
       "source": "Detailed records",
       "kind": "text",
@@ -2168,12 +2160,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 45,
+          "line": 43,
           "column": 6
         },
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 142,
+          "line": 140,
           "column": 15
         }
       ]
@@ -2334,25 +2326,13 @@
         }
       ]
     },
-    "578898555e391e3d": {
-      "source": "This plugin does not need any resources.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginResourcePanels.tsx",
-          "line": 39,
-          "column": 56
-        }
-      ]
-    },
     "57c82546ee40ed6b": {
       "source": "This operating system or CPU architecture is not currently supported",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 105,
           "column": 25
         }
@@ -2437,7 +2417,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 54,
+          "line": 52,
           "column": 32
         }
       ]
@@ -2567,12 +2547,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 573,
           "column": 30
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 592,
           "column": 42
         }
@@ -2709,7 +2689,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 497,
           "column": 13
         }
@@ -2759,7 +2739,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 233,
           "column": 15
         }
@@ -2879,7 +2859,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 470,
           "column": 66
         }
@@ -2950,6 +2930,23 @@
           "file": "features/models/CursorModelEditor.tsx",
           "line": 161,
           "column": 165
+        }
+      ]
+    },
+    "6ba2e6d57abb8244": {
+      "source": "Checking the provider runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 96,
+          "column": 7
+        },
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 309,
+          "column": 29
         }
       ]
     },
@@ -3052,7 +3049,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 112,
           "column": 53
         }
@@ -3162,7 +3159,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 402,
           "column": 12
         }
@@ -3256,7 +3253,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 530,
           "column": 100
         }
@@ -3321,7 +3318,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 241,
           "column": 100
         }
@@ -3333,14 +3330,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 368,
-          "column": 96
+          "column": 94
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 430,
-          "column": 72
+          "column": 71
         }
       ]
     },
@@ -3430,7 +3427,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 535,
+          "line": 532,
           "column": 43
         }
       ]
@@ -3451,12 +3448,12 @@
           "column": 88
         },
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 278,
           "column": 86
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 525,
           "column": 82
         }
@@ -3618,18 +3615,6 @@
         }
       ]
     },
-    "839076fbb08361b4": {
-      "source": "Reinitialize plugins",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 112,
-          "column": 85
-        }
-      ]
-    },
     "83ceae7197e574d1": {
       "source": "Call history",
       "kind": "text",
@@ -3670,7 +3655,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 216,
           "column": 25
         }
@@ -3711,12 +3696,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 28,
+          "line": 26,
           "column": 52
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 45,
+          "line": 43,
           "column": 45
         },
         {
@@ -3726,7 +3711,7 @@
         },
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 143,
+          "line": 141,
           "column": 42
         }
       ]
@@ -3813,6 +3798,18 @@
         }
       ]
     },
+    "87762cd4f237ef54": {
+      "source": "Reinitialize providers",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 112,
+          "column": 85
+        }
+      ]
+    },
     "879f977dac66759d": {
       "source": "Use complete request URL",
       "kind": "text",
@@ -3831,9 +3828,26 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 554,
           "column": 14
+        }
+      ]
+    },
+    "884c36d7956802c9": {
+      "source": "Provider runtime initialization failed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 98,
+          "column": 9
+        },
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 272,
+          "column": 9
         }
       ]
     },
@@ -3857,9 +3871,9 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 368,
-          "column": 39
+          "column": 38
         }
       ]
     },
@@ -3885,7 +3899,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 424,
           "column": 22
         }
@@ -3954,18 +3968,6 @@
         }
       ]
     },
-    "8c0f6d3ebfe7ba3a": {
-      "source": "Provider type",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallDetails.tsx",
-          "line": 21,
-          "column": 6
-        }
-      ]
-    },
     "8c43d9f62c17a9dc": {
       "source": "Default layout",
       "kind": "text",
@@ -3998,7 +4000,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 236,
           "column": 19
         }
@@ -4010,7 +4012,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 587,
           "column": 81
         }
@@ -4035,7 +4037,7 @@
       "refs": [
         {
           "file": "features/home/HomePage.tsx",
-          "line": 201,
+          "line": 207,
           "column": 25
         }
       ]
@@ -4071,6 +4073,18 @@
         }
       ]
     },
+    "9170c52f46f2f841": {
+      "source": "This provider does not need any resources.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderResourcePanels.tsx",
+          "line": 39,
+          "column": 56
+        }
+      ]
+    },
     "920e413c7d411b61": {
       "source": "Status",
       "kind": "text",
@@ -4078,7 +4092,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 29,
+          "line": 27,
           "column": 6
         },
         {
@@ -4099,7 +4113,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 414,
           "column": 75
         },
@@ -4122,15 +4136,15 @@
         }
       ]
     },
-    "93062e80072d54ae": {
-      "source": "Initialize the plugin runtime first",
+    "945ff9688aa5fe6c": {
+      "source": "Preparing the provider runtime",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 101,
-          "column": 11
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 314,
+          "column": 21
         }
       ]
     },
@@ -4152,26 +4166,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 241,
           "column": 144
-        }
-      ]
-    },
-    "9514b7ff4860ead7": {
-      "source": "Plugins",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 65,
-          "column": 14
-        },
-        {
-          "file": "shell/AppLayout.tsx",
-          "line": 36,
-          "column": 46
         }
       ]
     },
@@ -4193,9 +4190,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 410,
-          "column": 107
+          "column": 106
         },
         {
           "file": "shared/ui/ModelSelect.tsx",
@@ -4210,7 +4207,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 590,
           "column": 81
         }
@@ -4236,7 +4233,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 287,
           "column": 23
         }
@@ -4261,13 +4258,42 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 61,
+          "line": 59,
           "column": 33
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 64,
+          "line": 62,
           "column": 32
+        }
+      ]
+    },
+    "991d5fc9b9522dd3": {
+      "source": "Protocol type",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallDetails.tsx",
+          "line": 21,
+          "column": 6
+        }
+      ]
+    },
+    "996c32b35f2182a9": {
+      "source": "Providers",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 65,
+          "column": 14
+        },
+        {
+          "file": "shell/AppLayout.tsx",
+          "line": 36,
+          "column": 48
         }
       ]
     },
@@ -4297,6 +4323,18 @@
           "file": "features/settings/TabSettingsCard.tsx",
           "line": 58,
           "column": 41
+        }
+      ]
+    },
+    "9a7dc42e2945d93a": {
+      "source": "No providers installed",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 123,
+          "column": 16
         }
       ]
     },
@@ -4403,25 +4441,13 @@
         }
       ]
     },
-    "9f94433e65bd4144": {
-      "source": "Downloading the plugin runtime",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 310,
-          "column": 32
-        }
-      ]
-    },
     "9fd728c66c9a256b": {
       "source": "Add",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 136,
           "column": 10
         }
@@ -4489,20 +4515,6 @@
         }
       ]
     },
-    "a28156f8bf044457": {
-      "source": "Plugin runtime {version} is installed and ready to use.",
-      "kind": "template",
-      "placeholders": [
-        "version"
-      ],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 302,
-          "column": 44
-        }
-      ]
-    },
     "a2d1649e7b6ac563": {
       "source": "Open model list",
       "kind": "text",
@@ -4543,7 +4555,7 @@
           "column": 25
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 414,
           "column": 37
         }
@@ -4557,7 +4569,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 298,
           "column": 129
         }
@@ -4614,18 +4626,6 @@
         }
       ]
     },
-    "a619c449788c1fdd": {
-      "source": "Preparing the plugin runtime",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 314,
-          "column": 21
-        }
-      ]
-    },
     "a656107e99c71dea": {
       "source": "Statistics",
       "kind": "text",
@@ -4635,30 +4635,6 @@
           "file": "features/settings/SettingsPage.tsx",
           "line": 284,
           "column": 22
-        }
-      ]
-    },
-    "a6f192ccc79eaa5d": {
-      "source": "Initialize plugin runtime",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 277,
-          "column": 12
-        }
-      ]
-    },
-    "a72a5db5354f1a3e": {
-      "source": "Final request type",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallDetails.tsx",
-          "line": 23,
-          "column": 6
         }
       ]
     },
@@ -4686,13 +4662,25 @@
         }
       ]
     },
+    "a95928ac667694f2": {
+      "source": "Provider runtime initialized",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 270,
+          "column": 7
+        }
+      ]
+    },
     "a99dd514fa4c9267": {
       "source": "Open authorization page",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 243,
           "column": 147
         }
@@ -4705,12 +4693,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 58,
+          "line": 56,
           "column": 14
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 58,
+          "line": 56,
           "column": 60
         }
       ]
@@ -4781,7 +4769,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 556,
           "column": 21
         }
@@ -4834,7 +4822,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 575,
           "column": 25
         }
@@ -4934,7 +4922,7 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 63,
+          "line": 61,
           "column": 39
         }
       ]
@@ -5046,26 +5034,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 178,
           "column": 32
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 142,
           "column": 22
-        }
-      ]
-    },
-    "b850fc3d83889041": {
-      "source": "Installing the plugin runtime",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 312,
-          "column": 31
         }
       ]
     },
@@ -5157,21 +5133,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 130,
           "column": 22
-        }
-      ]
-    },
-    "be58f9baaca7362c": {
-      "source": "Plugin runtime is not supported on this system",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 100,
-          "column": 11
         }
       ]
     },
@@ -5193,7 +5157,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 129,
           "column": 21
         }
@@ -5217,7 +5181,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 475,
           "column": 110
         },
@@ -5272,15 +5236,15 @@
         }
       ]
     },
-    "c3e446ef62b7abd9": {
-      "source": "Provider URL",
+    "c4327360194ea574": {
+      "source": "Verifying the provider runtime download",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/calls/CallDetails.tsx",
-          "line": 22,
-          "column": 6
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 311,
+          "column": 30
         }
       ]
     },
@@ -5317,7 +5281,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 221,
           "column": 12
         }
@@ -5337,6 +5301,18 @@
           "file": "features/models/CursorSettingsPage.tsx",
           "line": 365,
           "column": 42
+        }
+      ]
+    },
+    "c9f4d52ae1654811": {
+      "source": "Initialize provider runtime",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 277,
+          "column": 12
         }
       ]
     },
@@ -5378,12 +5354,12 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 157,
           "column": 23
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 81,
           "column": 21
         }
@@ -5396,12 +5372,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 57,
+          "line": 55,
           "column": 14
         },
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 57,
+          "line": 55,
           "column": 63
         }
       ]
@@ -5514,12 +5490,12 @@
       "refs": [
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 186,
+          "line": 184,
           "column": 32
         },
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 189,
+          "line": 187,
           "column": 25
         },
         {
@@ -5540,6 +5516,18 @@
           "file": "features/models/CursorSettingsPage.tsx",
           "line": 164,
           "column": 27
+        }
+      ]
+    },
+    "d21212f35b7c084d": {
+      "source": "Allow local apps to call configured models, including provider models, with an API key.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/settings/ExternalApiSettingsCard.tsx",
+          "line": 47,
+          "column": 19
         }
       ]
     },
@@ -5590,9 +5578,21 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 376,
           "column": 38
+        }
+      ]
+    },
+    "d3720a1754fd4863": {
+      "source": "Provider runtime is not supported on this system",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 100,
+          "column": 11
         }
       ]
     },
@@ -5602,7 +5602,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 246,
           "column": 32
         }
@@ -5728,7 +5728,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 530,
+          "line": 527,
           "column": 43
         }
       ]
@@ -5765,7 +5765,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 240,
           "column": 20
         }
@@ -5878,7 +5878,7 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 216,
           "column": 43
         }
@@ -5902,26 +5902,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 457,
           "column": 32
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 457,
           "column": 68
-        }
-      ]
-    },
-    "de2f27954f5a7a48": {
-      "source": "Final request URL",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallDetails.tsx",
-          "line": 24,
-          "column": 6
         }
       ]
     },
@@ -5949,39 +5937,15 @@
         }
       ]
     },
-    "df91b66490647a1c": {
-      "source": "Initialization downloads and installs the plugin runtime.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 106,
-          "column": 9
-        }
-      ]
-    },
     "e0beec38b8847ca5": {
       "source": "Get key",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 139,
           "column": 10
-        }
-      ]
-    },
-    "e0f029f2f28fef4d": {
-      "source": "Allow local apps to call configured models, including plugin models, with an API key.",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/settings/ExternalApiSettingsCard.tsx",
-          "line": 47,
-          "column": 19
         }
       ]
     },
@@ -6078,7 +6042,7 @@
           "column": 111
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 505,
           "column": 68
         }
@@ -6109,7 +6073,7 @@
       ],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 79,
           "column": 11
         }
@@ -6241,6 +6205,18 @@
         }
       ]
     },
+    "e84e0864e2e0cc10": {
+      "source": "Initialization downloads and installs the provider runtime.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 106,
+          "column": 9
+        }
+      ]
+    },
     "e86985124c840a91": {
       "source": "Cache write: {tokens}",
       "kind": "template",
@@ -6291,18 +6267,6 @@
         }
       ]
     },
-    "e94e91518c1cf744": {
-      "source": "Verifying the plugin runtime download",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/plugins/PluginManagementPage.tsx",
-          "line": 311,
-          "column": 30
-        }
-      ]
-    },
     "ea93d6a262ecb87a": {
       "source": "Tools",
       "kind": "text",
@@ -6310,12 +6274,12 @@
       "refs": [
         {
           "file": "features/calls/CallDetails.tsx",
-          "line": 44,
+          "line": 42,
           "column": 6
         },
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 137,
+          "line": 135,
           "column": 15
         }
       ]
@@ -6363,13 +6327,25 @@
         }
       ]
     },
+    "ed2a32c55b7e3afc": {
+      "source": "Initialize providers",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/providers/ProviderManagementPage.tsx",
+          "line": 112,
+          "column": 115
+        }
+      ]
+    },
     "ee7ee5830f091690": {
       "source": "Add account",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 234,
           "column": 18
         }
@@ -6381,12 +6357,12 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginManagementPage.tsx",
+          "file": "features/providers/ProviderManagementPage.tsx",
           "line": 82,
           "column": 20
         },
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 406,
           "column": 18
         },
@@ -6639,9 +6615,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 374,
-          "column": 102
+          "column": 101
         }
       ]
     },
@@ -6687,9 +6663,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/plugins/PluginResourcePanels.tsx",
+          "file": "features/providers/ProviderResourcePanels.tsx",
           "line": 521,
-          "column": 111
+          "column": 115
         }
       ]
     },
@@ -6712,7 +6688,7 @@
       "refs": [
         {
           "file": "features/calls/CallTable.tsx",
-          "line": 183,
+          "line": 181,
           "column": 15
         },
         {
