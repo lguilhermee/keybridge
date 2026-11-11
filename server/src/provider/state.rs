@@ -403,11 +403,14 @@ impl ProviderStateStore {
         Ok(serde_json::from_value(value)?)
     }
 
+    /// Swaps in a freshly synced catalog, keeping each surviving model's enabled flag, and records
+    /// the provider source hash that produced it.
     pub async fn replace_models(
         &self,
         provider_id: &str,
         channel_id: &str,
         models: &[StoredModel],
+        source_hash: &str,
     ) -> Result<()> {
         let previous = self.models(provider_id, channel_id).await?;
         let models = models
@@ -426,7 +429,24 @@ impl ProviderStateStore {
                 &model_key(channel_id),
                 &serde_json::to_value(models)?,
             )
+            .await?;
+        self.data
+            .update(
+                provider_id,
+                &model_source_key(channel_id),
+                &serde_json::Value::String(source_hash.to_owned()),
+            )
             .await
+    }
+
+    /// Source hash of the provider code that synced the stored catalog; `None` when never recorded.
+    pub async fn models_source(&self, provider_id: &str, channel_id: &str) -> Option<String> {
+        self.data
+            .read(provider_id, &model_source_key(channel_id))
+            .await
+            .ok()?
+            .as_str()
+            .map(str::to_owned)
     }
 
     pub async fn set_model_enabled(
@@ -484,6 +504,10 @@ fn resource_key(resource_type: &str) -> String {
 
 fn model_key(channel_id: &str) -> String {
     format!("models-{channel_id}")
+}
+
+fn model_source_key(channel_id: &str) -> String {
+    format!("models-source-{channel_id}")
 }
 
 #[cfg(test)]
@@ -560,13 +584,18 @@ mod tests {
         }))
         .unwrap();
         store
-            .replace_models("dev.example", "codex", &[model])
+            .replace_models("dev.example", "codex", &[model], "hash-1")
             .await
             .unwrap();
         let models = store.models("dev.example", "codex").await.unwrap();
         assert_eq!(models.len(), 1);
         assert!(models[0].images);
         assert_eq!(models[0].private_data["reasoningEfforts"][0], "low");
+        assert_eq!(
+            store.models_source("dev.example", "codex").await.as_deref(),
+            Some("hash-1")
+        );
+        assert_eq!(store.models_source("dev.example", "other").await, None);
     }
 
     #[test]

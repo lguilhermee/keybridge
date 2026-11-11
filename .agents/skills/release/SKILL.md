@@ -7,6 +7,8 @@ description: Prepare, authorize, publish, troubleshoot, and verify Keybridge des
 
 Release through `.github/workflows/release.yml`. Preserve both updater formats: Tauri uses `latest.json`; legacy `v0.0.49` clients use `update.json`.
 
+For local build output and end-of-task cleanup, follow **Build outputs and cleanup** in the repository-root `AGENTS.md`.
+
 ## Publication authority
 
 - Only the repository author, GitHub user `leookun`, may authorize a live release.

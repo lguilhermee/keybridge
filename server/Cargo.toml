@@ -61,6 +61,7 @@ url = "2"
 uuid = { version = "1", features = ["v4"] }
 x509-parser = "0.18"
 zip = { version = "4", default-features = false, features = ["deflate"] }
+pulldown-cmark = { version = "0.13", default-features = false }
 
 # reqwest TLS backend per platform: native-tls on Windows/macOS (see
 # network.rs tls_builder), rustls on Linux where wreq's BoringSSL collides

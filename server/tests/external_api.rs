@@ -91,6 +91,46 @@ async fn setup() -> (
 }
 
 #[tokio::test]
+async fn long_context_requests_exceed_the_default_json_body_limit() {
+    let (router, protocol, store, _directory) = setup().await;
+    store
+        .set_external_api_settings(ExternalApiSettings {
+            enabled: true,
+            api_key: "secret".into(),
+        })
+        .await
+        .unwrap();
+    let input = "context ".repeat(300_000);
+    assert!(input.len() > 2 * 1024 * 1024);
+    for (path, body) in [
+        (
+            "/byok/v1/responses",
+            json!({"model":"work/qwen/model","input":input}),
+        ),
+        (
+            "/byok/v1/chat/completions",
+            json!({"model":"work/qwen/model","messages":[{"role":"user","content":input}]}),
+        ),
+        (
+            "/byok/v1/messages",
+            json!({"model":"work/qwen/model","max_tokens":16,"messages":[{"role":"user","content":input}]}),
+        ),
+    ] {
+        protocol.push(vec![
+            ModelEvent::TextDelta("ok".into()),
+            ModelEvent::Done(FinishReason::Stop),
+        ]);
+        let (status, response) = send(router.clone(), "POST", path, Some("secret"), body).await;
+        assert_eq!(status, StatusCode::OK, "{path}: {response}");
+    }
+    assert_eq!(protocol.requests().len(), 3);
+    for request in protocol.requests() {
+        let serialized = serde_json::to_string(&request).unwrap();
+        assert!(serialized.contains(&input), "long input was truncated");
+    }
+}
+
+#[tokio::test]
 async fn management_settings_enable_the_external_route_without_restart() {
     let (router, _protocol, _store, _directory) = setup().await;
     let (status, body) = send(

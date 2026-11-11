@@ -6,6 +6,7 @@ use std::{
 };
 
 use base64::{engine::general_purpose::STANDARD, Engine};
+use sha2::{Digest, Sha256};
 
 use super::{
     definition::ProviderDefinitionLoader,
@@ -31,6 +32,9 @@ pub(crate) struct ProviderEntry {
     pub manifest: ProviderManifest,
     pub definition: ProviderModuleDefinition,
     pub icon: String,
+    /// Hash of every file in the provider directory; a stored model catalog synced by different
+    /// provider code is stale (the provider may now declare other models or picker options).
+    pub source_hash: String,
 }
 
 impl ProviderCatalog {
@@ -175,7 +179,38 @@ async fn load_provider(
         manifest,
         definition,
         icon,
+        source_hash: source_hash(directory)?,
     })
+}
+
+/// SHA-256 over every file's relative path and content, in sorted path order.
+fn source_hash(directory: &Path) -> Result<String> {
+    fn collect(root: &Path, directory: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
+        for entry in fs::read_dir(directory)? {
+            let entry = entry?;
+            if entry.file_name().to_string_lossy().starts_with('.') {
+                continue;
+            }
+            let path = entry.path();
+            if entry.file_type()?.is_dir() {
+                collect(root, &path, files)?;
+            } else {
+                files.push(path.strip_prefix(root).unwrap_or(&path).to_path_buf());
+            }
+        }
+        Ok(())
+    }
+    let mut files = Vec::new();
+    collect(directory, directory, &mut files)?;
+    files.sort();
+    let mut hasher = Sha256::new();
+    for file in files {
+        hasher.update(file.to_string_lossy().replace('\\', "/").as_bytes());
+        hasher.update([0]);
+        hasher.update(fs::read(directory.join(&file))?);
+        hasher.update([0]);
+    }
+    Ok(hex::encode(hasher.finalize()))
 }
 
 /// Display text must be a non-empty string or a locale map of non-empty strings.

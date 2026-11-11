@@ -1,0 +1,6 @@
+---
+description: Keep one working main local build and clean temporary artifacts after every task.
+alwaysApply: true
+---
+
+Follow the **Build outputs and cleanup** section in [AGENTS.md](../../AGENTS.md) for every build, verification, and cleanup task. It defines the main local build, temporary verification output, and required end-of-task cleanup.

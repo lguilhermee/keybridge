@@ -71,12 +71,13 @@ impl RefusalCall<'_> {
         self.active.is_none() && self.fallbacks.contains_key(model)
     }
 
-    /// `model`, or the refusal model answering in its place.
-    pub(super) fn apply(&self, mut model: ModelSpec) -> ModelSpec {
-        if let Some(active) = &self.active {
-            model.model_id = active.clone();
+    /// Keep the client's settings on its selected model. A refusal model starts
+    /// fresh so routing applies its own saved settings and provider defaults.
+    pub(super) fn apply(&self, model: ModelSpec) -> ModelSpec {
+        match &self.active {
+            Some(active) => ModelSpec::new(active),
+            None => model,
         }
-        model
     }
 }
 
@@ -101,6 +102,27 @@ mod tests {
             usage: None,
             kind,
         }
+    }
+
+    #[test]
+    fn refusal_model_does_not_inherit_client_settings() {
+        let fallbacks = fallbacks(&[("a", "r")]);
+        let mut call = fallbacks.call();
+        let mut selected = ModelSpec::new("a");
+        selected.display_name = Some("Cursor model".into());
+        selected.reasoning.enabled = true;
+        selected.reasoning.effort = Some("medium".into());
+        selected.latency = crate::model::ModelLatency::Fast;
+        selected.max_output_tokens = Some(32_000);
+        selected.context_window_tokens = Some(1_000_000);
+        selected.supports_image_generation = true;
+        selected.extra_params = serde_json::json!({"reasoning": {"effort": "medium"}});
+
+        assert_eq!(call.apply(selected.clone()), selected);
+        call.switch("a", &failure(FailureKind::Refusal));
+        assert_eq!(call.apply(selected.clone()), ModelSpec::new("r"));
+        call.release();
+        assert_eq!(call.apply(selected.clone()), selected);
     }
 
     #[test]

@@ -1,5 +1,10 @@
 //! Orchestrates provider capabilities: resources, model catalogs, and invocation.
-use std::{collections::HashMap, path::Path, sync::Arc, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+    sync::Arc,
+    time::Duration,
+};
 
 use async_stream::try_stream;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
@@ -50,6 +55,8 @@ struct RegistryInner {
     entries: RwLock<Option<Vec<ProviderEntry>>>,
     workers: Mutex<HashMap<String, Arc<ProviderWorker>>>,
     oauth_sessions: Mutex<HashMap<String, OAuthSession>>,
+    /// `provider/channel/source hash` catalogs already re-synced (or tried) after a code change.
+    catalog_refreshes: Mutex<HashSet<String>>,
 }
 
 struct OAuthSession {
@@ -153,6 +160,7 @@ impl ProviderRegistry {
                 entries: RwLock::new(None),
                 workers: Mutex::new(HashMap::new()),
                 oauth_sessions: Mutex::new(HashMap::new()),
+                catalog_refreshes: Mutex::new(HashSet::new()),
             }),
         })
     }
@@ -176,7 +184,9 @@ impl ProviderRegistry {
                 .collect();
         };
         let mut providers = Vec::new();
-        for entry in self.entries(&executable).await {
+        let entries = self.entries(&executable).await;
+        self.refresh_stale_catalogs(&entries, &executable).await;
+        for entry in entries {
             providers.push(self.descriptor(&entry, &executable).await);
         }
         providers
@@ -188,7 +198,9 @@ impl ProviderRegistry {
             return Vec::new();
         };
         let mut models = Vec::new();
-        for entry in self.entries(&executable).await {
+        let entries = self.entries(&executable).await;
+        self.refresh_stale_catalogs(&entries, &executable).await;
+        for entry in entries {
             for channel in &entry.definition.channels {
                 if !self.channel_configured(&entry, channel).await {
                     continue;
@@ -1243,9 +1255,49 @@ impl ProviderRegistry {
         }
         self.inner
             .state
-            .replace_models(provider_id, &channel.id, &models)
+            .replace_models(provider_id, &channel.id, &models, &entry.source_hash)
             .await?;
         Ok(models.len())
+    }
+
+    /// Re-syncs every configured catalog that was synced by different provider code, so model
+    /// lists and picker options follow provider updates without a manual Sync. One attempt per
+    /// catalog and provider source; failures keep the stored catalog.
+    async fn refresh_stale_catalogs(&self, entries: &[ProviderEntry], executable: &Path) {
+        let mut attempted = self.inner.catalog_refreshes.lock().await;
+        for entry in entries {
+            for channel in &entry.definition.channels {
+                let attempt = format!("{}/{}/{}", entry.manifest.id, channel.id, entry.source_hash);
+                if !channel.has_models || attempted.contains(&attempt) {
+                    continue;
+                }
+                let source = self
+                    .inner
+                    .state
+                    .models_source(&entry.manifest.id, &channel.id)
+                    .await;
+                if source.as_deref() == Some(entry.source_hash.as_str())
+                    || !self.channel_configured(entry, channel).await
+                {
+                    continue;
+                }
+                attempted.insert(attempt);
+                match self.sync_channel_models(entry, executable, channel).await {
+                    Ok(count) => tracing::info!(
+                        provider = %entry.manifest.id,
+                        channel = %channel.id,
+                        count,
+                        "re-synced model catalog after provider code changed"
+                    ),
+                    Err(error) => tracing::warn!(
+                        provider = %entry.manifest.id,
+                        channel = %channel.id,
+                        %error,
+                        "model catalog re-sync after provider code change failed; keeping stored catalog"
+                    ),
+                }
+            }
+        }
     }
 
     /// Sorts resources by health and quota headroom: healthy with ample quota first, low quota next, cooling down by recovery time, and dead last.

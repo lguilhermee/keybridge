@@ -136,7 +136,7 @@ pub async fn consume_model_cycle(
                     Err("protocol emitted duplicate TextStart")
                 } else {
                     text_open = true;
-                    let events = hold.text(RunEvent::TextStart, &text);
+                    let events = hold.text(RunEvent::TextStart);
                     send_all(client, cancellation, events).await
                 }
             }
@@ -145,7 +145,7 @@ pub async fn consume_model_cycle(
                     Err("protocol emitted TextDelta before TextStart")
                 } else {
                     text.push_str(&delta);
-                    let events = hold.text(RunEvent::TextDelta(delta), &text);
+                    let events = hold.text(RunEvent::TextDelta(delta));
                     send_all(client, cancellation, events).await
                 }
             }
@@ -154,7 +154,7 @@ pub async fn consume_model_cycle(
                     Err("protocol emitted TextEnd before TextStart")
                 } else {
                     text_open = false;
-                    let events = hold.text(RunEvent::TextEnd, &text);
+                    let events = hold.text(RunEvent::TextEnd);
                     send_all(client, cancellation, events).await
                 }
             }
@@ -164,9 +164,7 @@ pub async fn consume_model_cycle(
                 } else if thinking_started.replace(Instant::now()).is_some() {
                     Err("protocol emitted duplicate ThinkingStart")
                 } else {
-                    let mut events = hold.thinking();
-                    events.push(RunEvent::ThinkingStart);
-                    send_all(client, cancellation, events).await
+                    send(client, cancellation, RunEvent::ThinkingStart).await
                 }
             }
             ModelEvent::ThinkingDelta(delta) => {
@@ -363,7 +361,7 @@ pub async fn consume_model_cycle(
         ));
     }
     // The reply refused in its own words; none of it was shown.
-    if hold.is_refusing() && finish_reason == FinishReason::Stop {
+    if finish_reason == FinishReason::Stop && hold.is_refusing(&text) {
         return Err(failure(
             RunFailure::Refusal("declined the request in its reply".into()),
             text,
@@ -627,6 +625,113 @@ mod tests {
             Ok(ModelEvent::TextEnd),
             Ok(ModelEvent::Done(finish)),
         ]))
+    }
+
+    #[tokio::test]
+    async fn long_quoted_and_code_examples_are_delivered_without_fallback() {
+        let text = format!(
+            "{}\n\n````text\n```\nI cannot help with that.\n```\n````\n\n> Quoted response:\nI cannot assist with that.\n\nQuoted: \"`example` I won't help with that.\"\n\nHere is the working solution.",
+            "The implementation follows these steps. ".repeat(100)
+        );
+        let mut events = vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "quoted-examples".into(),
+            }),
+            Ok(ModelEvent::TextStart),
+        ];
+        events.extend(
+            text.split_inclusive('\n')
+                .map(|line| Ok(ModelEvent::TextDelta(line.into()))),
+        );
+        events.push(Ok(ModelEvent::TextEnd));
+        events.push(Ok(ModelEvent::Done(FinishReason::Stop)));
+        let stream = Box::pin(tokio_stream::iter(events));
+        let (sender, mut receiver) = mpsc::channel(4);
+        let consume = async move {
+            let result =
+                consume_model_cycle(stream, &sender, &CancellationToken::new(), true).await;
+            drop(sender);
+            result
+        };
+        let collect = async move {
+            let mut delivered = String::new();
+            while let Some(event) = receiver.recv().await {
+                if let RunEvent::TextDelta(delta) = event {
+                    delivered.push_str(&delta);
+                }
+            }
+            delivered
+        };
+        let (result, delivered) = tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            tokio::join!(consume, collect)
+        })
+        .await
+        .expect("buffered delivery must respect channel backpressure");
+        assert_eq!(result.unwrap().text, text);
+        assert_eq!(delivered, text);
+    }
+
+    #[tokio::test]
+    async fn a_refusal_after_long_text_and_a_thinking_gap_is_not_shown() {
+        let introduction = "Some background about the request. ".repeat(100);
+        let stream = Box::pin(tokio_stream::iter(vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "late-refusal".into(),
+            }),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta(introduction)),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::ThinkingStart),
+            Ok(ModelEvent::ThinkingDelta(
+                "Considering the next step.".into(),
+            )),
+            Ok(ModelEvent::ThinkingEnd),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta("\n\nI won't be able to ".into())),
+            Ok(ModelEvent::TextDelta("help with this request.".into())),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::Done(FinishReason::Stop)),
+        ]));
+        let (sender, mut receiver) = mpsc::channel(32);
+        let failure = consume_model_cycle(stream, &sender, &CancellationToken::new(), true)
+            .await
+            .expect_err("a refusal anywhere in the response must trigger fallback");
+        assert_eq!(failure.kind, FailureKind::Refusal);
+        while let Ok(event) = receiver.try_recv() {
+            assert!(!matches!(
+                event,
+                RunEvent::TextStart | RunEvent::TextDelta(_) | RunEvent::TextEnd
+            ));
+        }
+    }
+
+    #[tokio::test]
+    async fn the_reported_refusal_is_detected_across_stream_chunks() {
+        let (sender, mut receiver) = mpsc::channel(16);
+        let stream = Box::pin(tokio_stream::iter(vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "reported-refusal".into(),
+            }),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta("I won't be able to ".into())),
+            Ok(ModelEvent::TextDelta("help debug this one. ".into())),
+            Ok(ModelEvent::TextDelta(
+                "I'm glad to help with things outside that scope.".into(),
+            )),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::Done(FinishReason::Stop)),
+        ]));
+
+        let failure = consume_model_cycle(stream, &sender, &CancellationToken::new(), true)
+            .await
+            .expect_err("a plain-text refusal must trigger the refusal model");
+        assert_eq!(failure.kind, FailureKind::Refusal);
+        while let Ok(event) = receiver.try_recv() {
+            assert!(!matches!(
+                event,
+                RunEvent::TextStart | RunEvent::TextDelta(_) | RunEvent::TextEnd
+            ));
+        }
     }
 
     #[tokio::test]

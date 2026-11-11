@@ -746,10 +746,10 @@ Deno.test("Model catalog exposes the Claude subscription models", async () => {
     models.every((model) => model.capabilities?.images === true),
     "all models accept images",
   );
-  assert(
-    models.every((model) => model.contextWindow === 200_000),
-    "all models share the 200K context window",
-  );
+  const contextOf = (id: string) => models.find((model) => model.id === id)?.contextWindow;
+  assert(contextOf("claude-opus-5-5") === 1_000_000, "claude-opus-5-5 context window");
+  assert(contextOf("claude-sonnet-5-5") === 1_000_000, "claude-sonnet-5-5 context window");
+  assert(contextOf("claude-haiku-4-5-20251001") === 200_000, "claude-haiku-4-5-20251001 context window");
 });
 
 Deno.test("Present shows plan, quota windows, and reset grants without credentials", async () => {

@@ -7,7 +7,7 @@ mod protocol;
 use std::sync::Arc;
 
 use axum::{
-    extract::State,
+    extract::{DefaultBodyLimit, State},
     http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -45,6 +45,8 @@ pub fn router(
         .route("/byok/v1/chat/completions", post(chat))
         .route("/byok/v1/responses", post(responses))
         .route("/byok/v1/messages", post(messages))
+        // Million-token inputs can exceed Axum's default 2 MiB JSON limit.
+        .layer(DefaultBodyLimit::max(64 * 1024 * 1024))
         .with_state(ApiState {
             store,
             providers,
