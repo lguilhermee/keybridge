@@ -1,0 +1,1131 @@
+{
+  "extraction": {
+    "cursor": {
+      "cursor_composers": 5618,
+      "cursor_bubbles": 1721472,
+      "cursor_orphan_text_bubbles": 99383,
+      "cursor_text_replies": 198505
+    },
+    "legacy": {
+      "cursor_databases_checked": 306
+    },
+    "byok": {
+      "byok_messages": 155915,
+      "byok-message_text_replies": 32352,
+      "byok_native_refusal_calls": 838,
+      "byok_native_refusals_with_text": 8,
+      "byok_terminal_calls": 3027,
+      "byok_terminal_calls_without_text": 2936,
+      "byok-call_text_replies": 91
+    },
+    "archives": {
+      "cursor-transcript_text_replies": 197449,
+      "transcript_assistant_records": 484953,
+      "transcript_files_read": 5870,
+      "transcript_non_message_records": 11390,
+      "qwen_scores_invalidated_for_recovered_prompt": 645,
+      "derived_compaction_markdown_files": 43,
+      "byok-backup-message_text_replies": 29,
+      "backup_assistant_records": 227,
+      "backup_terminal_calls": 11,
+      "backup_terminal_calls_without_text": 11,
+      "backup_databases_read": 1
+    },
+    "unique_replies": 176808,
+    "unique_by_language_heuristic": {
+      "en": 116157,
+      "other": 57949,
+      "pt": 2702
+    },
+    "source_counts": {
+      "byok-backup-message": 29,
+      "byok-call": 91,
+      "byok-message": 31152,
+      "control": 46,
+      "cursor": 188288,
+      "cursor-transcript": 197449
+    },
+    "historical_unique_replies": 176762
+  },
+  "metrics": {
+    "baseline": {
+      "all_labeled": {
+        "tp": 40,
+        "fp": 2,
+        "tn": 88,
+        "fn": 7,
+        "unknown": 0,
+        "precision": 0.9523809523809523,
+        "recall": 0.851063829787234,
+        "f1": 0.898876404494382,
+        "count": 137
+      },
+      "history_review": {
+        "tp": 17,
+        "fp": 1,
+        "tn": 67,
+        "fn": 6,
+        "unknown": 0,
+        "precision": 0.9444444444444444,
+        "recall": 0.7391304347826086,
+        "f1": 0.8292682926829268,
+        "count": 91
+      },
+      "controls": {
+        "tp": 23,
+        "fp": 1,
+        "tn": 21,
+        "fn": 1,
+        "unknown": 0,
+        "precision": 0.9583333333333334,
+        "recall": 0.9583333333333334,
+        "f1": 0.9583333333333334,
+        "count": 46
+      },
+      "english": {
+        "tp": 32,
+        "fp": 1,
+        "tn": 65,
+        "fn": 5,
+        "unknown": 0,
+        "precision": 0.9696969696969697,
+        "recall": 0.8648648648648649,
+        "f1": 0.9142857142857143,
+        "count": 103
+      },
+      "portuguese": {
+        "tp": 8,
+        "fp": 1,
+        "tn": 22,
+        "fn": 2,
+        "unknown": 0,
+        "precision": 0.8888888888888888,
+        "recall": 0.8,
+        "f1": 0.8421052631578947,
+        "count": 33
+      }
+    },
+    "qwen": {
+      "all_labeled": {
+        "tp": 39,
+        "fp": 35,
+        "tn": 55,
+        "fn": 8,
+        "unknown": 0,
+        "precision": 0.527027027027027,
+        "recall": 0.8297872340425532,
+        "f1": 0.6446280991735537,
+        "count": 137
+      },
+      "history_review": {
+        "tp": 15,
+        "fp": 19,
+        "tn": 49,
+        "fn": 8,
+        "unknown": 0,
+        "precision": 0.4411764705882353,
+        "recall": 0.6521739130434783,
+        "f1": 0.5263157894736842,
+        "count": 91
+      },
+      "controls": {
+        "tp": 24,
+        "fp": 16,
+        "tn": 6,
+        "fn": 0,
+        "unknown": 0,
+        "precision": 0.6,
+        "recall": 1.0,
+        "f1": 0.75,
+        "count": 46
+      },
+      "english": {
+        "tp": 29,
+        "fp": 25,
+        "tn": 41,
+        "fn": 8,
+        "unknown": 0,
+        "precision": 0.5370370370370371,
+        "recall": 0.7837837837837838,
+        "f1": 0.6373626373626373,
+        "count": 103
+      },
+      "portuguese": {
+        "tp": 10,
+        "fp": 9,
+        "tn": 14,
+        "fn": 0,
+        "unknown": 0,
+        "precision": 0.5263157894736842,
+        "recall": 1.0,
+        "f1": 0.6896551724137931,
+        "count": 33
+      }
+    },
+    "garak": {
+      "all_labeled": {
+        "tp": 13,
+        "fp": 40,
+        "tn": 50,
+        "fn": 34,
+        "unknown": 0,
+        "precision": 0.24528301886792453,
+        "recall": 0.2765957446808511,
+        "f1": 0.26,
+        "count": 137
+      },
+      "history_review": {
+        "tp": 10,
+        "fp": 21,
+        "tn": 47,
+        "fn": 13,
+        "unknown": 0,
+        "precision": 0.3225806451612903,
+        "recall": 0.43478260869565216,
+        "f1": 0.37037037037037035,
+        "count": 91
+      },
+      "controls": {
+        "tp": 3,
+        "fp": 19,
+        "tn": 3,
+        "fn": 21,
+        "unknown": 0,
+        "precision": 0.13636363636363635,
+        "recall": 0.125,
+        "f1": 0.13043478260869565,
+        "count": 46
+      },
+      "english": {
+        "tp": 12,
+        "fp": 29,
+        "tn": 37,
+        "fn": 25,
+        "unknown": 0,
+        "precision": 0.2926829268292683,
+        "recall": 0.32432432432432434,
+        "f1": 0.3076923076923077,
+        "count": 103
+      },
+      "portuguese": {
+        "tp": 1,
+        "fp": 10,
+        "tn": 13,
+        "fn": 9,
+        "unknown": 0,
+        "precision": 0.09090909090909091,
+        "recall": 0.1,
+        "f1": 0.09523809523809523,
+        "count": 33
+      }
+    }
+  },
+  "overall_history_predictions": {
+    "baseline": {
+      "0": 176592,
+      "1": 170
+    },
+    "qwen": {
+      "None": 156584,
+      "0": 14237,
+      "1": 5941
+    },
+    "garak": {
+      "None": 86458,
+      "0": 29634,
+      "1": 60670
+    }
+  },
+  "selected_history_predictions": {
+    "baseline": {
+      "0": 2916,
+      "1": 170
+    },
+    "qwen": {
+      "0": 2389,
+      "1": 697
+    },
+    "garak": {
+      "0": 2348,
+      "1": 738
+    }
+  },
+  "runs": {
+    "qwen:raw": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "torch": "2.11.0+cu128",
+      "transformers": "4.57.6",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "dtype": "bfloat16",
+      "context": 32768,
+      "load_seconds": 1.7128917000009096,
+      "batch_size": 4,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "view": "raw",
+      "started": 1794446695.7254126,
+      "finished": 1794446705.5423312,
+      "wall_seconds": 9.64894749999803,
+      "classified": 46,
+      "gpu_peak_allocated_bytes": 1985043968,
+      "process_rss_bytes": 1794592768,
+      "batch_ms_p50": 644.6982500001468,
+      "batch_ms_p95": 1276.40773499952
+    },
+    "garak:raw": {
+      "repo": "garak-llm/garak-refusal-detector",
+      "revision": "5cb5ec8f364318cc48724ddf8ad414000c36781b",
+      "torch": "2.11.0+cu128",
+      "transformers": "4.57.6",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "dtype": "bfloat16",
+      "context": 8192,
+      "load_seconds": 2.090338400001201,
+      "batch_size": 1,
+      "prompt_budget": 0,
+      "window_overlap": 128,
+      "view": "raw",
+      "started": 1794446793.622127,
+      "finished": 1794446796.1520867,
+      "wall_seconds": 2.3631285000010394,
+      "classified": 46,
+      "gpu_peak_allocated_bytes": 347478528,
+      "process_rss_bytes": 1753907200,
+      "batch_ms_p50": 38.777249999839114,
+      "batch_ms_p95": 62.60879999899771
+    },
+    "qwen-native-check:raw": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "engine": "llama.cpp b12292-af6b5243d",
+      "dtype": "BF16 weights; F32 normalization",
+      "context": 32768,
+      "max_input_tokens": 32768,
+      "deferred_replies": 0,
+      "workers": 1,
+      "token_budget": 60000,
+      "server_context_per_slot": 32768,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "started": 1794448240.8807032,
+      "gguf_sha256": "18f9b2684d0113f134cb480c2bbd60867e0d8e315148a5f7040c2f4a6e41bcf8",
+      "classified": 46,
+      "finished": 1794448254.6178038,
+      "wall_seconds": 13.750102699999843,
+      "request_ms_p50": 266.4022999997542,
+      "request_ms_p95": 404.9102999997558
+    },
+    "qwen:prose-review-check": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "engine": "llama.cpp b12292-af6b5243d",
+      "dtype": "BF16 weights; F32 normalization",
+      "context": 32768,
+      "max_input_tokens": 32768,
+      "deferred_replies": 0,
+      "workers": 4,
+      "token_budget": 32000,
+      "server_context_per_slot": 32768,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "started": 1794448935.874375,
+      "gguf_sha256": "18f9b2684d0113f134cb480c2bbd60867e0d8e315148a5f7040c2f4a6e41bcf8",
+      "classified": 126,
+      "finished": 1794449445.6285102,
+      "wall_seconds": 509.7916561999991,
+      "request_ms_p50": 11631.145200000901,
+      "request_ms_p95": 45543.14650000015
+    },
+    "qwen-torch-check:prose": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "torch": "2.11.0+cu128",
+      "transformers": "4.57.6",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "dtype": "bfloat16",
+      "context": 32768,
+      "load_seconds": 2.164384499999869,
+      "batch_size": 4,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "view": "prose",
+      "started": 1794449567.8071089,
+      "finished": 1794449587.907629,
+      "wall_seconds": 20.094931700001325,
+      "classified": 46,
+      "gpu_peak_allocated_bytes": 1980848128,
+      "process_rss_bytes": 1851621376,
+      "batch_ms_p50": 1589.2165999994177,
+      "batch_ms_p95": 2091.432374999385
+    },
+    "qwen:prose-initial": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "engine": "llama.cpp b12292-af6b5243d",
+      "dtype": "BF16 weights; F32 normalization",
+      "context": 32768,
+      "max_input_tokens": 32768,
+      "deferred_replies": 0,
+      "workers": 32,
+      "token_budget": 60000,
+      "server_context_per_slot": 32768,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "started": 1794448294.8570917,
+      "gguf_sha256": "18f9b2684d0113f134cb480c2bbd60867e0d8e315148a5f7040c2f4a6e41bcf8",
+      "stopped_at": 1794450289.41038,
+      "scope": "partial initial replay",
+      "scored_before_bucketing": 9505,
+      "wall_seconds": 1994.5532882213593
+    },
+    "qwen:prose-short": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "engine": "llama.cpp b12292-af6b5243d",
+      "dtype": "BF16 weights; F32 normalization",
+      "context": 32768,
+      "max_input_tokens": 896,
+      "deferred_replies": 27537,
+      "workers": 32,
+      "token_budget": 32768,
+      "server_context_per_slot": 1024,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "started": 1794450344.4829724,
+      "gguf_sha256": "18f9b2684d0113f134cb480c2bbd60867e0d8e315148a5f7040c2f4a6e41bcf8"
+    },
+    "qwen:prose-full-partial": {
+      "engine": "llama.cpp b12292 CUDA 13.5; context buckets",
+      "started": 1794450289.860265,
+      "context_buckets": [],
+      "response_context": 32768,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "weights": "BF16; no quantization",
+      "stopped_at": 1794451185.359805,
+      "scope": "partial full replay; user selected denial candidates"
+    },
+    "garak:prose-initial-full": {
+      "repo": "garak-llm/garak-refusal-detector",
+      "revision": "5cb5ec8f364318cc48724ddf8ad414000c36781b",
+      "torch": "2.11.0+cu128",
+      "transformers": "4.57.6",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "dtype": "bfloat16",
+      "context": 8192,
+      "load_seconds": 1.7431054999979096,
+      "batch_size": 32,
+      "prompt_budget": 0,
+      "window_overlap": 128,
+      "view": "prose",
+      "started": 1794446116.9703755,
+      "finished": 1794446277.5961246,
+      "wall_seconds": 153.55398159999822,
+      "classified": 88227,
+      "gpu_peak_allocated_bytes": 1258966528,
+      "process_rss_bytes": 3399983104,
+      "batch_ms_p50": 27.597349999268772,
+      "batch_ms_p95": 110.99992499930522
+    },
+    "garak:prose": {
+      "repo": "garak-llm/garak-refusal-detector",
+      "revision": "5cb5ec8f364318cc48724ddf8ad414000c36781b",
+      "torch": "2.11.0+cu128",
+      "transformers": "4.57.6",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "dtype": "bfloat16",
+      "context": 8192,
+      "load_seconds": 2.52726519999851,
+      "batch_size": 32,
+      "prompt_budget": 0,
+      "window_overlap": 128,
+      "view": "prose",
+      "started": 1794452442.1800845,
+      "finished": 1794452479.5364294,
+      "wall_seconds": 37.15129799999704,
+      "classified": 2123,
+      "gpu_peak_allocated_bytes": 1308051456,
+      "process_rss_bytes": 2849996800,
+      "batch_ms_p50": 199.381500002346,
+      "batch_ms_p95": 396.2327500008541
+    },
+    "qwen:prose-candidates-short": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "engine": "llama.cpp b12292-af6b5243d",
+      "dtype": "BF16 weights; F32 normalization",
+      "context": 32768,
+      "max_input_tokens": 8064,
+      "deferred_replies": 23,
+      "workers": 4,
+      "token_budget": 32768,
+      "server_context_per_slot": 8192,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "started": 1794452462.3705966,
+      "gguf_sha256": "18f9b2684d0113f134cb480c2bbd60867e0d8e315148a5f7040c2f4a6e41bcf8",
+      "classified": 2930,
+      "finished": 1794453107.3915648,
+      "wall_seconds": 667.1348902999998,
+      "request_ms_p50": 762.6805999971111,
+      "request_ms_p95": 1708.8968999996723
+    },
+    "qwen:prose-candidates-long": {
+      "repo": "Qwen/Qwen3Guard-Gen-0.6B",
+      "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+      "engine": "llama.cpp b12292-af6b5243d",
+      "dtype": "BF16 weights; F32 normalization",
+      "context": 32768,
+      "max_input_tokens": 32768,
+      "deferred_replies": 0,
+      "workers": 1,
+      "token_budget": 32768,
+      "server_context_per_slot": 32768,
+      "prompt_budget": 2048,
+      "window_overlap": 128,
+      "started": 1794453360.9612637,
+      "gguf_sha256": "18f9b2684d0113f134cb480c2bbd60867e0d8e315148a5f7040c2f4a6e41bcf8",
+      "classified": 23,
+      "finished": 1794453381.7832117,
+      "wall_seconds": 20.852721700000984,
+      "request_ms_p50": 845.7849000005808,
+      "request_ms_p95": 1323.1548000003386
+    }
+  },
+  "scope": "candidates",
+  "selection": {
+    "scope": "denial candidates plus false-positive controls",
+    "count": 3132,
+    "corpus_size": 176808,
+    "selection_sha256": "867bee864f422195239e4eb2e98d9a8724ea9ac03258e1c8eb27dbc66870922d",
+    "selection_pattern": "\\b(?:i|we)\\b.{0,80}\\b(?:cannot|can't|won't|unable|unwilling|refuse|decline|refusing|declining|refused|declined|not allowed|not permitted|not going|will not|do not want|don't want|rather not|stopping|ending|sorry|apologiz\\w*|regret)\\b|(?m:^\\s*(?:sorry|unfortunately|cannot|can't|won't|unable)\\b)|\\b(?:against|violat\\w*)\\b.{0,60}\\bmy (?:policy|guidelines)\\b|\\bnot something (?:i|we) can\\b|\\bsafe alternatives?\\b|\\b(?:i|we) can\\b.{0,60}\\binstead\\b|\\bn[a\u00e3]o\\s+(?:vou|posso|quero|consigo|podemos|iremos|vamos|irei)\\b|\\b(?:me recus\\w*|recuso|recusamos|desculp\\w*|lamento|infelizmente)\\b|\u6211(?:\u4e0d\u80fd|\u65e0\u6cd5|\u4e0d\u4f1a|\u6ca1\u6cd5|\u4e0d\u53ef\u4ee5)|\u62b1\u6b49",
+    "controls": 46
+  },
+  "baseline_adapter_validation": {
+    "reviewed_inputs": 137,
+    "matching_inputs": 137,
+    "mismatch_count": 0
+  },
+  "baseline_source_sha256": "2452676f74f07a559a1a3f9e68cf555864dbf9d14cfe5c92c064be5f4e24b0cf",
+  "label_counts": [
+    {
+      "control": 0,
+      "label": 0,
+      "count": 68
+    },
+    {
+      "control": 0,
+      "label": 1,
+      "count": 23
+    },
+    {
+      "control": 1,
+      "label": 0,
+      "count": 22
+    },
+    {
+      "control": 1,
+      "label": 1,
+      "count": 24
+    }
+  ],
+  "coverage": {
+    "qwen": {
+      "scored": 20224,
+      "errors": 0,
+      "windowed_replies": 0,
+      "max_windows": 1,
+      "prompts_with_omitted_tokens": 248,
+      "max_prompt_omission_tokens": 376150,
+      "selected_scored": 3132,
+      "selected_errors": 0,
+      "selected_bounds": {
+        "windowed_replies": 0,
+        "max_windows": 1,
+        "prompts_with_omitted_tokens": 248,
+        "max_prompt_omission_tokens": 376150,
+        "max_total_input_tokens_per_reply": 18932
+      }
+    },
+    "garak": {
+      "scored": 90350,
+      "errors": 0,
+      "windowed_replies": 17,
+      "max_windows": 12,
+      "prompts_with_omitted_tokens": 0,
+      "max_prompt_omission_tokens": 0,
+      "selected_scored": 3132,
+      "selected_errors": 0,
+      "selected_bounds": {
+        "windowed_replies": 16,
+        "max_windows": 3,
+        "prompts_with_omitted_tokens": 0,
+        "max_prompt_omission_tokens": 0,
+        "max_total_input_tokens_per_reply": 18933
+      }
+    }
+  },
+  "agreements": [
+    {
+      "baseline": 0,
+      "qwen": 0,
+      "garak": 0,
+      "count": 1973
+    },
+    {
+      "baseline": 0,
+      "qwen": 0,
+      "garak": 1,
+      "count": 326
+    },
+    {
+      "baseline": 0,
+      "qwen": 1,
+      "garak": 0,
+      "count": 267
+    },
+    {
+      "baseline": 0,
+      "qwen": 1,
+      "garak": 1,
+      "count": 350
+    },
+    {
+      "baseline": 1,
+      "qwen": 0,
+      "garak": 0,
+      "count": 72
+    },
+    {
+      "baseline": 1,
+      "qwen": 0,
+      "garak": 1,
+      "count": 18
+    },
+    {
+      "baseline": 1,
+      "qwen": 1,
+      "garak": 0,
+      "count": 36
+    },
+    {
+      "baseline": 1,
+      "qwen": 1,
+      "garak": 1,
+      "count": 44
+    }
+  ],
+  "control_results": [
+    {
+      "case": "control:capability",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:compiler",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 0,
+      "qwen_raw": 0,
+      "qwen_native_raw": 0,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:completed",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 0,
+      "qwen_raw": 0,
+      "qwen_native_raw": 0,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:dependency-choice",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 0,
+      "qwen_raw": 0,
+      "qwen_native_raw": 0,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:nao-vou-implementar",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-ascii",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-ascii-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-blockquote",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-blockquote-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-curly",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-curly-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-fence",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 0,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-fence-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-html",
+      "expected": 0,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-html-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:nao-vou-implementar-late",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:partial-decline",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:pt-capability",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 0,
+      "qwen_raw": 0,
+      "qwen_native_raw": 0,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:pt-completed",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 0,
+      "qwen_raw": 0,
+      "qwen_native_raw": 0,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:pt-safe-decline",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:reported-speech",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:safe-decline",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 1
+    },
+    {
+      "case": "control:stopping-here",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-ascii",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-ascii-then-refusal",
+      "expected": 1,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-blockquote",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-blockquote-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-curly",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-curly-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-fence",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-fence-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-html",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-html-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:stopping-here-late",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-ascii",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 0,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-ascii-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-blockquote",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-blockquote-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-curly",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-curly-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-fence",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 1,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-fence-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-html",
+      "expected": 0,
+      "baseline": 0,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-html-then-refusal",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    },
+    {
+      "case": "control:wont-implement-late",
+      "expected": 1,
+      "baseline": 1,
+      "qwen_prose": 1,
+      "qwen_raw": 1,
+      "qwen_native_raw": 1,
+      "garak_prose": 0,
+      "garak_raw": 0
+    }
+  ],
+  "runtime_parity": {
+    "count": 46,
+    "same_refusal_label": 45,
+    "errors": 0
+  },
+  "filtered_runtime_parity": {
+    "count": 46,
+    "same_refusal_label": 46,
+    "errors": 0
+  },
+  "controls_unique_qwen_inputs": 35,
+  "standalone_controls": {
+    "qwen": {
+      "tp": 24,
+      "fp": 16,
+      "tn": 6,
+      "fn": 0,
+      "unknown": 0,
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1": 0.75,
+      "count": 46
+    },
+    "qwen-native-check": {
+      "tp": 24,
+      "fp": 17,
+      "tn": 5,
+      "fn": 0,
+      "unknown": 0,
+      "precision": 0.5853658536585366,
+      "recall": 1.0,
+      "f1": 0.7384615384615385,
+      "count": 46
+    },
+    "garak": {
+      "tp": 3,
+      "fp": 7,
+      "tn": 15,
+      "fn": 21,
+      "unknown": 0,
+      "precision": 0.3,
+      "recall": 0.125,
+      "f1": 0.17647058823529413,
+      "count": 46
+    }
+  },
+  "private_exports": {
+    "candidates": 3086,
+    "agent_reviewed_refusals": 23
+  }
+}

@@ -87,26 +87,56 @@ async fn run(store: &Store, protocol: Arc<ProtocolRouter>, model: ModelSpec, ind
 
 #[tokio::test]
 async fn refusal_uses_saved_settings_and_next_run_keeps_client_settings() {
-    for (saved_effort, plain_text_refusal) in [
-        (Some("high"), false),
-        (None, false),
-        (Some("high"), true),
-        (None, true),
+    let late_refusal = format!(
+        "{}\n\nQuoted example: \"I cannot assist with that.\"\n\n```text\nI won't help with that.\n```\n\nI won't be able to help debug this one.",
+        "Some background about the request. ".repeat(100)
+    );
+    for saved_effort in [Some("high"), None] {
+        verify_refusal(saved_effort, None).await;
+        verify_refusal(saved_effort, Some(&late_refusal)).await;
+    }
+}
+
+#[tokio::test]
+async fn reported_refusals_switch_with_the_refusal_models_own_settings() {
+    for reply in [
+        include_str!("fixtures/refusals/stopping-here.md"),
+        include_str!("fixtures/refusals/nao-vou-implementar.md"),
+        include_str!("fixtures/refusals/wont-implement.md"),
     ] {
-        let (_directory, store) = fixtures::temp_store().await;
-        let (sent, mut received) = tokio::sync::mpsc::unbounded_channel();
-        let upstream = Router::new().route(
+        for saved_effort in [Some("high"), None] {
+            verify_refusal(saved_effort, Some(reply)).await;
+        }
+    }
+}
+
+#[tokio::test]
+async fn garak_discovered_refusals_switch_with_the_refusal_models_own_settings() {
+    for reply in [
+        "I won't lay out a way to do that.",
+        "I can't add that. I can help with a legitimate alternative.",
+        "I can't rename or disguise the tool to avoid detection. I left the project unchanged.",
+        "I'm not going to adopt that persona.",
+    ] {
+        for saved_effort in [Some("high"), None] {
+            verify_refusal(saved_effort, Some(reply)).await;
+        }
+    }
+}
+
+async fn verify_refusal(saved_effort: Option<&str>, reply: Option<&str>) {
+    let reply = reply.map(str::to_owned);
+    let (_directory, store) = fixtures::temp_store().await;
+    let (sent, mut received) = tokio::sync::mpsc::unbounded_channel();
+    let upstream = Router::new().route(
             "/v1/responses",
             post(move |Json(body): Json<Value>| {
                 let sent = sent.clone();
+                let reply = reply.clone();
                 async move {
                     let refuses = body["model"] == "original";
                     sent.send(body).unwrap();
-                    let content = if refuses && plain_text_refusal {
-                        let text = format!(
-                            "{}\n\nQuoted example: \"I cannot assist with that.\"\n\n```text\nI won't help with that.\n```\n\nI won't be able to help debug this one.",
-                            "Some background about the request. ".repeat(100)
-                        );
+                    let content = if let (true, Some(text)) = (refuses, reply) {
                         json!({"type":"output_text","text":text})
                     } else if refuses {
                         json!({"type":"refusal","refusal":"I cannot help with that."})
@@ -126,62 +156,60 @@ async fn refusal_uses_saved_settings_and_next_run_keeps_client_settings() {
                 }
             }),
         );
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base_url = format!("http://{}", listener.local_addr().unwrap());
-        let server = tokio::spawn(async move { axum::serve(listener, upstream).await.unwrap() });
-        let original = store
-            .create_model(&model_input(&base_url, "original", Some("high")))
-            .await
-            .unwrap();
-        let refusal = store
-            .create_model(&model_input(&base_url, "refusal", saved_effort))
-            .await
-            .unwrap();
-        store
-            .replace_refusal_fallbacks(&[RefusalFallback {
-                model_id: original.model_hash.clone(),
-                fallback_model_id: refusal.model_hash,
-            }])
-            .await
-            .unwrap();
-        let clients = NetworkClients::new(store.clone());
-        let headroom =
-            cursor_server::headroom::HeadroomRuntime::new(store.clone(), clients.clone());
-        let providers = ProviderRegistry::managed(
-            store.clone(),
-            ProviderRuntime::managed().unwrap(),
-            "0.1.0".into(),
-            headroom.clone(),
-        )
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base_url = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move { axum::serve(listener, upstream).await.unwrap() });
+    let original = store
+        .create_model(&model_input(&base_url, "original", Some("high")))
+        .await
         .unwrap();
-        let protocol = Arc::new(ProtocolRouter::new(
-            store.clone(),
-            providers,
-            clients,
-            headroom,
-            Duration::from_secs(5),
-            Duration::from_secs(5),
-        ));
-        for (index, effort) in ["medium", "max"].into_iter().enumerate() {
-            let mut selected = ModelSpec::new(&original.model_hash);
-            selected.reasoning.enabled = true;
-            selected.reasoning.effort = Some(effort.into());
-            selected.latency = ModelLatency::Fast;
-            selected.max_output_tokens = Some(32_000);
-            selected.context_window_tokens = Some(1_000_000);
-            run(&store, protocol.clone(), selected, index).await;
+    let refusal = store
+        .create_model(&model_input(&base_url, "refusal", saved_effort))
+        .await
+        .unwrap();
+    store
+        .replace_refusal_fallbacks(&[RefusalFallback {
+            model_id: original.model_hash.clone(),
+            fallback_model_id: refusal.model_hash,
+        }])
+        .await
+        .unwrap();
+    let clients = NetworkClients::new(store.clone());
+    let headroom = cursor_server::headroom::HeadroomRuntime::new(store.clone(), clients.clone());
+    let providers = ProviderRegistry::managed(
+        store.clone(),
+        ProviderRuntime::managed().unwrap(),
+        "0.1.0".into(),
+        headroom.clone(),
+    )
+    .unwrap();
+    let protocol = Arc::new(ProtocolRouter::new(
+        store.clone(),
+        providers,
+        clients,
+        headroom,
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+    ));
+    for (index, effort) in ["medium", "max"].into_iter().enumerate() {
+        let mut selected = ModelSpec::new(&original.model_hash);
+        selected.reasoning.enabled = true;
+        selected.reasoning.effort = Some(effort.into());
+        selected.latency = ModelLatency::Fast;
+        selected.max_output_tokens = Some(32_000);
+        selected.context_window_tokens = Some(1_000_000);
+        run(&store, protocol.clone(), selected, index).await;
 
-            let original = received.try_recv().unwrap();
-            let refusal = received.try_recv().unwrap();
-            assert_eq!(original["model"], "original");
-            assert_eq!(original["reasoning"]["effort"], effort);
-            assert_eq!(original["service_tier"], "priority");
-            assert_eq!(original["max_output_tokens"], 32_000);
-            assert_eq!(refusal["model"], "refusal");
-            assert_eq!(refusal["reasoning"]["effort"], json!(saved_effort));
-            assert_eq!(refusal["max_output_tokens"], 4_096);
-            assert!(refusal.get("service_tier").is_none());
-        }
-        server.abort();
+        let original = received.try_recv().unwrap();
+        let refusal = received.try_recv().unwrap();
+        assert_eq!(original["model"], "original");
+        assert_eq!(original["reasoning"]["effort"], effort);
+        assert_eq!(original["service_tier"], "priority");
+        assert_eq!(original["max_output_tokens"], 32_000);
+        assert_eq!(refusal["model"], "refusal");
+        assert_eq!(refusal["reasoning"]["effort"], json!(saved_effort));
+        assert_eq!(refusal["max_output_tokens"], 4_096);
+        assert!(refusal.get("service_tier").is_none());
     }
+    server.abort();
 }

@@ -7,7 +7,12 @@ use regex::Regex;
 /// Text matching supplements protocol refusal signals. Require a decline and
 /// an action: apologies and "as an AI" alone also occur in helpful answers.
 pub(super) fn is_refusal(text: &str) -> bool {
-    prose_refuses(&markdown_prose(text))
+    prose_refuses(&assistant_prose(text))
+}
+
+/// The same ownership filter used by the detector, for offline evaluation.
+pub(super) fn assistant_prose(text: &str) -> String {
+    unquoted_prose(&markdown_prose(text))
 }
 
 fn markdown_prose(text: &str) -> String {
@@ -114,21 +119,43 @@ fn refusal_pattern() -> &'static Regex {
             r"(?i)",
             // English: inability, unwillingness, and permission, including
             // "I won't be able to help" and "I'm not allowed to provide".
-            r"\b(?:i|we)(?:\s+(?:can't|cannot|can\s+not|won't|will\s+not|don't|do\s+not)(?:\s+be\s+able\s+to)?",
+            // A coordinated refusal may omit its repeated subject:
+            // "I'm stopping here and won't build", "I reviewed the code but won't write".
+            r"\b(?:i|we)(?:(?:(?:'m|'re|\s+am|\s+are)\s+(?:stopping|ending)\s+here",
+            r"|(?:'ve|\s+have)?\s+(?:reviewed|checked|read(?:\s+through)?|looked\s+(?:at|through))\s+(?:(?:the|this|your)\s+)?(?:project|request|code|codebase))\s*,?\s+(?:and|but))?",
+            r"(?:\s+(?:can't|cannot|can\s+not|won't|will\s+not|don't|do\s+not)(?:\s+be\s+able\s+to)?",
             r"|(?:'m|'re|\s+am|\s+are)\s+(?:not\s+(?:able|allowed|permitted|willing|going)|unable|unwilling)\s+to",
-            r"|(?:'d|\s+would)\s+prefer\s+not\s+to)",
+            r"|(?:'d|\s+would)\s+prefer\s+not\s+to|\s+(?:don't|do\s+not)\s+want\s+to)",
             r"\s+(?:(?:really|directly|specifically|actually|safely|ethically|responsibly|legally)\s+){0,2}",
             r"(?:help|assist|build|create|write|provide|make|develop|implement|support|contribute|generate|produce|work\s+on|comply|facilitate|participate|engage",
-            r"|(?:do|complete|fulfill?|answer|carry\s+out)\s+(?:(?:this|that|your|the)\s+(?:request|task|instruction|question)s?|this|that|it))\b",
+            r"|lay\s+out\s+(?:(?:a|the|this|that)\s+)?(?:way|steps|instructions|plan)",
+            r"|adopt\s+(?:(?:this|that|your|the)\s+)?persona",
+            r"|(?:do|complete|fulfill?|answer|carry\s+out)\s+(?:(?:this|that|your|the)\s+(?:request|task|instruction|question)s?|this|that|it)",
+            r"|be\s+(?:helping|assisting|building|creating|writing|providing|implementing|working\s+(?:on|toward)))\b",
             // Explicit declines and discomfort with doing the requested work.
             r"|\b(?:i|we)(?:(?:'m|'re|\s+am|\s+are)\s+not\s+comfortable|\s+(?:don't|do\s+not)\s+feel\s+comfortable)",
             r"\s+(?:helping|assisting|building|creating|writing|providing|doing\s+that|complying)\b",
             r"|\b(?:i|we)(?:\s+(?:must|need\s+to|have\s+to|will|am\s+going\s+to)|'ll|'m\s+going\s+to)\s+(?:respectfully\s+)?(?:decline|refuse)\b",
+            r"|\b(?:i|we)(?:(?:'m|'re|\s+am|\s+are)\s+(?:declining|refusing)|\s+(?:decline|refuse))\s+(?:to\b|(?:this|that|your|the)\s+(?:request|task|objective)\b)",
             r"|\b(?:that|this)(?:'s|\s+is)\s+not\s+(?:something|a\s+request)\s+(?:i|we)\s+can\s+(?:help|assist|provide|support)\b",
+            // Short task-relative declines: "I can't add that", "I won't plan those".
+            // Require a complete clause so "I can't add that column until ..."
+            // remains a capability limit rather than a refusal.
+            r"|\b(?:i|we)(?:\s+(?:can't|cannot|won't|will\s+not)|(?:'m|'re|\s+am|\s+are)\s+(?:not\s+going|unable)\s+to)\s+",
+            r"(?:(?:(?:add|plan|install|connect|wire)\s+(?:this|that|these|those)|set\s+(?:this|that)\s+up)\s*(?:[.!?]|\x01|$)",
+            // Modifying/renaming also occur in ordinary tool failures. Only
+            // extend those actions when the same paragraph states the declined
+            // evasion purpose. Never borrow a reason from a later Markdown block.
+            r"|(?:modify|rename|disguise|continue\s+(?:generating|renaming|developing|implementing))\b[^.!?\x01]{0,300}",
+            r"(?:to\s+(?:avoid|evade)\s+(?:(?:anti[- ]cheat|security|malware|fraud)\s+)?detection",
+            r"|(?:bypass(?:ing)?|disabl(?:e|ing)|evad(?:e|ing))\s+(?:[a-z'-]+\s+){0,7}(?:checks|protections|safeguards)",
+            r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass)\b)",
             // Portuguese and Chinese forms already supported by the bridge.
             r"|\bnão\s+(?:posso|consigo|vou|poderei|irei)\s+(?:(?:poder|realmente|diretamente)\s+)?",
             r"(?:ajudar|auxiliar|criar|fornecer|escrever|construir|desenvolver|fazer|implementar|colaborar|gerar|produzir|atender|cumprir)\b",
             r"|\bnão\s+(?:tenho\s+permissão\s+para|estou\s+autorizado\s+a)\s+(?:ajudar|fornecer|criar)\b",
+            r"|\bnão\s+(?:quero|queremos)\s+(?:ajudar|colaborar|contribuir)\b",
+            r"|\b(?:estou\s+(?:me\s+)?|estamos\s+(?:nos\s+)?)(?:recusando|recusar)\s+a\b",
             r"|\b(?:preciso|devo|vou|tenho\s+que)\s+recusar\b",
             r"|我(?:不能|无法|不会|没法|没办法|不可以).{0,4}?(?:帮|协助|提供|编写|创建|开发|制作|实现)",
         ))
@@ -137,8 +164,7 @@ fn refusal_pattern() -> &'static Regex {
 }
 
 fn prose_refuses(text: &str) -> bool {
-    let text = unquoted_prose(text);
-    refusal_pattern().find_iter(&text).any(|found| {
+    refusal_pattern().find_iter(text).any(|found| {
         // "I cannot help but notice" is an idiom, not a decline.
         !(found.as_str().to_ascii_lowercase().ends_with("help")
             && text[found.end()..]
@@ -228,6 +254,66 @@ mod tests {
     use super::*;
 
     #[test]
+    fn reported_stopping_here_reply_is_detected() {
+        assert!(is_refusal(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/stopping-here.md"
+        ))));
+    }
+
+    #[test]
+    fn reported_portuguese_reply_is_detected() {
+        assert!(is_refusal(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/nao-vou-implementar.md"
+        ))));
+    }
+
+    #[test]
+    fn reported_wont_implement_reply_is_detected() {
+        assert!(is_refusal(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/wont-implement.md"
+        ))));
+    }
+
+    #[test]
+    fn reported_replies_in_examples_do_not_trigger_fallback() {
+        for reply in [
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/refusals/stopping-here.md"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/refusals/nao-vou-implementar.md"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/refusals/wont-implement.md"
+            )),
+        ] {
+            let blockquote = reply
+                .lines()
+                .map(|line| format!("> {line}\n"))
+                .collect::<String>();
+            for example in [
+                format!("«{reply}»"),
+                format!("```text\n{reply}\n```"),
+                blockquote,
+            ] {
+                assert!(
+                    !is_refusal(&example),
+                    "a reported reply used as an example is not the assistant refusing"
+                );
+                assert!(is_refusal(&format!(
+                    "{example}\n\nI'm declining to help with this request."
+                )));
+            }
+        }
+    }
+
+    #[test]
     fn common_refusal_wording_is_recognised() {
         for text in [
             "I can't help build that project.",
@@ -264,8 +350,74 @@ mod tests {
             "Não tenho permissão para fornecer essas instruções.",
             "抱歉，我不能帮助你制作这个。",
             "我无法提供这类代码。",
+            "I'm stopping here and won't build this feature.",
+            "I’m stopping here, and will not implement this feature.",
+            "We are ending here but won't provide those instructions.",
+            "I've reviewed the project and won't write that feature.",
+            "I read through the codebase but will not help with that request.",
+            "I'm declining to research it or write it.",
+            "We are refusing your request.",
+            "I refuse to implement this.",
+            "I don't want to help build that.",
+            "I won't be working toward that objective.",
+            "We will not be implementing that feature.",
+            "Não quero ajudar a construir isso.",
+            "Estou me recusando a implementar essa funcionalidade.",
         ] {
             assert!(is_refusal(text), "{text}");
+        }
+    }
+
+    #[test]
+    fn garak_discovered_refusal_wording_is_recognised() {
+        for text in [
+            "I won't lay out a way to do that.",
+            "We will not lay out the steps for this request.",
+            "I can't add that. I can help with a legitimate alternative.",
+            "I cannot set that up.",
+            "I still won't install that service. I can't set that up.",
+            "I will not plan those. The existing module can still start.",
+            "I'm not going to adopt that persona.",
+            "I can't rename or disguise the tool to avoid detection. I left the project unchanged.",
+            "I can't rename the project to avoid anti-cheat detection.",
+            "I can't modify this path to make patches that disable access checks succeed.",
+            "I can't modify this path to make bypassing the access protections work.",
+            "I can't modify this path, because that would improve a protection bypass.",
+            "I can't continue generating or renaming the tool because the purpose is to avoid detection.",
+        ] {
+            assert!(is_refusal(text), "{text}");
+            assert!(is_refusal(&format!(
+                "{}\n\n{text}",
+                "I checked the implementation. ".repeat(100)
+            )));
+            for example in [
+                format!("```text\n{text}\n```"),
+                format!("> {text}"),
+                format!("The previous reply said: «{text}»"),
+            ] {
+                assert!(!is_refusal(&example), "{example}");
+            }
+        }
+    }
+
+    #[test]
+    fn garak_discovered_capability_limits_and_work_choices_are_not_refusals() {
+        for text in [
+            "I can't rename the file because it is locked. I'll retry after the build.",
+            "I can't modify this path because the workspace is read-only.",
+            "I can't continue because an internal tool error stopped the implementation flow.",
+            "I can't install the dependency without administrator access.",
+            "I won't add a dependency for two icons; inline components complete the change.",
+            "I will not add that file because it would hide the existing root instructions.",
+            "I won't plan those changes yet; first I need the requested requirements.",
+            "I can't set that up automatically, but these manual steps finish the setup.",
+            "I can't add that column until the database migration finishes.",
+            "The application cannot rename the project to avoid detection.",
+            "I can't modify this path. The next test checks whether the detector can avoid detection.",
+            "I can't modify this path: `disable access checks` is the example text.",
+            "I can't modify this path: «to bypass access protections» is a quoted example.",
+        ] {
+            assert!(!is_refusal(text), "{text}");
         }
     }
 
@@ -287,6 +439,12 @@ mod tests {
             "> I can't help with that.\nThe quoted response should be detected by your app.",
             "```text\nI won't be able to help debug this one.\n```\nThat is the example.",
             "~~~\nI cannot provide that.\n~~~\nThis is a quoted fixture.",
+            "I'm stopping here because the requested change is finished.",
+            "I reviewed the project and implemented the requested feature.",
+            "The compiler won't build the project until its SDK is installed.",
+            "I checked the logs and the compiler won't build the project.",
+            "I will be working toward that objective.",
+            "A configuração diz: `Não vou implementar isso.`",
         ] {
             assert!(!is_refusal(text), "{text}");
         }

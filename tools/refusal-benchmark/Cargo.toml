@@ -1,0 +1,17 @@
+[package]
+name = "keybridge-refusal-benchmark"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[[bin]]
+name = "refusal_benchmark"
+path = "../../server/examples/refusal_benchmark.rs"
+test = false
+
+[dependencies]
+pulldown-cmark = { version = "=0.13.6", default-features = false }
+regex = "=1.13.1"
+serde_json = "=1.0.151"
