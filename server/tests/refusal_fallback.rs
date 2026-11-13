@@ -103,6 +103,8 @@ async fn reported_refusals_switch_with_the_refusal_models_own_settings() {
         include_str!("fixtures/refusals/stopping-here.md"),
         include_str!("fixtures/refusals/nao-vou-implementar.md"),
         include_str!("fixtures/refusals/wont-implement.md"),
+        include_str!("fixtures/refusals/wont-hunt-for-exploit.md"),
+        include_str!("fixtures/refusals/cant-continue-with.md"),
     ] {
         for saved_effort in [Some("high"), None] {
             verify_refusal(saved_effort, Some(reply)).await;

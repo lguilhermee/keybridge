@@ -138,16 +138,23 @@ fn refusal_pattern() -> &'static Regex {
             r"|\b(?:i|we)(?:\s+(?:must|need\s+to|have\s+to|will|am\s+going\s+to)|'ll|'m\s+going\s+to)\s+(?:respectfully\s+)?(?:decline|refuse)\b",
             r"|\b(?:i|we)(?:(?:'m|'re|\s+am|\s+are)\s+(?:declining|refusing)|\s+(?:decline|refuse))\s+(?:to\b|(?:this|that|your|the)\s+(?:request|task|objective)\b)",
             r"|\b(?:that|this)(?:'s|\s+is)\s+not\s+(?:something|a\s+request)\s+(?:i|we)\s+can\s+(?:help|assist|provide|support)\b",
-            // Short task-relative declines: "I can't add that", "I won't plan those".
+            // Declining exploit research is narrower than declining any search.
+            // Use unwillingness here: an unavailable scanner is a tool limit.
+            r"|\b(?:i|we)(?:\s+(?:won't|will\s+not)|(?:'m|'re|\s+am|\s+are)\s+not\s+going\s+to)\s+",
+            r"(?:hunt|search|look)\s+for\s+(?:(?:a|an|the|new|another)\s+)?",
+            r"(?:(?:server|client)[- ]side\s+)?(?:exploits?|vulnerabilit(?:y|ies))\b",
+            // Short task-relative declines, including "I can't continue with this request".
             // Require a complete clause so "I can't add that column until ..."
             // remains a capability limit rather than a refusal.
             r"|\b(?:i|we)(?:\s+(?:can't|cannot|won't|will\s+not)|(?:'m|'re|\s+am|\s+are)\s+(?:not\s+going|unable)\s+to)\s+",
-            r"(?:(?:(?:add|plan|install|connect|wire)\s+(?:this|that|these|those)|set\s+(?:this|that)\s+up)\s*(?:[.!?]|\x01|$)",
+            r"(?:(?:(?:add|plan|install|connect|wire)\s+(?:this|that|these|those)|set\s+(?:this|that)\s+up",
+            r"|(?:continue|proceed)\s+with\s+(?:(?:this|that|your|the)\s+)?(?:request|task))\s*(?:[.!?]|\x01|$)",
             // Modifying/renaming also occur in ordinary tool failures. Only
             // extend those actions when the same paragraph states the declined
             // evasion purpose. Never borrow a reason from a later Markdown block.
-            r"|(?:modify|rename|disguise|continue\s+(?:generating|renaming|developing|implementing))\b[^.!?\x01]{0,300}",
+            r"|(?:modify|rename|disguise|(?:continue|proceed)\s+(?:with\s+)?(?:generating|renaming|developing|implementing|intercepting|spoofing))\b[^.!?\x01]{0,300}",
             r"(?:to\s+(?:avoid|evade)\s+(?:(?:anti[- ]cheat|security|malware|fraud)\s+)?detection",
+            r"|to\s+(?:evade|bypass)\s+(?:(?:the|this|that|a|an)\s+)?(?:restrictions?|bans?|access\s+controls?)",
             r"|(?:bypass(?:ing)?|disabl(?:e|ing)|evad(?:e|ing))\s+(?:[a-z'-]+\s+){0,7}(?:checks|protections|safeguards)",
             r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass)\b)",
             // Portuguese and Chinese forms already supported by the bridge.
@@ -275,6 +282,102 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/tests/fixtures/refusals/wont-implement.md"
         ))));
+    }
+
+    #[test]
+    fn reported_wont_hunt_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/wont-hunt-for-exploit.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I reviewed the current implementation. ".repeat(100)
+        )));
+
+        let quoted = reply
+            .lines()
+            .map(|line| format!("> {line}\n"))
+            .collect::<String>();
+        for example in [
+            format!("````text\n{reply}\n````"),
+            quoted,
+            format!("«{reply}»"),
+        ] {
+            assert!(!is_refusal(&example));
+        }
+    }
+
+    #[test]
+    fn declining_exploit_research_is_distinct_from_search_limitations() {
+        for reply in [
+            "I won't hunt for a server-side exploit.",
+            "I won’t hunt for an exploit against that server.",
+            "We will not search for vulnerabilities in that service.",
+            "I'm not going to look for a client-side exploit.",
+        ] {
+            assert!(is_refusal(reply), "{reply}");
+        }
+        for reply in [
+            "I won't hunt for a log file; the trace already identifies the failure.",
+            "I won't search for another dependency; the existing parser handles this.",
+            "I can't search for vulnerabilities while the local test environment is offline.",
+            "The scanner won't search for vulnerabilities without its test database.",
+            "The report mentions a server-side exploit; I fixed the validation issue.",
+            "The example says: `I won't hunt for a server-side exploit.`",
+        ] {
+            assert!(!is_refusal(reply), "{reply}");
+        }
+    }
+
+    #[test]
+    fn reported_cant_continue_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/cant-continue-with.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I inspected the current behavior. ".repeat(100)
+        )));
+        let quoted = reply
+            .lines()
+            .map(|line| format!("> {line}\n"))
+            .collect::<String>();
+        for example in [
+            format!("```text\n{reply}\n```"),
+            quoted,
+            format!("The previous reply said: «{reply}»"),
+        ] {
+            assert!(!is_refusal(&example), "{example}");
+        }
+    }
+
+    #[test]
+    fn continuation_declines_are_distinct_from_errors_and_waiting() {
+        for reply in [
+            "I can't continue with this request.",
+            "We will not proceed with that task.",
+            "I cannot continue with spoofing requests to evade that restriction.",
+            "I can't proceed with intercepting traffic to bypass access controls.",
+            "I'm unable to continue with implementing this to evade the ban.",
+        ] {
+            assert!(is_refusal(reply), "{reply}");
+        }
+        for reply in [
+            "I can't continue because an internal tool error stopped the implementation flow.",
+            "I cannot continue with the test while the database is offline.",
+            "I can't continue with implementing the parser because the workspace is read-only.",
+            "I can't continue with this request until the missing input arrives.",
+            "The scanner cannot continue with intercepting traffic to bypass access controls.",
+            "The fixture says: `I can't continue with this request.`",
+            "I can't continue with implementing this.\n\nThe report describes an attempt to evade the restriction.",
+            "I can't continue with implementing `to evade the restriction` because the test fixture is missing.",
+        ] {
+            assert!(!is_refusal(reply), "{reply}");
+        }
     }
 
     #[test]
