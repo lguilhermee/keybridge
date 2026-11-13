@@ -1,231 +1,81 @@
 <div align="center">
 
-<img src="./docs/banner.svg" alt="Keybridge — Local BYOK Model Gateway & Subscription Bridge for Cursor" width="100%" />
+<img src="./docs/keybridge-logo.png" alt="Keybridge" width="440" />
 
-# Keybridge
+**Your models. Your subscriptions. In Cursor and Codex.**
 
-**Run Cursor Agent at full power with any model or subscription — without paying for the $20/mo Cursor Pro plan.**
+Keybridge is a desktop app that connects your AI accounts, API keys, and local models to the coding tools you already use. Pick a model and keep working in your editor.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-00e676.svg)](./LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-38bdf8.svg)](#quick-start)
-[![Rust](https://img.shields.io/badge/Backend-Rust%20%2B%20Axum-f97316.svg)](#architecture)
-[![Desktop](https://img.shields.io/badge/Desktop-Tauri%20%2B%20React-a855f7.svg)](#architecture)
-
-[Why Keybridge](#-why-keybridge) · [Supported Subscriptions](#-supported-subscriptions--byok-channels) · [Supported Cursor Features](#-full-cursor-feature-support) · [How It Works](#-how-it-works) · [Quick Start](#-quick-start)
+**[Download for Windows, macOS, or Linux](https://github.com/lguilhermee/keybridge/releases/latest)** · [Report an issue](https://github.com/lguilhermee/keybridge/issues) · [MIT license](./LICENSE)
 
 </div>
 
----
+## What you get
 
-## Why Keybridge
+- **Cursor integration** — use your models with Agent, Plan, Debug, file edits, terminal commands, MCP, subagents, and Computer Use.
+- **Codex app and CLI integration** — use the same configured models, with reasoning effort and Fast options where supported.
+- **Token-saving tools** — optional Headroom integration compresses request context to reduce input tokens. Cache-friendly conversation history also helps reuse provider prompt caches. Install and enable Headroom in **Settings → Cursor → Headroom**.
+- **Model combos** — put several models under one name. Start in order, rotate, or choose randomly; switch to the next model on errors, rate limits, or refusals.
+- **Refusal switching** — choose a replacement model for individual models, with bulk editing for larger lists.
+- **Usage you can inspect** — see tokens, estimated costs, cache hits, and response times. Filter calls, export CSV, or enable detailed request and response recording.
+- **A local API for other apps** — share your configured models through OpenAI- or Anthropic-compatible endpoints.
 
-Cursor locks its best Agent features behind a **$20/month Pro subscription** (or $200/month Ultra) and restricts which models can drive its native tool runtime.
+## Bring what you already have
 
-**Keybridge** runs a local gateway on your machine that speaks Cursor's native `aiserver.v1` Connect-RPC / Protobuf protocol end to end:
+**Accounts:** Claude, ChatGPT / Codex, Devin / Windsurf, Google Antigravity, Grok, and OpenCode. Sign-in and import options vary by provider.
 
-- **Bypasses the $20 Cursor Subscription Check:** Emulates an active local **Cursor Ultra** account (`membershipType: "ultra"`, `$200` included plan quota, zero slow-pool throttling) so Cursor unlocks every gated Agent capability out of the box — even on a free or unauthenticated Cursor install.
-- **Use Any Model You Want:** Connect any **OpenAI-compatible** (`/v1/chat/completions` or `/v1/responses`), **Anthropic-compatible** (`/v1/messages`), local (**Ollama, vLLM, LM Studio, llama.cpp**), or custom API endpoint with full control over model IDs, headers, reasoning effort, thinking budgets, and parameters.
-- **Reuse Your Existing AI Subscriptions:** Sign in directly with your existing **Claude**, **ChatGPT / Codex**, **Devin / Windsurf**, **Google Antigravity (Gemini & Claude)**, **Grok (xAI)**, or **OpenCode Go** accounts via built-in Deno auth providers — no separate API billing required.
-- **100% Native Cursor Experience:** Every Cursor Agent feature — including **Computer Use**, **Subagents**, **MCP**, **Skills**, **Semble semantic codebase search**, **Checkpoints**, **Git commit generation**, and **Remote SSH** — works natively with whichever model you select.
+**API keys:** OpenAI Chat Completions, OpenAI Responses, and Anthropic Messages endpoints, including compatible services such as OpenRouter and DeepSeek.
 
-> [!IMPORTANT]
-> Keybridge is free and open source under the MIT License, though the third-party model APIs or subscriptions you connect may enforce their own usage limits or billing. This is an independent project and is not affiliated with or endorsed by Cursor.
+**Local models:** Ollama, vLLM, LM Studio, or another server with a compatible API.
 
----
+Available models and usage limits depend on the provider and your account.
 
-## Supported Subscriptions & BYOK Channels
+## Get started
 
-Keybridge supports both **built-in subscription providers** (OAuth / browser sign-in / credential import) and **direct BYOK API channels**:
+1. [Download the latest release](https://github.com/lguilhermee/keybridge/releases/latest) and open Keybridge.
+2. Open **Providers → Add provider**. Sign in to an account or add an API endpoint and its models.
+3. Connect your coding tool:
+   - **Cursor:** open the **Cursor** page, click **Initialize CA**, follow the certificate trust prompts, and enable **local Cursor integration**.
+   - **Codex:** open the **Codex** page, turn on **Connect Codex**, then restart Codex to load the model list.
+4. Keep Keybridge running and choose your model in Cursor or Codex.
 
-### 1. Built-in Subscription Providers
+Cursor connects through a local HTTPS proxy using a certificate you trust during setup. Codex connects through the local API; its previous model settings are restored when you disconnect or Keybridge shuts down. Requests go to the model provider you choose.
 
-| Provider | Account / Subscription Type | Auth Method | Included Model Families |
-| :--- | :--- | :--- | :--- |
-| <img src="./server/providers/built-in/claude-auth/assets/claude.svg" width="16" height="16" /> **Claude** (`claude-auth`) | Claude Pro / Max / Claude Code subscriptions | Browser OAuth & Credential Import | `claude-opus-5-5`, `claude-opus-5`, `claude-fable-5-2`, `claude-fable-5-1`, `claude-fable-5`, `claude-sonnet-5-5`, `claude-sonnet-5`, `claude-haiku-4-5` (with Fast Mode support) |
-| <img src="./server/providers/built-in/codex-auth/assets/codex.svg" width="16" height="16" /> **ChatGPT / Codex** (`codex-auth`) | ChatGPT Plus / Pro / Team / Codex subscriptions | Device Code OAuth, Credential Import & Quota Reset Cards | Dynamic official Codex model catalog (`gpt-5.x`, `codex-*`, reasoning effort levels, Priority service tier, and `daybreak-blue` cyber access program) |
-| <img src="./server/providers/built-in/devin-auth/assets/devin.svg" width="16" height="16" /> **Devin** (`devin-auth`) | Devin / Cognition / Windsurf accounts | Browser OAuth & Credential Import | Live `GetCliModelConfigs` catalog discovery with automatic Fast Mode sibling routing |
-| <img src="./server/providers/built-in/antigravity-auth/assets/antigravity.svg" width="16" height="16" /> **Google Antigravity** (`antigravity-auth`) | Google Cloud Code / Antigravity accounts & keys | Google OAuth & Credential Import | **Gemini 3.8 / 3.7 / 3.6 Flash**, **Gemini 3.1 / 2.5 Pro**, **Claude Sonnet 4.6 & 3.7 Opus Thinking (via Antigravity)**, **GPT-4o**, **GPT OSS 120B** |
-| <img src="./server/providers/built-in/grok-auth/assets/grok.svg" width="16" height="16" /> **Grok** (`grok-auth`) | xAI / Grok accounts (Free & Paid tiers) | Device Code OAuth & Credential Import | Live `/v1/language-models` discovery + built-in fallback for **Grok 4.6**, **Grok 4.5**, and vision-capable Grok models |
-| <img src="./server/providers/built-in/opencode-auth/assets/opencode.svg" width="16" height="16" /> **OpenCode** (`opencode-auth`) | OpenCode Go subscriptions **+ Zero-Auth Free Tier** | API Key / Credential Import & Built-in Free Session Pool | **Kimi K3 / K2.7 Code**, **GLM 5.3 / Flash**, **Qwen 3.8 Max**, **DeepSeek V4 Pro / Flash**, **MiniMax M3**, **MiMo V2.6**, **Grok 4.7**, **GPT 6 Luna**, **Muse Spark 1.3** |
+Codex's built-in web search is unavailable with Keybridge models. For Cursor Remote SSH setup and current verification limits, see the [Remote SSH guide](./docs/remote-ssh.md).
 
-### 2. Custom BYOK API Protocols
+## Build from source
 
-- **OpenAI Chat Completions (`/v1/chat/completions`):** OpenAI, OpenRouter, Together, Groq, DeepSeek, SiliconFlow, Fireworks, Ollama, vLLM, LM Studio, or any compatible proxy.
-- **OpenAI Responses API (`/v1/responses`):** Native reasoning items, encrypted reasoning continuity, and multimodal tool turns.
-- **Anthropic Messages API (`/v1/messages`):** Official Anthropic API, AWS Bedrock / Vertex proxies, and third-party Anthropic-compatible gateways with prompt caching and extended thinking.
+You'll need Rust and Node.js 20+, plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). Windows also needs `nasm` on `PATH`.
 
----
-
-## Full Cursor Feature Support
-
-Keybridge implements Cursor's bidirectional `AgentService` / `AiService` protocol and tool execution state machine, unlocking **all native Cursor IDE capabilities** on any model:
-
-### Computer Use (`ComputerUse`)
-Full native encoding and execution dispatch for Cursor's **Computer Use** agent tool:
-- **Mouse Actions:** `mouse_move`, `click` (left/right/middle, single/double/triple click, modifier keys), `mouse_down`, `mouse_up`, `drag` (multi-point coordinate paths), and `scroll` (directional with custom amounts).
-- **Keyboard Actions:** `type` / `type_text` and `key` / `press` with optional `hold_duration_ms`.
-- **Screen & State Inspection:** `screenshot` capture, `cursor_position` queries, and timed `wait` actions.
-
-### All 7 Cursor Prompt & Execution Modes
-- **Agent Mode:** Full autonomous coding with file edits, shell execution, search, MCP, subagents, and Computer Use.
-- **Plan Mode:** Architectural exploration, interactive clarifying questions (`AskQuestion`), and step-by-step planning.
-- **Debug Mode:** Automated runtime log instrumentation, debug server endpoint wiring, and root-cause isolation.
-- **Ask Mode:** Read-only codebase Q&A and explanation.
-- **Multitask Mode:** Parallel multi-goal execution (`CreateGoal`, `UpdateGoal`).
-- **Subagent Mode (`Task`):** Spawns child agents (`subagent_type`, local or cloud execution environments, background runs, and agent resume).
-- **Compaction Mode:** Automatic context-window summarization and prefix-stable history compaction for long sessions.
-
-### Complete Native Tool Suite
-- **Workspace & Files:** `Read`, `Write`, `StrReplace`, `Delete`, `EditNotebook` (Jupyter `.ipynb`), `Glob`, `Grep` (ripgrep), and `ReadLints` (IDE language-server diagnostics).
-- **Terminal & Shell (`Shell`):** Interactive and background command execution, command parsing metadata, sandbox policies, and smart-mode approval gates.
-- **Semantic Codebase Search (`crates/semble-core`):** Local implementation of `SembleSearch` and `SembleFindRelated` so codebase indexing and semantic symbol discovery work completely offline.
-- **Web & Multimodal:** `WebSearch`, `WebFetch` (with conversation-private pagination), vision image inputs, and `GenerateImage`.
-- **Model Context Protocol (MCP):** Full `GetMcpTools`, `CallMcpTool`, and `FetchMcpResource` routing to your configured Cursor MCP servers.
-- **Skills & Rules:** Preserves `.cursor/rules`, `AGENTS.md`, `CLAUDE.md`, and workspace/global Skills.
-- **Task & Mode Control:** `TodoWrite`, `AskQuestion`, `SwitchMode`, `CreateGoal`, and `UpdateGoal`.
-
-### IDE Integrations & Gateway Capabilities
-- **Checkpoints & Conversation Recovery:** SQLite-backed conversation checkpoints (`server/src/cursor/checkpoint`) let you rewind, branch, and resume multi-turn Agent sessions without losing provider prefix-cache hits.
-- **Git Commit Message Generation:** Intercepts Cursor's SCM sparkle button (`WriteGitCommitMessage`) and generates commit messages using your chosen BYOK/subscription model and custom prompt.
-- **Cursor Tab Completion Routing:** Configurable passthrough to Cursor's public Tab service or a custom Tab completion server (`StreamCpp`, `StreamNextCursorPrediction`, `FileSyncService`).
-- **Remote SSH Support:** Works across Cursor Remote-SSH workspaces via `"cursorAgentHost.remoteInferenceRoute": "always"` without exposing public ports or copying CA keys to remote hosts.
-- **Headroom Context Compression:** Optional integration with `headroom` proxy to compress large prompts before they hit upstream providers.
-- **External Local API:** Exposes your configured models and subscription providers as a local OpenAI/Anthropic-compatible endpoint for other tools on your machine.
-- **Model Combos with Fallback:** Group several configured models (API-key models or subscription models) under one name in Cursor's model picker. Pick the start strategy (ordered, loop, or random) and the fallback order; when a member errors, is rate limited, or refuses, the next member answers the same call.
-- **Desktop Observability & Benchmarks:** Built-in Tauri desktop dashboard with token usage heatmaps, cache-hit rate tracking, TTFT / throughput connection benchmarks, and full request/response payload inspection.
-
----
-
-## How It Works
-
-```text
-┌────────────────────────────────────────────────────────────────────────────┐
-│                                 Cursor IDE                                 │
-│   Agent · Plan · Debug · Computer Use · Subagents · MCP · Tab · Git SCM    │
-└─────────────────────────────────────┬──────────────────────────────────────┘
-                                      │  HTTPS / Connect-RPC (Protobuf)
-                                      │  Intercepted via Local Trusted CA
-                                      ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                          Keybridge Local Service                           │
-│  ┌──────────────────────────┬───────────────────────┬───────────────────┐  │
-│  │ Account & Plan Bypass    │ Agent Tool Runtime    │ Local Semble      │  │
-│  │ Emulates Cursor Ultra    │ Shell, Edit, MCP,     │ Semantic Codebase │  │
-│  │ ($20 Pro Check Bypassed) │ Task, ComputerUse     │ Search & Indexing │  │
-│  └──────────────────────────┴───────────┬───────────┴───────────────────┘  │
-│                                         │                                  │
-│                 Prefix-Stable Prompt Compiler & SQLite Store               │
-└───────────────────┬─────────────────────────────────────┬──────────────────┘
-                    │                                     │
-     Built-in Deno Auth Providers            Direct BYOK Protocol Adapters
-    (OAuth / Session / Free Pools)          (OpenAI Chat, Responses, Anthropic)
-                    │                                     │
-                    ▼                                     ▼
-┌───────────────────────────────────────┐ ┌──────────────────────────────────┐
-│   Claude · Codex · Devin · Grok       │ │ OpenAI · Anthropic · OpenRouter  │
-│   Google Antigravity · OpenCode Go    │ │ DeepSeek · Ollama · vLLM · Custom│
-└───────────────────────────────────────┘ └──────────────────────────────────┘
-```
-
-1. **Local CA & Endpoint Harness:** Keybridge initializes a device-local Certificate Authority and routes Cursor's API traffic to `127.0.0.1`.
-2. **Subscription Check Bypass:** When Cursor queries `/aiserver.v1.DashboardService/GetCurrentPeriodUsage`, `GetUsageLimitStatusAndActiveGrants`, or `/api/auth/stripe`, Keybridge responds with an active `ultra` subscription profile — removing the $20 Pro paywall and slow-pool restrictions.
-3. **Protocol Translation:** Bidirectional Protobuf frames from Cursor are compiled into prefix-cache-friendly OpenAI or Anthropic requests. When your model emits tool calls (such as `ComputerUse`, `Shell`, `StrReplace`, or `Task`), Keybridge translates them into Cursor `ExecServerMessage` frames, collects the IDE's execution result, and streams the next turn.
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- **Rust toolchain** (MSVC on Windows; `nasm` on `PATH` is required on Windows by `aws-lc-sys`)
-- **Node.js** (v20+)
-
-### Run in Development
+Run from the repository root:
 
 ```bash
-# 1. Install desktop frontend dependencies
 npm --prefix apps/desktop install
-
-# 2. Launch the Tauri desktop app + Rust gateway
 npm --prefix apps/desktop run tauri:dev
 ```
 
-### Build Release Installer
+To build the desktop app:
 
 ```bash
-# Build frontend and native desktop installer (NSIS / DMG / AppImage / DEB)
-make build-web build-desktop
+npm --prefix apps/desktop run tauri:build
 ```
 
-To build only the standalone Rust backend service:
+<details>
+<summary>Development checks</summary>
 
 ```bash
-cargo build --release -p cursor-server --bin cursor-server
-```
-
-### First-Time Setup in Keybridge
-
-1. **Initialize Local CA:** Open Keybridge and click **Initialize CA** on the Cursor settings page to trust the device-local certificate.
-2. **Add a Subscription or Model:**
-   - Go to **Providers** to sign in with **Claude**, **Codex (ChatGPT)**, **Devin**, **Google (Antigravity)**, **Grok**, or **OpenCode**, **or**
-   - Go to **Models → Add Model** to configure any OpenAI- or Anthropic-compatible API endpoint and key.
-3. **Enable Models in Cursor:** Select your configured models in Keybridge, open Cursor, and start using Agent, Plan, Debug, or Computer Use with your chosen model.
-
----
-
-## Architecture
-
-```text
-cursor-byok/
-├── apps/desktop/                  # Tauri + React desktop control center
-│   ├── src/features/home/         # Token usage charts, latency trends, cache-hit metrics
-│   ├── src/features/models/       # Model editor, benchmark runner, CA gate, Remote SSH guide
-│   ├── src/features/providers/    # Subscription OAuth flows, account & quota management
-│   ├── src/features/calls/        # Real-time LLM call inspector & trace viewer
-│   └── src/features/settings/     # Ports, Commit model, Tab service, Headroom, External API
-├── server/                        # Rust backend (cursor-server)
-│   ├── src/cursor/services/       # Ultra account mock ($20 bypass), Commit SCM, Tab, Model catalog
-│   ├── src/cursor/protocol/       # Connect-RPC & Protobuf wire framing
-│   ├── src/cursor/prompting/      # 7-mode Cursor prompt & tool manifest compiler
-│   ├── src/cursor/tools/          # Tool dispatch & result codecs (Shell, Edit, MCP, Task, ComputerUse)
-│   ├── src/cursor/checkpoint/     # SQLite conversation state, checkpoints, subagent recovery
-│   ├── src/protocol/              # OpenAI Chat, OpenAI Responses, Anthropic Messages adapters
-│   ├── src/provider/              # Deno provider host: registry, manifests, runtime, SDK
-│   └── providers/built-in/        # Bundled Deno subscription providers:
-│       ├── claude-auth/           #   Claude Pro / Max / Code
-│       ├── codex-auth/            #   ChatGPT Plus / Pro / Codex
-│       ├── devin-auth/            #   Devin / Windsurf
-│       ├── antigravity-auth/      #   Google Cloud Code / Antigravity (Gemini + Claude)
-│       ├── grok-auth/             #   xAI Grok
-│       └── opencode-auth/         #   OpenCode Go + Free tier
-├── crates/semble-core/            # Local semantic repository search engine
-└── docs/                          # Hero assets, Remote SSH guide, Windows build notes
-```
-
----
-
-## Development & Verification
-
-```bash
-# Format, lint, and run the Rust test suite
 cargo fmt --all -- --check
 cargo clippy -p cursor-server --all-targets -- -D warnings
 cargo test -p cursor-server --all-targets
+npm --prefix apps/desktop run check
 ```
 
-Built-in subscription providers are tested with the Deno runtime:
+For built-in providers, run `deno test -A <provider>_test.ts` from that provider's directory under `server/providers/built-in/`.
 
-```bash
-cd server/providers/built-in/<provider>
-deno test -A <provider>_test.ts
-```
+</details>
 
 ---
 
-## License
+Free and open source under [MIT](./LICENSE). Provider fees and limits still apply. Keybridge is an independent project, unaffiliated with Cursor or the model providers.
 
-Released under the [MIT License](./LICENSE).
-
-## Credits
-
-Keybridge builds upon [cursor-byok](https://github.com/leookun/cursor-byok) by [@leookun](https://github.com/leookun), where the local Cursor protocol engine, desktop application, and provider runtime originated.
+Built on [cursor-byok](https://github.com/leookun/cursor-byok) by [@leookun](https://github.com/leookun).
