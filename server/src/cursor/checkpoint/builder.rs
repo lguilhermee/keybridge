@@ -23,6 +23,8 @@ pub struct CheckpointBuilder {
     pub(super) sync: BlobSynchronizer,
     pub(super) parent_tool_call_id: Option<String>,
     pub(super) base: pb::ConversationStateStructure,
+    pub(super) conversation_id: String,
+    pub(super) agent_session_id: Option<String>,
     pub(super) subagent_completions: SubagentCompletions,
     pub(super) model: String,
     pub(super) max_context_tokens: Option<u64>,
@@ -41,14 +43,34 @@ impl CheckpointBuilder {
         store: Store,
         sync: BlobSynchronizer,
         parent_tool_call_id: Option<String>,
-        base: Option<pb::ConversationStateStructure>,
+        request: &pb::AgentRunRequest,
         subagent_completions: SubagentCompletions,
     ) -> Self {
+        let mut base = request.conversation_state.clone().unwrap_or_default();
+        if matches!(
+            request
+                .action
+                .as_ref()
+                .and_then(|action| action.action.as_ref()),
+            Some(pb::conversation_action::Action::GoalContinuationAction(_))
+        ) {
+            if let Some(goal) = base.goal_state.as_mut().filter(|goal| {
+                goal.status == pb::GoalStatus::Active as i32 && !goal.objective.trim().is_empty()
+            }) {
+                goal.continuation_count = goal.continuation_count.saturating_add(1);
+            }
+        }
+        let conversation_id = request
+            .conversation_id
+            .clone()
+            .unwrap_or_else(|| sync.request_id().into());
         Self {
             store,
             sync,
             parent_tool_call_id,
-            base: base.unwrap_or_default(),
+            base,
+            conversation_id,
+            agent_session_id: request.agent_session_id.clone(),
             subagent_completions,
             model: String::new(),
             max_context_tokens: None,
@@ -167,6 +189,7 @@ impl CheckpointBuilder {
         pending_tool_calls: Vec<String>,
         presentation: &PendingSteps,
     ) -> Result<pb::ConversationStateStructure> {
+        self.record_goal_changes(presentation);
         self.record_background_subagents(presentation);
         self.subagent_completions
             .apply(&mut self.base.subagent_runs_by_parent_tool_call_id);

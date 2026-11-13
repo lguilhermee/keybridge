@@ -15,6 +15,7 @@ use crate::{api::cursor::proxy, Error, Result};
 pub const BOOTSTRAP_STATSIG_PATH: &str = "/aiserver.v1.AnalyticsService/BootstrapStatsig";
 const AGENT_RETRIES_GATE: &str = "nal_agent_retries";
 const CLIENT_AGENT_LOOP_GATE: &str = "agent_host_local_loop";
+const GOAL_CONTINUATION_GATE: &str = "agent_goal_continuation";
 const LOCAL_RULE: &str = "local_enabled";
 
 #[derive(Clone, PartialEq, Message)]
@@ -100,6 +101,7 @@ fn local_response() -> Result<Response<Body>> {
 fn configure_agent_runtime(config: &mut Value) -> Result<()> {
     let retries_key = statsig_key(config, AGENT_RETRIES_GATE);
     let loop_key = statsig_key(config, CLIENT_AGENT_LOOP_GATE);
+    let goal_key = statsig_key(config, GOAL_CONTINUATION_GATE);
     let root = config
         .as_object_mut()
         .ok_or_else(|| Error::Protocol("Statsig bootstrap config must be an object".into()))?;
@@ -112,6 +114,8 @@ fn configure_agent_runtime(config: &mut Value) -> Result<()> {
     // BYOK owns the agent loop through AgentService/RunSSE. Cursor's client-owned
     // loop uses InferenceService/RunInferenceSSE and a different Bidi protocol.
     gates.insert(loop_key.clone(), feature_gate(&loop_key, false));
+    // Cursor's idle scheduler dispatches GoalContinuationAction only with this gate enabled.
+    gates.insert(goal_key.clone(), feature_gate(&goal_key, true));
     Ok(())
 }
 
@@ -183,6 +187,20 @@ fn encode_unary(message: &impl Message, framed: bool) -> Bytes {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bootstrap_enables_native_goal_continuation() {
+        for hash_used in ["none", "djb2", "sha256"] {
+            let mut config = json!({"hash_used": hash_used, "feature_gates": {}});
+            let goal_key = statsig_key(&config, "agent_goal_continuation");
+            config["feature_gates"][&goal_key] = json!({"value": false});
+            configure_agent_runtime(&mut config).unwrap();
+            assert_eq!(
+                config["feature_gates"][&goal_key]["value"], true,
+                "{hash_used}"
+            );
+        }
+    }
 
     #[test]
     fn bootstrap_selects_the_byok_server_owned_agent_loop() {

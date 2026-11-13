@@ -512,9 +512,15 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
 }
 
 fn goal_directive(text: &str) -> Option<String> {
+    let text = text.trim();
     let objective = text
-        .lines()
-        .find_map(|line| line.trim().strip_prefix("/goal").map(str::trim))?;
+        .strip_prefix("/goal")
+        .filter(|rest| rest.starts_with(char::is_whitespace))
+        .or_else(|| {
+            text.strip_suffix("/goal")
+                .filter(|rest| rest.ends_with(char::is_whitespace))
+        })?
+        .trim();
     if objective.is_empty() {
         return None;
     }
@@ -708,7 +714,23 @@ mod tests {
         assert!(directive.contains("keep iterating until the build is green"));
         assert!(goal_directive("/goal").is_none());
         assert!(goal_directive("please /goal this").is_none());
+        assert!(goal_directive("/goals are useful").is_none());
+        assert!(goal_directive("explain `/goal`").is_none());
+        assert!(goal_directive("example:\n```\n/goal run tests\n```").is_none());
         assert!(goal_directive("no command here").is_none());
+    }
+
+    #[test]
+    fn goal_command_after_the_objective_produces_a_create_goal_directive() {
+        let directive = goal_directive("then you need to fix it until it hit lobby /goal")
+            .expect("a trailing /goal must activate the user's objective");
+        assert!(directive.contains("CreateGoal"));
+        assert!(directive.contains("then you need to fix it until it hit lobby"));
+        let multiline =
+            goal_directive("Fix the build.\nRun tests until they pass.\n/goal").unwrap();
+        assert!(multiline.contains("Fix the build.\nRun tests until they pass."));
+        let prefix = goal_directive("/goal Fix the build.\nRun tests until they pass.").unwrap();
+        assert!(prefix.contains("Fix the build.\nRun tests until they pass."));
     }
 
     #[test]

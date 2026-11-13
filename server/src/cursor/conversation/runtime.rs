@@ -762,7 +762,7 @@ fn spawn_run_request(
             dependencies.store.clone(),
             blob_sync.clone(),
             handle.parent().map(|parent| parent.tool_call_id.clone()),
-            request.conversation_state.clone(),
+            &request,
             subagent_completions,
         );
         let prepared = tokio::select! {

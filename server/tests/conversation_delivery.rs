@@ -590,6 +590,205 @@ async fn background_shell_completion_wakes_the_parent_with_the_captured_notifica
 }
 
 #[tokio::test]
+async fn goal_creation_persists_active_state_for_client_continuation() {
+    let (_directory, store) = fixtures::temp_store().await;
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(goal_tool_response(
+        "CreateGoal",
+        "create-goal-1",
+        serde_json::json!({"objective": "keep fixing until the build passes"}),
+    ));
+    protocol.push(stop_response(
+        "goal-progress",
+        "The build still fails; investigation remains.",
+    ));
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let registry = TransportRegistry::new(
+        store,
+        Arc::new(protocol.clone()),
+        PromptCompiler::new(assets),
+    );
+    let handle = registry.get_or_create("create-goal-request").await.unwrap();
+    let mut start = user_run("keep fixing until the build passes /goal", "goal-message");
+    if let Some(pb::agent_client_message::Message::RunRequest(request)) = start.message.as_mut() {
+        request.agent_session_id = Some("goal-agent-session".into());
+    }
+    let (checkpoint, _) = drive_completion(&handle, start).await;
+    let goal = checkpoint
+        .goal_state
+        .clone()
+        .expect("CreateGoal must persist an active goal so Cursor schedules continuation");
+    assert_eq!(goal.conversation_id, "parent-conversation");
+    assert_eq!(goal.objective, "keep fixing until the build passes");
+    assert_eq!(goal.status, pb::GoalStatus::Active as i32);
+    assert_eq!(goal.agent_session_id.as_deref(), Some("goal-agent-session"));
+    uuid::Uuid::parse_str(&goal.goal_id).expect("Cursor only continues goals with UUID identities");
+    let requests = protocol.requests();
+    assert_eq!(requests.len(), 2);
+    assert!(serde_json::to_string(&requests[0].history)
+        .unwrap()
+        .contains("<goal_command>"));
+
+    // Resume twice from the wire checkpoint. Each continuation must append a
+    // distinct runtime event without changing the already delivered history.
+    let mut state = checkpoint;
+    for count in 1..=2 {
+        protocol.push(stop_response(
+            &format!("progress-{count}"),
+            "Still investigating the failing build.",
+        ));
+        let handle = registry
+            .get_or_create(&format!("goal-follow-up-{count}"))
+            .await
+            .unwrap();
+        let (next, _) = drive_completion(&handle, goal_continuation_run(state)).await;
+        let next_goal = next.goal_state.as_ref().unwrap();
+        assert_eq!(next_goal.goal_id, goal.goal_id);
+        assert_eq!(next_goal.status, pb::GoalStatus::Active as i32);
+        assert_eq!(next_goal.continuation_count, count);
+        state = next;
+    }
+    protocol.push(goal_tool_response(
+        "UpdateGoal",
+        "finish-goal",
+        serde_json::json!({"status": "complete"}),
+    ));
+    protocol.push(stop_response("goal-done", "The build now passes."));
+    let handle = registry.get_or_create("goal-complete").await.unwrap();
+    let (completed, _) = drive_completion(&handle, goal_continuation_run(state)).await;
+    assert_eq!(
+        completed.goal_state.as_ref().unwrap().status,
+        pb::GoalStatus::Complete as i32
+    );
+    assert_eq!(completed.goal_state.as_ref().unwrap().continuation_count, 3);
+    let requests = protocol.requests();
+    assert_eq!(requests.len(), 6);
+    for (index, count) in [(2, 0), (3, 1), (4, 2)] {
+        assert_eq!(
+            requests[index].history.last().unwrap().message_id,
+            format!("runtime:goal-continuation:{}:{count}", goal.goal_id)
+        );
+    }
+    for pair in requests.windows(2) {
+        // Checkpoint hydration reconstructs internal message IDs. Providers
+        // receive roles/content, so those must remain an exact prefix.
+        let before = pair[0]
+            .history
+            .iter()
+            .map(|message| (&message.role, &message.content))
+            .collect::<Vec<_>>();
+        let after = pair[1]
+            .history
+            .iter()
+            .map(|message| (&message.role, &message.content))
+            .collect::<Vec<_>>();
+        assert!(
+            after.starts_with(&before),
+            "goal continuation changed the provider history prefix"
+        );
+        assert_eq!(pair[0].prompt, pair[1].prompt);
+    }
+}
+
+fn goal_tool_response(name: &str, call_id: &str, arguments: serde_json::Value) -> Vec<ModelEvent> {
+    vec![
+        ModelEvent::Start {
+            model_call_id: call_id.into(),
+        },
+        ModelEvent::ToolCallStart {
+            index: 0,
+            call_id: call_id.into(),
+            name: name.into(),
+        },
+        ModelEvent::ToolCallArgumentsDelta {
+            index: 0,
+            delta: arguments.to_string(),
+        },
+        ModelEvent::ToolCallEnd { index: 0 },
+        ModelEvent::Done(FinishReason::ToolUse),
+    ]
+}
+
+fn goal_continuation_run(state: pb::ConversationStateStructure) -> pb::AgentClientMessage {
+    let mut message = user_run("", "unused");
+    let Some(pb::agent_client_message::Message::RunRequest(request)) = message.message.as_mut()
+    else {
+        unreachable!()
+    };
+    request.action.as_mut().unwrap().action =
+        Some(pb::conversation_action::Action::GoalContinuationAction(
+            pb::GoalContinuationAction::default(),
+        ));
+    request.conversation_state = Some(state);
+    message
+}
+
+#[tokio::test]
+async fn goal_updates_persist_pause_and_clear_without_replaying_old_creation() {
+    for (status, expected) in [("paused", Some(pb::GoalStatus::Paused)), ("cleared", None)] {
+        let (_directory, store) = fixtures::temp_store().await;
+        let protocol = fake_protocol::FakeProtocol::default();
+        protocol.push(goal_tool_response(
+            "CreateGoal",
+            "create-goal",
+            serde_json::json!({"objective": "fix the build"}),
+        ));
+        protocol.push(stop_response("progress", "The build still needs work."));
+        protocol.push(goal_tool_response(
+            "UpdateGoal",
+            "update-goal",
+            serde_json::json!({"status": status}),
+        ));
+        protocol.push(stop_response(
+            "updated",
+            "Updated the goal at your request.",
+        ));
+        protocol.push(stop_response("ordinary-reply", "Here is the status."));
+        let assets = PromptAssets::load(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("prompt/cursor")
+                .as_path(),
+        )
+        .unwrap();
+        let registry =
+            TransportRegistry::new(store, Arc::new(protocol), PromptCompiler::new(assets));
+        let handle = registry.get_or_create("goal-before-update").await.unwrap();
+        let (state, _) =
+            drive_completion(&handle, user_run("/goal fix the build", "start-goal")).await;
+        assert!(state.goal_state.is_some());
+        let mut update = user_run(&format!("{status} the goal"), "change-goal");
+        if let Some(pb::agent_client_message::Message::RunRequest(request)) =
+            update.message.as_mut()
+        {
+            request.conversation_state = Some(state);
+        }
+        let handle = registry.get_or_create("goal-update").await.unwrap();
+        let (state, _) = drive_completion(&handle, update).await;
+        assert_eq!(
+            state.goal_state.as_ref().map(|goal| goal.status),
+            expected.map(|status| status as i32)
+        );
+        let mut follow_up = user_run("What is the status?", "after-goal-update");
+        if let Some(pb::agent_client_message::Message::RunRequest(request)) =
+            follow_up.message.as_mut()
+        {
+            request.conversation_state = Some(state);
+        }
+        let handle = registry.get_or_create("after-goal-update").await.unwrap();
+        let (state, _) = drive_completion(&handle, follow_up).await;
+        assert_eq!(
+            state.goal_state.as_ref().map(|goal| goal.status),
+            expected.map(|status| status as i32)
+        );
+    }
+}
+
+#[tokio::test]
 async fn goal_continuation_starts_a_simulated_turn_and_preserves_goal_state() {
     let (_directory, store) = fixtures::temp_store().await;
     let protocol = fake_protocol::FakeProtocol::default();
@@ -660,7 +859,13 @@ async fn goal_continuation_starts_a_simulated_turn_and_preserves_goal_state() {
 
     // The checkpointed conversation state must keep the client's GoalState so
     // the next continuation still sees an active goal.
-    assert_eq!(checkpoint.goal_state, Some(goal_state));
+    assert_eq!(
+        checkpoint.goal_state,
+        Some(pb::GoalState {
+            continuation_count: 3,
+            ..goal_state
+        })
+    );
 }
 
 async fn drive_completion(
