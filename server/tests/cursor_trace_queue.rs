@@ -81,7 +81,11 @@ async fn trace_producers_do_not_wait_for_sqlite_and_artifacts_stay_ordered() {
                 .await
                 .unwrap();
             if artifacts.len() == 64 {
-                break artifacts;
+                // Artifact insertion and completion are separate queued writes.
+                let trace = store.cursor_trace("trace-queue-order").await.unwrap();
+                if trace.is_some_and(|trace| trace.status == "completed") {
+                    break artifacts;
+                }
             }
             tokio::time::sleep(Duration::from_millis(10)).await;
         }

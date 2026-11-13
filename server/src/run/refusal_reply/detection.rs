@@ -149,12 +149,12 @@ fn refusal_pattern() -> &'static Regex {
             r"|\b(?:i|we)(?:\s+(?:can't|cannot|won't|will\s+not)|(?:'m|'re|\s+am|\s+are)\s+(?:not\s+going|unable)\s+to)\s+",
             r"(?:(?:(?:add|plan|install|connect|wire)\s+(?:this|that|these|those)|set\s+(?:this|that)\s+up",
             r"|(?:continue|proceed)\s+with\s+(?:(?:this|that|your|the)\s+)?(?:request|task))\s*(?:[.!?]|\x01|$)",
-            // Modifying/renaming also occur in ordinary tool failures. Only
-            // extend those actions when the same paragraph states the declined
+            // These actions also occur in ordinary tool failures and work choices.
+            // Only extend them when the same paragraph states the declined
             // evasion purpose. Never borrow a reason from a later Markdown block.
-            r"|(?:modify|rename|disguise|(?:continue|proceed)\s+(?:with\s+)?(?:generating|renaming|developing|implementing|intercepting|spoofing))\b[^.!?\x01]{0,300}",
+            r"|(?:add|spoof|modify|rename|disguise|(?:continue|proceed)\s+(?:with\s+)?(?:generating|renaming|developing|implementing|intercepting|spoofing))\b[^.!?\x01]{0,300}",
             r"(?:to\s+(?:avoid|evade)\s+(?:(?:anti[- ]cheat|security|malware|fraud)\s+)?detection",
-            r"|to\s+(?:evade|bypass)\s+(?:(?:the|this|that|a|an)\s+)?(?:restrictions?|bans?|access\s+controls?)",
+            r"|to\s+(?:evade|bypass)\s+(?:(?:the|this|that|a|an)\s+)?(?:[a-z'-]+\s+){0,3}(?:restrictions?|bans?|access\s+controls?)",
             r"|(?:bypass(?:ing)?|disabl(?:e|ing)|evad(?:e|ing))\s+(?:[a-z'-]+\s+){0,7}(?:checks|protections|safeguards)",
             r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass)\b)",
             // Portuguese and Chinese forms already supported by the bridge.
@@ -375,6 +375,57 @@ mod tests {
             "The fixture says: `I can't continue with this request.`",
             "I can't continue with implementing this.\n\nThe report describes an attempt to evade the restriction.",
             "I can't continue with implementing `to evade the restriction` because the test fixture is missing.",
+        ] {
+            assert!(!is_refusal(reply), "{reply}");
+        }
+    }
+
+    #[test]
+    fn reported_wont_add_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/wont-add-or-spoof.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I reviewed the current implementation. ".repeat(100)
+        )));
+        let quoted = reply
+            .lines()
+            .map(|line| format!("> {line}\n"))
+            .collect::<String>();
+        for example in [
+            format!("```text\n{reply}\n```"),
+            quoted,
+            format!("A historical response said: «{reply}»"),
+        ] {
+            assert!(!is_refusal(&example), "{example}");
+            assert!(is_refusal(&format!(
+                "{example}\n\nI cannot help with this request."
+            )));
+        }
+    }
+
+    #[test]
+    fn guarded_action_declines_allow_named_restrictions() {
+        for reply in [
+            "I won't add hooks to evade the ban.",
+            "I won't spoof traffic to evade that restriction.",
+            "I can't modify the tool to evade the Example Service ban.",
+            "I won't add network hooks to bypass the Example Service restriction.",
+        ] {
+            assert!(is_refusal(reply), "{reply}");
+        }
+        for reply in [
+            "I won't add a dependency; the existing parser handles the request.",
+            "I can't add the hook while the file is locked.",
+            "I won't spoof the fixture data; the captured values make a better test.",
+            "The application won't add hooks to evade the Example Service ban.",
+            "I won't add a dependency. The report discusses a way to evade the Example Service ban.",
+            "I won't add a dependency.\n\nThe report discusses a way to evade the Example Service ban.",
+            "I won't add `to evade the Example Service ban` to this test fixture.",
+            "The old response says: «I won't add hooks to evade the Example Service ban.»",
         ] {
             assert!(!is_refusal(reply), "{reply}");
         }
