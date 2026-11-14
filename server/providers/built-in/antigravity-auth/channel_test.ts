@@ -293,3 +293,71 @@ Deno.test("isQuotaError identifies rate limits and quota exhaustion", () => {
   assert(isQuotaError("HTTP 429 Too Many Requests"));
   assert(!isQuotaError("Invalid authorization header"));
 });
+
+Deno.test("parseAntigravityModels skips disabled model entries", () => {
+  const models = parseAntigravityModels({
+    models: {
+      "gemini-4-hydrogen-disabled": { displayName: "Gemini 4 Hydrogen" },
+      "gemini-4-argon-disabled": { displayName: "Gemini 4 Argon" },
+      "claude-sonnet-4-6": { displayName: "Claude Sonnet 4.6" },
+    },
+  });
+  const ids = models.map((model) => model.id);
+  assert(!ids.includes("gemini-4-hydrogen-disabled"));
+  assert(!ids.includes("gemini-4-argon-disabled"));
+  assert(!ids.includes("gemini-4-argon"));
+  assert(ids.includes("claude-sonnet-4-6"));
+});
+
+Deno.test("404 NOT_FOUND returns resource-error for multi-account failover", async () => {
+  const result = await antigravityChannel.invoke(
+    {
+      model: catalogModel("gemini-4-hydrogen-xhigh"),
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: request(),
+    },
+    { emit: () => {} },
+    context({
+      stream: () => ({
+        status: 404,
+        headers: {},
+        lines: sse(['{"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}}']),
+      }),
+    }),
+  );
+  assertEquals(result.status, "resource-error");
+  assertEquals("patch" in result ? result.patch : undefined, {});
+});
+
+Deno.test("disabledModels short-circuits with resource-error without calling network", async () => {
+  let called = false;
+  const result = await antigravityChannel.invoke(
+    {
+      model: catalogModel("gemini-4-hydrogen-xhigh"),
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        displayName: "free-user@example.com",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+        disabledModels: ["gemini-4-hydrogen"],
+      }),
+      request: request(),
+    },
+    { emit: () => {} },
+    context({
+      stream: () => {
+        called = true;
+        throw new Error("should not call stream for disabled model");
+      },
+    }),
+  );
+  assert(!called);
+  assertEquals(result.status, "resource-error");
+  assertEquals("patch" in result ? result.patch : undefined, {});
+});

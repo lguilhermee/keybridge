@@ -55,6 +55,7 @@ export type AccountData = {
   projectId?: string | null;
   expiresAtMs?: number | null;
   quota: AccountQuota | null;
+  disabledModels?: string[];
 };
 
 export type CredentialCandidate = {
@@ -64,7 +65,17 @@ export type CredentialCandidate = {
   projectId?: string | null;
   expiresAtMs?: number | null;
   quota?: AccountQuota | null;
+  disabledModels?: string[];
 };
+
+export function isModelDisabledForAccount(actualModel: string, disabledModels?: string[]): boolean {
+  if (!disabledModels || disabledModels.length === 0) return false;
+  const normalized = actualModel.trim().toLowerCase();
+  return disabledModels.some((entry) => {
+    const prefix = entry.trim().toLowerCase();
+    return prefix.length > 0 && (normalized === prefix || normalized.startsWith(`${prefix}-`));
+  });
+}
 
 export async function fetchAccountProjectAndTier(
   accessToken: string,
@@ -109,7 +120,7 @@ export async function fetchAccountProjectAndTier(
 export async function queryAccountQuota(
   accessToken: string,
   network: ProviderContext["network"],
-): Promise<{ quota: AccountQuota | null; projectId: string }> {
+): Promise<{ quota: AccountQuota | null; projectId: string; disabledModels: string[] }> {
   const { projectId, planLabel } = await fetchAccountProjectAndTier(accessToken, network);
 
   for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
@@ -134,8 +145,18 @@ export async function queryAccountQuota(
       let claudeResetAtMs: number | null = null;
       let geminiFraction: number | null = null;
       let geminiResetAtMs: number | null = null;
+      const disabledModels: string[] = [];
 
       for (const [key, value] of Object.entries(models)) {
+        const normalizedKey = key.trim().toLowerCase();
+        if (normalizedKey.endsWith("-disabled")) {
+          const prefix = normalizedKey.slice(0, -"-disabled".length);
+          if (prefix && !disabledModels.includes(prefix)) {
+            disabledModels.push(prefix);
+          }
+          continue;
+        }
+
         const info = object(value);
         const quota = object(info?.quotaInfo);
         const fraction = typeof quota?.remainingFraction === "number"
@@ -145,13 +166,18 @@ export async function queryAccountQuota(
         const resetAtMs = resetTime ? Date.parse(resetTime) : null;
         if (fraction === null) continue;
 
-        const k = key.toLowerCase();
-        if (k.includes("claude") || k.includes("sonnet") || k.includes("opus")) {
+        if (
+          normalizedKey.includes("claude") || normalizedKey.includes("sonnet") ||
+          normalizedKey.includes("opus")
+        ) {
           if (claudeFraction === null || fraction < claudeFraction) {
             claudeFraction = fraction;
             claudeResetAtMs = resetAtMs;
           }
-        } else if (k.includes("gemini") || k.includes("flash") || k.includes("pro")) {
+        } else if (
+          normalizedKey.includes("gemini") || normalizedKey.includes("flash") ||
+          normalizedKey.includes("pro")
+        ) {
           if (geminiFraction === null || fraction < geminiFraction) {
             geminiFraction = fraction;
             geminiResetAtMs = resetAtMs;
@@ -161,6 +187,7 @@ export async function queryAccountQuota(
 
       return {
         projectId,
+        disabledModels,
         quota: {
           planLabel,
           limitReached: false,
@@ -181,6 +208,7 @@ export async function queryAccountQuota(
 
   return {
     projectId,
+    disabledModels: [],
     quota: {
       planLabel,
       limitReached: false,
@@ -273,6 +301,7 @@ export async function credentialDraft(credential: CredentialCandidate): Promise<
     expiresAtMs: credential.expiresAtMs ??
       (credential.refreshToken ? Date.now() + 3500 * 1000 : null),
     quota: credential.quota ?? null,
+    ...(credential.disabledModels?.length ? { disabledModels: credential.disabledModels } : {}),
   };
   return { key: identity.key, privateData: data as unknown as JsonValue };
 }
@@ -281,6 +310,11 @@ export function accountData(resource: ResourceSnapshot): AccountData {
   const data = object(resource.privateData);
   const accessToken = text(data?.accessToken);
   if (!accessToken) throw new Error("Antigravity account resource is missing its access token");
+  const disabledModels = Array.isArray(data?.disabledModels)
+    ? data.disabledModels.filter((item): item is string =>
+      typeof item === "string" && item.trim().length > 0
+    )
+    : undefined;
   return {
     accessToken,
     refreshToken: text(data?.refreshToken),
@@ -288,6 +322,7 @@ export function accountData(resource: ResourceSnapshot): AccountData {
     projectId: text(data?.projectId) ?? "bamboo-precept-lgxtn",
     expiresAtMs: typeof data?.expiresAtMs === "number" ? data.expiresAtMs : null,
     quota: (data?.quota ?? null) as AccountQuota | null,
+    ...(disabledModels && disabledModels.length > 0 ? { disabledModels } : {}),
   };
 }
 
@@ -431,6 +466,7 @@ export async function refreshAccount(
     projectId,
     expiresAtMs,
     quota: result.quota ?? data.quota,
+    disabledModels: result.disabledModels,
   };
   return {
     privateData: updatedData as unknown as JsonValue,
@@ -616,6 +652,7 @@ export const credentialImport: ResourceImportSupport = {
           const res = await queryAccountQuota(c.accessToken, context.network);
           c.quota = res.quota;
           c.projectId = res.projectId;
+          c.disabledModels = res.disabledModels;
         } catch {
           // ignore error
         }

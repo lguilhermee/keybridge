@@ -116,10 +116,12 @@ async function complete(
 
   let projectId = "bamboo-precept-lgxtn";
   let quota = null;
+  let disabledModels: string[] = [];
   try {
     const result = await queryAccountQuota(accessToken, context.network);
     projectId = result.projectId;
     quota = result.quota;
+    disabledModels = result.disabledModels;
   } catch {
     // Quota can be refreshed after the account has been persisted.
   }
@@ -133,6 +135,7 @@ async function complete(
       projectId,
       expiresAtMs: expiresIn === null ? null : Date.now() + expiresIn * 1000,
       quota,
+      disabledModels,
     }),
   ];
 }

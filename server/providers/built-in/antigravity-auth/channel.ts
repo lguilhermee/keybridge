@@ -20,6 +20,7 @@ import {
 import {
   type AccountData,
   accountData,
+  isModelDisabledForAccount,
   isTokenExpired,
   quotaExhaustedPatch,
   refreshAccount,
@@ -679,6 +680,18 @@ async function invoke(
   }
 
   let projectId = data.projectId ?? "bamboo-precept-lgxtn";
+  const actualModel = resolveAntigravityModel(
+    tierModelId(input.model, input.request.reasoning.effort),
+  );
+  if (isModelDisabledForAccount(actualModel, data.disabledModels)) {
+    return {
+      status: "resource-error",
+      message: `Model ${actualModel} is disabled on Antigravity account ${data.displayName}`,
+      patch: patchData
+        ? { privateData: patchData as unknown as JsonValue, state: { status: "ready" } }
+        : {},
+    };
+  }
 
   try {
     await streamCloudCode(data.accessToken, projectId, input.model.id, input, output, context);
@@ -721,6 +734,18 @@ async function invoke(
           status: "resource-error",
           message: error.message,
           patch: quotaExhaustedPatch(data, error.body),
+        };
+      }
+      if (error.status === 401) {
+        return invalidResult(error.message, "Antigravity authorization expired; sign in again");
+      }
+      if (error.status === 404 || error.status === 403) {
+        return {
+          status: "resource-error",
+          message: error.message,
+          patch: patchData
+            ? { privateData: patchData as unknown as JsonValue, state: { status: "ready" } }
+            : {},
         };
       }
       return { status: "request-error", message: error.message };
