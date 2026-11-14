@@ -157,6 +157,18 @@ fn refusal_pattern() -> &'static Regex {
             r"|to\s+(?:evade|bypass)\s+(?:(?:the|this|that|a|an)\s+)?(?:[a-z'-]+\s+){0,3}(?:restrictions?|bans?|access\s+controls?)",
             r"|(?:bypass(?:ing)?|disabl(?:e|ing)|evad(?:e|ing))\s+(?:[a-z'-]+\s+){0,7}(?:checks|protections|safeguards)",
             r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass)\b)",
+            // Provider policy notices and "not this one" declines are written in
+            // the third person and carry no subject to match on.
+            r"|\b(?:this|the|your)\s+(?:request|prompt|message|turn)\s+",
+            r"(?:was|is|got|gets?|has\s+been|'s\s+been)\s+(?:blocked|flagged|rejected)\s+by\s+",
+            r"(?:[a-z'’-]+\s+){0,3}(?:filters?|safety|safeguards?|polic(?:y|ies)|content\s+filter|moderation|guardrails?)\b",
+            r"|\b(?:content\s+filter|safety\s+filters?|safeguards?|guardrails?|moderation)\s+",
+            r"(?:blocked|flagged|rejected)\b",
+            r"|\b(?:gemini(?:'s|’s)?|copilot|chatgpt|openai(?:'s|’s)?|claude(?:'s|’s)?)\s+",
+            r"(?:safety\s+|content\s+)?filters?\s+(?:blocked|flagged|rejected|declined)\b",
+            r"|\b(?:i|we)(?:\s+(?:won't|will\s+not)|'ll\s+not|'m\s+not\s+going\s+to)\s+",
+            r"take\s+(?:this|that)\s+one\s+on\b",
+            r"|\b(?:i|we)(?:'ll|\s+will)\s+sit\s+(?:this|that)\s+one\s+out\b",
             // Portuguese and Chinese forms already supported by the bridge.
             r"|\bnão\s+(?:posso|consigo|vou|poderei|irei)\s+(?:(?:poder|realmente|diretamente)\s+)?",
             r"(?:ajudar|auxiliar|criar|fornecer|escrever|construir|desenvolver|fazer|implementar|colaborar|gerar|produzir|atender|cumprir)\b",
@@ -428,6 +440,102 @@ mod tests {
             "The old response says: «I won't add hooks to evade the Example Service ban.»",
         ] {
             assert!(!is_refusal(reply), "{reply}");
+        }
+    }
+
+    #[test]
+    fn reported_gemini_block_notice_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/gemini-blocked-by-filters.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I inspected the current behavior. ".repeat(100)
+        )));
+        let quoted = reply
+            .lines()
+            .map(|line| format!("> {line}\n"))
+            .collect::<String>();
+        for example in [
+            format!("```text\n{reply}\n```"),
+            quoted,
+            format!("The previous reply said: «{reply}»"),
+        ] {
+            assert!(!is_refusal(&example), "{example}");
+            assert!(is_refusal(&format!(
+                "{example}\n\nThis request was blocked by Gemini's filters."
+            )));
+        }
+    }
+
+    #[test]
+    fn reported_wont_take_this_one_on_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/wont-take-this-one-on.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I read the whole request. ".repeat(100)
+        )));
+        let quoted = reply
+            .lines()
+            .map(|line| format!("> {line}\n"))
+            .collect::<String>();
+        for example in [
+            format!("```text\n{reply}\n```"),
+            quoted,
+            format!("A historical response said: «{reply}»"),
+        ] {
+            assert!(!is_refusal(&example), "{example}");
+        }
+    }
+
+    #[test]
+    fn provider_block_notices_are_refusals() {
+        for text in [
+            "This request was blocked by Gemini's filters.",
+            "This request was blocked by Gemini’s filters.",
+            "The prompt was blocked by the safety filters.",
+            "Your message has been blocked by the content filter.",
+            "The request got flagged by the moderation layer.",
+            "Gemini's filters blocked this request.",
+            "The content filter rejected this turn.",
+        ] {
+            assert!(is_refusal(text), "{text}");
+        }
+        for text in [
+            "This request was blocked by the rate limiter, so I added a backoff.",
+            "The blocked request path now retries and the tests pass.",
+            "The sample notice is: `This request was blocked by Gemini's filters.`",
+            "> This request was blocked by Gemini's filters.",
+            "The fixture says: «The content filter rejected this turn.»",
+        ] {
+            assert!(!is_refusal(text), "{text}");
+        }
+    }
+
+    #[test]
+    fn not_taking_this_one_on_is_a_refusal() {
+        for text in [
+            "I won't take this one on.",
+            "I won’t take this one on. It needs anti-cheat work.",
+            "I'll not take that one on.",
+            "We will not take this one on.",
+            "I'm not going to take that one on.",
+            "I'll sit this one out.",
+            "We will sit that one out.",
+        ] {
+            assert!(is_refusal(text), "{text}");
+        }
+        for text in [
+            "I took this one on and finished the parser.",
+            "The previous reply said: «I won't take this one on.»",
+        ] {
+            assert!(!is_refusal(text), "{text}");
         }
     }
 

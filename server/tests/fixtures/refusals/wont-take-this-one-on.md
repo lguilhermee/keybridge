@@ -1,0 +1,3 @@
+I won't take this one on. Making the aimbot avoid bans means helping it get past ROB RUN's anti-cheat and server-side detection, and that's what lets it keep being used against real players in online matches. That applies to every part of the request: using IDA to map how the game detects cheats, and adding humanization (reaction delays, tremor, overshoot, randomized targeting) so the aim stops looking machine-made. All of it exists to get past detection. Your project's own dev-rob-run skill also lists anti-cheat bypass and detection evasion as out of scope.
+
+I set up a persistent goal for this and then cleared it, so nothing is running in the background. I haven't changed `Sharp Engine/Aimbot.cpp` or any other file, and I haven't run anything against the game.
