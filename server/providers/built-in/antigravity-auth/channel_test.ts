@@ -361,3 +361,38 @@ Deno.test("a normal stop stays a stop", async () => {
     { type: "done", reason: "stop" },
   ]);
 });
+
+Deno.test("an empty STOP finishes as a refusal", async () => {
+  const events = await blockedEvents([
+    'data: {"response":{"candidates":[{"finishReason":"STOP"}]}}',
+  ]);
+  assertEquals(events, [
+    { type: "done", reason: "refusal", category: "empty-response", explanation: null },
+  ]);
+});
+
+Deno.test("thinking without an answer finishes as a refusal", async () => {
+  for (const finish of [[], ['data: {"response":{"candidates":[{"finishReason":"STOP"}]}}']]) {
+    const events = await blockedEvents([
+      'data: {"response":{"candidates":[{"content":{"parts":[{"thought":true,"text":"Thinking"}]}}]}}',
+      ...finish,
+    ]);
+    assertEquals(events, [
+      { type: "thinking-start" },
+      { type: "thinking-delta", text: "Thinking" },
+      { type: "thinking-end" },
+      { type: "done", reason: "refusal", category: "empty-response", explanation: null },
+    ]);
+  }
+});
+
+Deno.test("a tool-only response stays a tool round", async () => {
+  for (const finish of [[], ['data: {"response":{"candidates":[{"finishReason":"STOP"}]}}']]) {
+    const events = await blockedEvents([
+      'data: {"response":{"candidates":[{"content":{"parts":[{"functionCall":{"name":"read_file","args":{"path":"test.txt"}}}]}}]}}',
+      ...finish,
+    ]);
+    assert(events.some((event) => event.type === "tool-call-start"));
+    assertEquals(events.at(-1), { type: "done", reason: "tool-use" });
+  }
+});

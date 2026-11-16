@@ -444,6 +444,7 @@ async function streamCloudCode(
       let thinkingStarted = false;
       let doneEmitted = false;
       let hasTools = false;
+      let hasText = false;
       let toolIndex = 0;
       let lastThoughtSignature: string | null = null;
       let blocked: { category: string; explanation: string | null } | null = null;
@@ -533,6 +534,7 @@ async function streamCloudCode(
               }
               const cleanText = textPart.replace(/<\/?think>/gi, "");
               if (cleanText) {
+                hasText = true;
                 hasEmittedAnyChunk = true;
                 if (!textStarted) {
                   textStarted = true;
@@ -617,6 +619,8 @@ async function streamCloudCode(
           const blockedFinish = blocked ??
             (BLOCKED_FINISH_REASONS.has(finishReason)
               ? { category: finishReason.toLowerCase(), explanation: null }
+              : !hasText && !hasTools
+              ? { category: "empty-response", explanation: null }
               : null);
           output.emit(
             blockedFinish
@@ -657,7 +661,7 @@ async function streamCloudCode(
       if (!doneEmitted) {
         // A block can end the stream before the first chunk; an answer with no
         // text and no tool call is the same "blocked by the filters" reply.
-        const refusal = blocked === null && hasEmittedAnyChunk ? null : {
+        const refusal = blocked === null && (hasText || hasTools) ? null : {
           category: blocked?.category ?? "empty-response",
           explanation: blocked?.explanation ?? null,
         };
