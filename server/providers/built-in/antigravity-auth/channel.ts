@@ -52,6 +52,16 @@ function isQuotaHttpError(error: HttpError): boolean {
     body.includes("too many requests");
 }
 
+/// Finish reasons that state a policy block rather than a normal stop.
+const BLOCKED_FINISH_REASONS = new Set([
+  "SAFETY",
+  "RECITATION",
+  "BLOCKLIST",
+  "PROHIBITED_CONTENT",
+  "SPII",
+  "IMAGE_SAFETY",
+]);
+
 function invalidResult(message: string, stateMessage: string): ChannelResult {
   return {
     status: "resource-error",
@@ -435,8 +445,10 @@ async function streamCloudCode(
       let thinkingStarted = false;
       let doneEmitted = false;
       let hasTools = false;
+      let hasText = false;
       let toolIndex = 0;
       let lastThoughtSignature: string | null = null;
+      let blocked: { category: string; explanation: string | null } | null = null;
       let finalUsage: {
         inputTokens: number | null;
         outputTokens: number | null;
@@ -458,6 +470,18 @@ async function streamCloudCode(
 
         const resp = (json.response as Record<string, unknown> | undefined) ?? json;
         if (!resp) continue;
+
+        // A blocked prompt carries its reason outside the candidates and often
+        // has no candidate at all, so it would otherwise end as a bare stop.
+        const promptFeedback = resp.promptFeedback as Record<string, unknown> | undefined;
+        if (typeof promptFeedback?.blockReason === "string" && promptFeedback.blockReason) {
+          blocked = {
+            category: promptFeedback.blockReason.toLowerCase(),
+            explanation: typeof promptFeedback.blockReasonMessage === "string"
+              ? promptFeedback.blockReasonMessage
+              : null,
+          };
+        }
 
         const usage = resp.usageMetadata as Record<string, number> | undefined;
         if (usage) {
@@ -511,6 +535,7 @@ async function streamCloudCode(
               }
               const cleanText = textPart.replace(/<\/?think>/gi, "");
               if (cleanText) {
+                hasText = true;
                 hasEmittedAnyChunk = true;
                 if (!textStarted) {
                   textStarted = true;
@@ -592,10 +617,17 @@ async function streamCloudCode(
           }
           const isTool = finishReason === "STOP" &&
             (hasTools || parts?.some((p) => p.functionCall));
-          output.emit({
-            type: "done",
-            reason: isTool ? "tool-use" : "stop",
-          });
+          const blockedFinish = blocked ??
+            (BLOCKED_FINISH_REASONS.has(finishReason)
+              ? { category: finishReason.toLowerCase(), explanation: null }
+              : !hasText && !hasTools
+              ? { category: "empty-response", explanation: null }
+              : null);
+          output.emit(
+            blockedFinish
+              ? { type: "done", reason: "refusal", ...blockedFinish }
+              : { type: "done", reason: isTool ? "tool-use" : "stop" },
+          );
           doneEmitted = true;
           break;
         }
@@ -628,10 +660,17 @@ async function streamCloudCode(
         });
       }
       if (!doneEmitted) {
-        output.emit({
-          type: "done",
-          reason: hasTools ? "tool-use" : "stop",
-        });
+        // A block can end the stream before the first chunk; an answer with no
+        // text and no tool call is the same "blocked by the filters" reply.
+        const refusal = blocked === null && (hasText || hasTools) ? null : {
+          category: blocked?.category ?? "empty-response",
+          explanation: blocked?.explanation ?? null,
+        };
+        output.emit(
+          refusal
+            ? { type: "done", reason: "refusal", ...refusal }
+            : { type: "done", reason: hasTools ? "tool-use" : "stop" },
+        );
       }
       return;
     } catch (err) {

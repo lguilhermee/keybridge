@@ -294,6 +294,111 @@ Deno.test("isQuotaError identifies rate limits and quota exhaustion", () => {
   assert(!isQuotaError("Invalid authorization header"));
 });
 
+async function blockedEvents(lines: string[]): Promise<ModelEvent[]> {
+  const events: ModelEvent[] = [];
+  const result = await antigravityChannel.invoke(
+    {
+      model: catalogModel("gemini-4-hydrogen"),
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: request(),
+    },
+    { emit: (event) => events.push(event) },
+    context({
+      stream: () => ({ status: 200, headers: {}, lines: sse(lines) }),
+    }),
+  );
+  assertEquals(result, { status: "completed" });
+  return events;
+}
+
+Deno.test("a prompt block feedback finishes the call as a refusal", async () => {
+  const events = await blockedEvents([
+    'data: {"response":{"promptFeedback":{"blockReason":"OTHER","blockReasonMessage":"This request was blocked by Gemini\'s filters."}}}',
+  ]);
+  assertEquals(events, [
+    {
+      type: "done",
+      reason: "refusal",
+      category: "other",
+      explanation: "This request was blocked by Gemini's filters.",
+    },
+  ]);
+});
+
+Deno.test("a policy finish reason finishes the call as a refusal", async () => {
+  const events = await blockedEvents([
+    'data: {"response":{"candidates":[{"content":{"parts":[{"text":"Partial answer"}]}}]}}',
+    'data: {"response":{"candidates":[{"finishReason":"SAFETY"}]}}',
+  ]);
+  assertEquals(events, [
+    { type: "text-start" },
+    { type: "text-delta", text: "Partial answer" },
+    { type: "text-end" },
+    { type: "done", reason: "refusal", category: "safety", explanation: null },
+  ]);
+});
+
+Deno.test("a stream with neither text nor tools finishes the call as a refusal", async () => {
+  const events = await blockedEvents(['data: {"response":{"candidates":[{"content":{}}]}}']);
+  assertEquals(events, [
+    { type: "done", reason: "refusal", category: "empty-response", explanation: null },
+  ]);
+});
+
+Deno.test("a normal stop stays a stop", async () => {
+  const events = await blockedEvents([
+    'data: {"response":{"candidates":[{"content":{"parts":[{"text":"Here is the fix."}]},"finishReason":"STOP"}]}}',
+  ]);
+  assertEquals(events, [
+    { type: "text-start" },
+    { type: "text-delta", text: "Here is the fix." },
+    { type: "text-end" },
+    { type: "done", reason: "stop" },
+  ]);
+});
+
+Deno.test("an empty STOP finishes as a refusal", async () => {
+  const events = await blockedEvents([
+    'data: {"response":{"candidates":[{"finishReason":"STOP"}]}}',
+  ]);
+  assertEquals(events, [
+    { type: "done", reason: "refusal", category: "empty-response", explanation: null },
+  ]);
+});
+
+Deno.test("thinking without an answer finishes as a refusal", async () => {
+  for (const finish of [[], ['data: {"response":{"candidates":[{"finishReason":"STOP"}]}}']]) {
+    const events = await blockedEvents([
+      'data: {"response":{"candidates":[{"content":{"parts":[{"thought":true,"text":"Thinking"}]}}]}}',
+      ...finish,
+    ]);
+    assertEquals(events, [
+      { type: "thinking-start" },
+      { type: "thinking-delta", text: "Thinking" },
+      { type: "thinking-end" },
+      { type: "done", reason: "refusal", category: "empty-response", explanation: null },
+    ]);
+  }
+});
+
+Deno.test("a tool-only response stays a tool round", async () => {
+  for (const finish of [[], ['data: {"response":{"candidates":[{"finishReason":"STOP"}]}}']]) {
+    const events = await blockedEvents([
+      'data: {"response":{"candidates":[{"content":{"parts":[{"functionCall":{"name":"read_file","args":{"path":"test.txt"}}}]}}]}}',
+      ...finish,
+    ]);
+    assert(events.some((event) => event.type === "tool-call-start"));
+    assertEquals(events.at(-1), { type: "done", reason: "tool-use" });
+  }
+});
+
+});
+
 Deno.test("parseAntigravityModels skips disabled model entries", () => {
   const models = parseAntigravityModels({
     models: {
