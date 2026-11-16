@@ -100,6 +100,11 @@ impl ProviderRuntimeStatus {
 }
 
 impl ProviderRuntime {
+    #[cfg(test)]
+    pub(super) fn for_test(root: PathBuf) -> Result<Self> {
+        Self::new(root)
+    }
+
     pub fn managed() -> Result<Self> {
         Self::new(
             config::managed_data_dir()?

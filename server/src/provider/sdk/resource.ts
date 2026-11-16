@@ -187,7 +187,7 @@ export type ResourceSupport = {
   import?: ResourceImportSupport;
   present(resource: ResourceSnapshot): ResourceView;
   actions?: ResourceAction[];
-  /** Re-reads upstream state (quota, credential validity) when the user explicitly triggers it. */
+  /** Re-reads upstream state (quota, credentials) on explicit refresh and before model discovery. */
   refresh?(resource: ResourceSnapshot, context: ProviderContext): Promise<ResourcePatch>;
   /** Optional upstream revoke; the host deletes the local record afterwards. */
   remove?(resource: ResourceSnapshot, context: ProviderContext): Promise<void>;

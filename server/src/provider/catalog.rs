@@ -38,6 +38,15 @@ pub(crate) struct ProviderEntry {
 }
 
 impl ProviderCatalog {
+    #[cfg(test)]
+    pub(super) fn for_test(root: &Path) -> Result<Self> {
+        Ok(Self {
+            roots: vec![root.to_path_buf()],
+            definition_loader: ProviderDefinitionLoader::for_test(root)?,
+            app_version: "1.0.0".into(),
+        })
+    }
+
     pub fn managed(app_version: String) -> Result<Self> {
         let installed = config::managed_data_dir()?.join("providers/installed");
         fs::create_dir_all(&installed)?;

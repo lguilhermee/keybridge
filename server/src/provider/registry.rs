@@ -892,7 +892,19 @@ impl ProviderRegistry {
     ) -> Result<()> {
         let executable = self.executable()?;
         let entry = self.find_entry(&executable, provider_id).await?;
-        let resource = find_resource(&entry, resource_type)?;
+        self.refresh_resource_record(&entry, &executable, resource_type, resource_id)
+            .await
+    }
+
+    async fn refresh_resource_record(
+        &self,
+        entry: &ProviderEntry,
+        executable: &Path,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<()> {
+        let provider_id = &entry.manifest.id;
+        let resource = find_resource(entry, resource_type)?;
         if !resource.can_refresh {
             return Err(Error::Config(format!(
                 "provider '{provider_id}' resource '{resource_type}' does not support refresh"
@@ -902,7 +914,7 @@ impl ProviderRegistry {
             .find_record(provider_id, resource_type, resource_id)
             .await?;
         let value = self
-            .worker(&entry, &executable)
+            .worker(entry, executable)
             .await
             .invoke(
                 "resource.refresh",
@@ -1220,32 +1232,81 @@ impl ProviderRegistry {
             )));
         }
         let provider_id = &entry.manifest.id;
-        let resource = match &channel.resource_type {
+        let resources = match &channel.resource_type {
             Some(resource_type) => {
-                let record = self.select_resource(provider_id, resource_type).await?;
-                Some(record.snapshot(resource_type))
+                let ranked = self.select_resources(provider_id, resource_type).await?;
+                let now = now_ms();
+                let ready: Vec<_> = ranked
+                    .iter()
+                    .filter(|record| record.state.is_ready(now))
+                    .cloned()
+                    .collect();
+                let chosen = if ready.is_empty() {
+                    ranked.into_iter().take(1).collect()
+                } else {
+                    ready
+                };
+                chosen.into_iter().map(Some).collect()
             }
-            None => None,
+            None => vec![None],
         };
-        let value = self
-            .worker(entry, executable)
-            .await
-            .invoke(
-                "models.list",
-                serde_json::json!({ "channelId": channel.id, "resource": resource }),
-                CancellationToken::new(),
-            )
-            .await?;
-        let definitions = value
-            .as_array()
-            .ok_or_else(|| Error::Protocol("provider models.list must return an array".into()))?;
-        let mut models = Vec::with_capacity(definitions.len());
+        let worker = self.worker(entry, executable).await;
+        let mut models = Vec::new();
         let mut seen = std::collections::HashSet::new();
-        for definition in definitions {
-            let model = StoredModel::from_definition(definition)?;
-            if seen.insert(model.id.clone()) {
-                models.push(model);
+        let mut any_succeeded = false;
+        let mut last_error: Option<Error> = None;
+        for resource in resources {
+            let discovery = async {
+                let resource = match (resource, channel.resource_type.as_deref()) {
+                    (Some(record), Some(resource_type)) => {
+                        let record = if find_resource(entry, resource_type)?.can_refresh {
+                            // Credential updates belong to resource.refresh: persist them
+                            // before models.list consumes the refreshed snapshot.
+                            if let Err(error) = self
+                                .refresh_resource_record(
+                                    entry,
+                                    executable,
+                                    resource_type,
+                                    &record.id,
+                                )
+                                .await
+                            {
+                                tracing::warn!(provider = %provider_id, %error,
+                                    "resource refresh failed before model discovery; using stored credentials");
+                            }
+                            self.find_record(provider_id, resource_type, &record.id)
+                                .await?
+                        } else {
+                            record
+                        };
+                        if matches!(record.state, super::state::ResourceState::Invalid { .. }) {
+                            return Err(Error::Provider(
+                                "provider resource is unavailable after refresh".into(),
+                            ));
+                        }
+                        Some(record.snapshot(resource_type))
+                    }
+                    _ => None,
+                };
+                worker
+                    .invoke(
+                        "models.list",
+                        serde_json::json!({ "channelId": channel.id, "resource": resource }),
+                        CancellationToken::new(),
+                    )
+                    .await
+            };
+            match discovery.await {
+                Ok(value) => match append_channel_models(&value, &mut seen, &mut models) {
+                    Ok(()) => any_succeeded = true,
+                    Err(error) => last_error = Some(error),
+                },
+                Err(error) => last_error = Some(error),
             }
+        }
+        if !any_succeeded {
+            return Err(last_error
+                .unwrap_or_else(|| Error::Provider("no provider resource is available".into())));
         }
         if models.is_empty() {
             return Err(Error::Provider(format!(
@@ -1317,18 +1378,6 @@ impl ProviderRegistry {
             )));
         }
         Ok(rank_resources(records, now_ms()))
-    }
-
-    async fn select_resource(
-        &self,
-        provider_id: &str,
-        resource_type: &str,
-    ) -> Result<ResourceRecord> {
-        self.select_resources(provider_id, resource_type)
-            .await?
-            .into_iter()
-            .next()
-            .ok_or_else(|| Error::Provider("no provider resource is available".into()))
     }
 
     async fn find_record(
@@ -1467,6 +1516,26 @@ struct ImportParseResult {
     warnings: Vec<String>,
 }
 
+fn append_channel_models(
+    value: &serde_json::Value,
+    seen: &mut std::collections::HashSet<String>,
+    models: &mut Vec<StoredModel>,
+) -> Result<()> {
+    let definitions = value
+        .as_array()
+        .ok_or_else(|| Error::Protocol("provider models.list must return an array".into()))?;
+    let definitions = definitions
+        .iter()
+        .map(StoredModel::from_definition)
+        .collect::<Result<Vec<_>>>()?;
+    for model in definitions {
+        if seen.insert(model.id.clone()) {
+            models.push(model);
+        }
+    }
+    Ok(())
+}
+
 fn find_channel<'a>(entry: &'a ProviderEntry, channel_id: &str) -> Result<&'a ChannelDefinition> {
     entry
         .definition
@@ -1574,6 +1643,9 @@ fn quota_tier(private_data: &serde_json::Value, now_ms: i64) -> u8 {
 }
 
 #[cfg(test)]
+mod discovery_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::provider::state::ResourceState;
@@ -1660,5 +1732,31 @@ mod tests {
                 "invalid",
             ]
         );
+    }
+
+    #[test]
+    fn merges_models_across_multiple_resources_without_duplicates() {
+        let mut seen = std::collections::HashSet::new();
+        let mut models = Vec::new();
+        let first = serde_json::json!([
+            { "id": "claude-sonnet-4-6", "displayName": "Claude Sonnet 4.6" }
+        ]);
+        let second = serde_json::json!([
+            { "id": "claude-sonnet-4-6", "displayName": "Duplicate" },
+            { "id": "gemini-4-hydrogen", "displayName": "Gemini 4 Hydrogen" },
+            { "id": "gemini-4-hydrogen-xhigh", "displayName": "Gemini 4 Hydrogen (XHigh)" }
+        ]);
+        append_channel_models(&first, &mut seen, &mut models).unwrap();
+        append_channel_models(&second, &mut seen, &mut models).unwrap();
+        let ids: Vec<&str> = models.iter().map(|m| m.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec![
+                "claude-sonnet-4-6",
+                "gemini-4-hydrogen",
+                "gemini-4-hydrogen-xhigh"
+            ]
+        );
+        assert_eq!(models[0].display_name, "Claude Sonnet 4.6");
     }
 }

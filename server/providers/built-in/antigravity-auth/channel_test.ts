@@ -7,14 +7,14 @@ import type {
 import type { LlmRequest, ModelEvent } from "cursor-byok:channel";
 import type { ResourceSnapshot } from "cursor-byok:resource";
 import { antigravityChannel, antigravitySessionId, isQuotaError } from "./channel.ts";
-import { parseAntigravityModels, STATIC_ANTIGRAVITY_MODELS } from "./models.ts";
+import { antigravityModels, parseAntigravityModels, STATIC_ANTIGRAVITY_MODELS } from "./models.ts";
 
 /** The catalog model Cursor would select for this ID, or a bare model for wire IDs. */
 function catalogModel(id: string) {
   return STATIC_ANTIGRAVITY_MODELS.find((model) => model.id === id) ??
     { id, displayName: id, privateData: {} };
 }
-import { RESOURCE_TYPE } from "./resources.ts";
+import { queryAccountQuota, refreshAccount, RESOURCE_TYPE } from "./resources.ts";
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
   if (!condition) throw new Error(message);
@@ -395,4 +395,164 @@ Deno.test("a tool-only response stays a tool round", async () => {
     assert(events.some((event) => event.type === "tool-call-start"));
     assertEquals(events.at(-1), { type: "done", reason: "tool-use" });
   }
+});
+
+Deno.test("parseAntigravityModels skips disabled model entries", () => {
+  const models = parseAntigravityModels({
+    models: {
+      "gemini-4-hydrogen-disabled": { displayName: "Gemini 4 Hydrogen" },
+      "gemini-4-argon-disabled": { displayName: "Gemini 4 Argon" },
+      "claude-sonnet-4-6": { displayName: "Claude Sonnet 4.6" },
+    },
+  });
+  const ids = models.map((model) => model.id);
+  assert(!ids.includes("gemini-4-hydrogen-disabled"));
+  assert(!ids.includes("gemini-4-argon-disabled"));
+  assert(!ids.includes("gemini-4-argon"));
+  assert(ids.includes("claude-sonnet-4-6"));
+});
+
+Deno.test("404 NOT_FOUND returns resource-error for multi-account failover", async () => {
+  const result = await antigravityChannel.invoke(
+    {
+      model: catalogModel("gemini-4-hydrogen-xhigh"),
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: request(),
+    },
+    { emit: () => {} },
+    context({
+      stream: () => ({
+        status: 404,
+        headers: {},
+        lines: sse(['{"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}}']),
+      }),
+    }),
+  );
+  assertEquals(result.status, "resource-error");
+  assertEquals("patch" in result ? result.patch : undefined, {});
+});
+
+Deno.test("disabledModels short-circuits with resource-error without calling network", async () => {
+  let called = false;
+  const result = await antigravityChannel.invoke(
+    {
+      model: catalogModel("gemini-4-hydrogen-xhigh"),
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        displayName: "free-user@example.com",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+        disabledModels: ["gemini-4-hydrogen"],
+      }),
+      request: request(),
+    },
+    { emit: () => {} },
+    context({
+      stream: () => {
+        called = true;
+        throw new Error("should not call stream for disabled model");
+      },
+    }),
+  );
+  assert(!called);
+  assertEquals(result.status, "resource-error");
+  assertEquals("patch" in result ? result.patch : undefined, {});
+});
+
+Deno.test("a refreshed request is classified by its own failure and keeps fresh credentials", async () => {
+  for (const status of [401, 403, 404, 429, 400]) {
+    let refreshes = 0;
+    let initialCalls = 0;
+    const result = await antigravityChannel.invoke(
+      {
+        model: catalogModel("gemini-4-hydrogen"),
+        resource: snapshot({
+          accessToken: "old-token",
+          refreshToken: "refresh-token",
+          expiresAtMs: Date.now() + 3600_000,
+        }),
+        request: request(),
+      },
+      { emit: () => {} },
+      context({
+        fetch: (url) => {
+          if (url.endsWith("/token")) {
+            refreshes++;
+            return { status: 200, headers: {}, body: '{"access_token":"fresh-token"}' };
+          }
+          return { status: 200, headers: {}, body: '{"models":{}}' };
+        },
+        stream: (_url, init) => {
+          if (init?.headers?.authorization === "Bearer old-token") {
+            initialCalls++;
+            return { status: 401, headers: {}, lines: sse(["Unauthorized"]) };
+          }
+          assertEquals(init?.headers?.authorization, "Bearer fresh-token");
+          return { status, headers: {}, lines: sse([`failure ${status}`]) };
+        },
+      }),
+    );
+    assertEquals(refreshes, 1);
+    assert(initialCalls > 0);
+    assertEquals(result.status, status === 400 ? "request-error" : "resource-error");
+    assertEquals((result.patch?.privateData as Record<string, JsonValue>)?.accessToken, "fresh-token");
+    if (status === 401) assertEquals(result.patch?.state?.status, "invalid");
+    else assert(result.patch?.state?.status !== "invalid");
+    if (status === 429) assertEquals(result.patch?.state?.status, "cooling");
+  }
+});
+
+Deno.test("revoked credentials invalidate an account after a 401", async () => {
+  const result = await antigravityChannel.invoke(
+    {
+      model: catalogModel("gemini-4-hydrogen"),
+      resource: snapshot({ accessToken: "old-token", refreshToken: "revoked-token" }),
+      request: request(),
+    },
+    { emit: () => {} },
+    context({
+      fetch: () => ({ status: 400, headers: {}, body: '{"error":"invalid_grant"}' }),
+      stream: () => ({ status: 401, headers: {}, lines: sse(["Unauthorized"]) }),
+    }),
+  );
+  assertEquals(result.status, "resource-error");
+  assertEquals(result.patch?.state?.status, "invalid");
+});
+
+Deno.test("failed catalog discovery retains known disabled model families", async () => {
+  const resource = snapshot({ accessToken: "token", disabledModels: ["gemini-4-argon"] });
+  const models = await antigravityModels.list({ resource }, context({
+    fetch: () => ({ status: 503, headers: {}, body: "Unavailable" }),
+  }));
+  assert(models.length > 0);
+  assert(!models.some((model) => model.id.startsWith("gemini-4-argon")));
+});
+
+Deno.test("quota calculations ignore disabled entries and record disabled families", async () => {
+  const result = await queryAccountQuota("token", context({
+    fetch: () => ({
+      status: 200,
+      headers: {},
+      body: JSON.stringify({ models: {
+        "gemini-4-argon-disabled": { quotaInfo: { remainingFraction: 0 } },
+        "gemini-4-hydrogen": { quotaInfo: { remainingFraction: 0.8 } },
+      } }),
+    }),
+  }).network);
+  assertEquals(result.disabledModels, ["gemini-4-argon"]);
+  assertEquals(result.quota?.gemini?.remainingPercent, 80);
+});
+
+Deno.test("refresh preserves known disabled models when quota discovery is unavailable", async () => {
+  const patch = await refreshAccount(
+    snapshot({ accessToken: "token", disabledModels: ["gemini-4-argon"] }),
+    context({ fetch: () => ({ status: 503, headers: {}, body: "Unavailable" }) }),
+  );
+  assertEquals((patch.privateData as Record<string, JsonValue>).disabledModels, ["gemini-4-argon"]);
 });

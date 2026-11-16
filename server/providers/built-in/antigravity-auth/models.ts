@@ -1,6 +1,10 @@
 import type { JsonValue } from "cursor-byok:provider";
 import type { ModelDefinition, ModelSnapshot, ModelSupport } from "cursor-byok:model";
-import { accountData } from "./resources.ts";
+import {
+  type AccountData,
+  accountData,
+  isModelDisabledForAccount,
+} from "./resources.ts";
 
 export const ANTIGRAVITY_PROD_ENDPOINT = "https://cloudcode-pa.googleapis.com";
 export const ANTIGRAVITY_DAILY_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com";
@@ -406,8 +410,15 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
 
   const models: ModelDefinition[] = [];
   const seen = new Set<string>();
+  const disabledPrefixes: string[] = [];
 
   for (const [modelId, raw] of Object.entries(rawModels)) {
+    const normalizedId = modelId.trim().toLowerCase();
+    if (normalizedId.endsWith("-disabled")) {
+      const prefix = normalizedId.slice(0, -"-disabled".length);
+      if (prefix) disabledPrefixes.push(prefix);
+      continue;
+    }
     if (ANTIGRAVITY_DENYLIST.has(modelId)) continue;
     const model = object(raw);
     if (!model) continue;
@@ -437,7 +448,7 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
 
   // Static wire IDs fill in what discovery did not return, then tiers collapse per model.
   for (const staticModel of STATIC_ANTIGRAVITY_CATALOG) {
-    if (!seen.has(staticModel.id)) {
+    if (!seen.has(staticModel.id) && !isModelDisabledForAccount(staticModel.id, disabledPrefixes)) {
       seen.add(staticModel.id);
       models.push({ ...staticModel, contextWindow: contextWindowFor(staticModel.id) });
     }
@@ -445,48 +456,58 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
   return groupTiers(models);
 }
 
+async function fetchModelsForAccount(
+  data: AccountData,
+  context: Parameters<ModelSupport["list"]>[1],
+): Promise<ModelDefinition[] | null> {
+  const payloads = [
+    JSON.stringify({ project: data.projectId || "bamboo-precept-lgxtn" }),
+    JSON.stringify({}),
+  ];
+
+  const requestModels = (endpoint: string, accessToken: string, bodyPayload: string) =>
+    context.network.fetch(`${endpoint}${FETCH_AVAILABLE_MODELS_PATH}`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
+        "user-agent": ANTIGRAVITY_USER_AGENT,
+        ...ANTIGRAVITY_CLIENT_HEADERS,
+      },
+      body: bodyPayload,
+    });
+
+  for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
+    for (const bodyPayload of payloads) {
+      try {
+        const response = await requestModels(endpoint, data.accessToken, bodyPayload);
+        if (response.status >= 200 && response.status < 300) {
+          const body = JSON.parse(response.body);
+          const models = parseAntigravityModels(body);
+          if (models.length > 0) return models;
+        }
+      } catch {
+        // Continue
+      }
+    }
+  }
+
+  return null;
+}
+
 export const antigravityModels: ModelSupport = {
   list: async ({ resource }, context): Promise<ModelDefinition[]> => {
     if (!resource) return STATIC_ANTIGRAVITY_MODELS;
-    let data;
+    let data: AccountData;
     try {
       data = accountData(resource);
     } catch {
       return STATIC_ANTIGRAVITY_MODELS;
     }
 
-    const payloads = [
-      JSON.stringify({ project: data.projectId || "bamboo-precept-lgxtn" }),
-      JSON.stringify({}),
-    ];
-
-    for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
-      for (const bodyPayload of payloads) {
-        try {
-          const response = await context.network.fetch(
-            `${endpoint}${FETCH_AVAILABLE_MODELS_PATH}`,
-            {
-              method: "POST",
-              headers: {
-                authorization: `Bearer ${data.accessToken}`,
-                "content-type": "application/json",
-                "user-agent": ANTIGRAVITY_USER_AGENT,
-                ...ANTIGRAVITY_CLIENT_HEADERS,
-              },
-              body: bodyPayload,
-            },
-          );
-          if (response.status >= 200 && response.status < 300) {
-            const body = JSON.parse(response.body);
-            const models = parseAntigravityModels(body);
-            if (models.length > 0) return models;
-          }
-        } catch {
-          // Continue
-        }
-      }
-    }
-
-    return STATIC_ANTIGRAVITY_MODELS;
+    // The host refreshes and persists the account before discovery. Never
+    // discard a credential patch inside this read-only catalog operation.
+    const models = (await fetchModelsForAccount(data, context)) ?? STATIC_ANTIGRAVITY_MODELS;
+    return models.filter((model) => !isModelDisabledForAccount(model.id, data.disabledModels));
   },
 };
