@@ -62,11 +62,18 @@ const BLOCKED_FINISH_REASONS = new Set([
   "IMAGE_SAFETY",
 ]);
 
-function invalidResult(message: string, stateMessage: string): ChannelResult {
+function invalidResult(
+  message: string,
+  stateMessage: string,
+  privateData?: AccountData | null,
+): ChannelResult {
   return {
     status: "resource-error",
     message,
-    patch: { state: { status: "invalid", message: stateMessage } },
+    patch: {
+      ...(privateData ? { privateData: privateData as unknown as JsonValue } : {}),
+      state: { status: "invalid", message: stateMessage },
+    },
   };
 }
 
@@ -709,6 +716,13 @@ async function invoke(
   if (data.refreshToken && isTokenExpired(data)) {
     try {
       const refreshed = await refreshAccount(input.resource, context);
+      if (refreshed.state?.status === "invalid") {
+        return {
+          status: "resource-error",
+          message: "Antigravity authorization expired; sign in again",
+          patch: refreshed,
+        };
+      }
       if (refreshed.privateData) {
         data = refreshed.privateData as unknown as AccountData;
         patchData = data;
@@ -718,7 +732,7 @@ async function invoke(
     }
   }
 
-  let projectId = data.projectId ?? "bamboo-precept-lgxtn";
+  const projectId = data.projectId ?? "bamboo-precept-lgxtn";
   const actualModel = resolveAntigravityModel(
     tierModelId(input.model, input.request.reasoning.effort),
   );
@@ -740,17 +754,32 @@ async function invoke(
         patch: { privateData: patchData as unknown as JsonValue, state: { status: "ready" } },
       }
       : { status: "completed" };
-  } catch (error) {
+  } catch (initialError) {
+    let error = initialError;
     if (error instanceof HttpError) {
       if (
         (error.status === 401 || error.status === 403) && data.refreshToken &&
         !isQuotaHttpError(error)
       ) {
+        let retryStarted = false;
         try {
           const refreshed = await refreshAccount(input.resource, context);
+          if (refreshed.state?.status === "invalid") {
+            return { status: "resource-error", message: error.message, patch: refreshed };
+          }
           if (refreshed.privateData) {
             const freshData = refreshed.privateData as unknown as AccountData;
+            data = freshData;
+            patchData = freshData;
+            if (isModelDisabledForAccount(actualModel, freshData.disabledModels)) {
+              return {
+                status: "resource-error",
+                message: `Model ${actualModel} is disabled on this Antigravity account`,
+                patch: { privateData: freshData as unknown as JsonValue, state: { status: "ready" } },
+              };
+            }
             const freshProj = freshData.projectId ?? projectId;
+            retryStarted = true;
             await streamCloudCode(
               freshData.accessToken,
               freshProj,
@@ -764,10 +793,13 @@ async function invoke(
               patch: { privateData: freshData as unknown as JsonValue, state: { status: "ready" } },
             };
           }
-        } catch {
-          // Failed refresh
+        } catch (retryError) {
+          // Classify the retried request, not the authentication error it replaced.
+          if (retryStarted) error = retryError;
         }
       }
+    }
+    if (error instanceof HttpError) {
       if (isQuotaHttpError(error)) {
         return {
           status: "resource-error",
@@ -776,7 +808,7 @@ async function invoke(
         };
       }
       if (error.status === 401) {
-        return invalidResult(error.message, "Antigravity authorization expired; sign in again");
+        return invalidResult(error.message, "Antigravity authorization expired; sign in again", patchData);
       }
       if (error.status === 404 || error.status === 403) {
         return {
@@ -787,13 +819,21 @@ async function invoke(
             : {},
         };
       }
-      return { status: "request-error", message: error.message };
+      return {
+        status: "request-error",
+        message: error.message,
+        ...(patchData ? { patch: { privateData: patchData as unknown as JsonValue } } : {}),
+      };
     }
     const message = error instanceof Error ? error.message : String(error);
     if (isQuotaError(message)) {
       return { status: "resource-error", message, patch: quotaExhaustedPatch(data, message) };
     }
-    return { status: "request-error", message };
+    return {
+      status: "request-error",
+      message,
+      ...(patchData ? { patch: { privateData: patchData as unknown as JsonValue } } : {}),
+    };
   }
 }
 

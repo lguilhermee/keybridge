@@ -4,8 +4,6 @@ import {
   type AccountData,
   accountData,
   isModelDisabledForAccount,
-  isTokenExpired,
-  refreshAccount,
 } from "./resources.ts";
 
 export const ANTIGRAVITY_PROD_ENDPOINT = "https://cloudcode-pa.googleapis.com";
@@ -459,25 +457,9 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
 }
 
 async function fetchModelsForAccount(
-  initialData: AccountData,
-  resource: NonNullable<Parameters<ModelSupport["list"]>[0]["resource"]>,
+  data: AccountData,
   context: Parameters<ModelSupport["list"]>[1],
 ): Promise<ModelDefinition[] | null> {
-  let data = initialData;
-  let didRefresh = false;
-
-  if (data.refreshToken && isTokenExpired(data)) {
-    try {
-      const refreshed = await refreshAccount(resource, context);
-      if (refreshed.privateData) {
-        data = refreshed.privateData as unknown as AccountData;
-        didRefresh = true;
-      }
-    } catch {
-      // Fall back to the existing token if refresh fails.
-    }
-  }
-
   const payloads = [
     JSON.stringify({ project: data.projectId || "bamboo-precept-lgxtn" }),
     JSON.stringify({}),
@@ -498,19 +480,7 @@ async function fetchModelsForAccount(
   for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
     for (const bodyPayload of payloads) {
       try {
-        let response = await requestModels(endpoint, data.accessToken, bodyPayload);
-        if (
-          (response.status === 401 || response.status === 403) &&
-          !didRefresh &&
-          data.refreshToken
-        ) {
-          didRefresh = true;
-          const refreshed = await refreshAccount(resource, context);
-          if (refreshed.privateData) {
-            data = refreshed.privateData as unknown as AccountData;
-            response = await requestModels(endpoint, data.accessToken, bodyPayload);
-          }
-        }
+        const response = await requestModels(endpoint, data.accessToken, bodyPayload);
         if (response.status >= 200 && response.status < 300) {
           const body = JSON.parse(response.body);
           const models = parseAntigravityModels(body);
@@ -535,6 +505,9 @@ export const antigravityModels: ModelSupport = {
       return STATIC_ANTIGRAVITY_MODELS;
     }
 
-    return (await fetchModelsForAccount(data, resource, context)) ?? STATIC_ANTIGRAVITY_MODELS;
+    // The host refreshes and persists the account before discovery. Never
+    // discard a credential patch inside this read-only catalog operation.
+    const models = (await fetchModelsForAccount(data, context)) ?? STATIC_ANTIGRAVITY_MODELS;
+    return models.filter((model) => !isModelDisabledForAccount(model.id, data.disabledModels));
   },
 };

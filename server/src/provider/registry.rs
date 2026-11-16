@@ -892,7 +892,19 @@ impl ProviderRegistry {
     ) -> Result<()> {
         let executable = self.executable()?;
         let entry = self.find_entry(&executable, provider_id).await?;
-        let resource = find_resource(&entry, resource_type)?;
+        self.refresh_resource_record(&entry, &executable, resource_type, resource_id)
+            .await
+    }
+
+    async fn refresh_resource_record(
+        &self,
+        entry: &ProviderEntry,
+        executable: &Path,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<()> {
+        let provider_id = &entry.manifest.id;
+        let resource = find_resource(entry, resource_type)?;
         if !resource.can_refresh {
             return Err(Error::Config(format!(
                 "provider '{provider_id}' resource '{resource_type}' does not support refresh"
@@ -902,7 +914,7 @@ impl ProviderRegistry {
             .find_record(provider_id, resource_type, resource_id)
             .await?;
         let value = self
-            .worker(&entry, &executable)
+            .worker(entry, executable)
             .await
             .invoke(
                 "resource.refresh",
@@ -1234,10 +1246,7 @@ impl ProviderRegistry {
                 } else {
                     ready
                 };
-                chosen
-                    .into_iter()
-                    .map(|record| Some(record.snapshot(resource_type)))
-                    .collect()
+                chosen.into_iter().map(Some).collect()
             }
             None => vec![None],
         };
@@ -1247,25 +1256,57 @@ impl ProviderRegistry {
         let mut any_succeeded = false;
         let mut last_error: Option<Error> = None;
         for resource in resources {
-            match worker
-                .invoke(
-                    "models.list",
-                    serde_json::json!({ "channelId": channel.id, "resource": resource }),
-                    CancellationToken::new(),
-                )
-                .await
-            {
-                Ok(value) => {
-                    any_succeeded = true;
-                    append_channel_models(&value, &mut seen, &mut models)?;
-                }
+            let discovery = async {
+                let resource = match (resource, channel.resource_type.as_deref()) {
+                    (Some(record), Some(resource_type)) => {
+                        let record = if find_resource(entry, resource_type)?.can_refresh {
+                            // Credential updates belong to resource.refresh: persist them
+                            // before models.list consumes the refreshed snapshot.
+                            if let Err(error) = self
+                                .refresh_resource_record(
+                                    entry,
+                                    executable,
+                                    resource_type,
+                                    &record.id,
+                                )
+                                .await
+                            {
+                                tracing::warn!(provider = %provider_id, %error,
+                                    "resource refresh failed before model discovery; using stored credentials");
+                            }
+                            self.find_record(provider_id, resource_type, &record.id)
+                                .await?
+                        } else {
+                            record
+                        };
+                        if matches!(record.state, super::state::ResourceState::Invalid { .. }) {
+                            return Err(Error::Provider(
+                                "provider resource is unavailable after refresh".into(),
+                            ));
+                        }
+                        Some(record.snapshot(resource_type))
+                    }
+                    _ => None,
+                };
+                worker
+                    .invoke(
+                        "models.list",
+                        serde_json::json!({ "channelId": channel.id, "resource": resource }),
+                        CancellationToken::new(),
+                    )
+                    .await
+            };
+            match discovery.await {
+                Ok(value) => match append_channel_models(&value, &mut seen, &mut models) {
+                    Ok(()) => any_succeeded = true,
+                    Err(error) => last_error = Some(error),
+                },
                 Err(error) => last_error = Some(error),
             }
         }
         if !any_succeeded {
-            return Err(last_error.unwrap_or_else(|| {
-                Error::Provider("no provider resource is available".into())
-            }));
+            return Err(last_error
+                .unwrap_or_else(|| Error::Provider("no provider resource is available".into())));
         }
         if models.is_empty() {
             return Err(Error::Provider(format!(
@@ -1483,8 +1524,11 @@ fn append_channel_models(
     let definitions = value
         .as_array()
         .ok_or_else(|| Error::Protocol("provider models.list must return an array".into()))?;
-    for definition in definitions {
-        let model = StoredModel::from_definition(definition)?;
+    let definitions = definitions
+        .iter()
+        .map(StoredModel::from_definition)
+        .collect::<Result<Vec<_>>>()?;
+    for model in definitions {
         if seen.insert(model.id.clone()) {
             models.push(model);
         }
@@ -1599,6 +1643,9 @@ fn quota_tier(private_data: &serde_json::Value, now_ms: i64) -> u8 {
 }
 
 #[cfg(test)]
+mod discovery_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::provider::state::ResourceState;
@@ -1704,7 +1751,11 @@ mod tests {
         let ids: Vec<&str> = models.iter().map(|m| m.id.as_str()).collect();
         assert_eq!(
             ids,
-            vec!["claude-sonnet-4-6", "gemini-4-hydrogen", "gemini-4-hydrogen-xhigh"]
+            vec![
+                "claude-sonnet-4-6",
+                "gemini-4-hydrogen",
+                "gemini-4-hydrogen-xhigh"
+            ]
         );
         assert_eq!(models[0].display_name, "Claude Sonnet 4.6");
     }

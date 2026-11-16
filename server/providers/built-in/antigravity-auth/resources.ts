@@ -120,7 +120,7 @@ export async function fetchAccountProjectAndTier(
 export async function queryAccountQuota(
   accessToken: string,
   network: ProviderContext["network"],
-): Promise<{ quota: AccountQuota | null; projectId: string; disabledModels: string[] }> {
+): Promise<{ quota: AccountQuota | null; projectId: string; disabledModels: string[] | null }> {
   const { projectId, planLabel } = await fetchAccountProjectAndTier(accessToken, network);
 
   for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
@@ -208,7 +208,7 @@ export async function queryAccountQuota(
 
   return {
     projectId,
-    disabledModels: [],
+    disabledModels: null,
     quota: {
       planLabel,
       limitReached: false,
@@ -466,7 +466,7 @@ export async function refreshAccount(
     projectId,
     expiresAtMs,
     quota: result.quota ?? data.quota,
-    disabledModels: result.disabledModels,
+    disabledModels: result.disabledModels ?? data.disabledModels,
   };
   return {
     privateData: updatedData as unknown as JsonValue,
@@ -652,7 +652,7 @@ export const credentialImport: ResourceImportSupport = {
           const res = await queryAccountQuota(c.accessToken, context.network);
           c.quota = res.quota;
           c.projectId = res.projectId;
-          c.disabledModels = res.disabledModels;
+          c.disabledModels = res.disabledModels ?? undefined;
         } catch {
           // ignore error
         }

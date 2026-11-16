@@ -121,7 +121,7 @@ async function complete(
     const result = await queryAccountQuota(accessToken, context.network);
     projectId = result.projectId;
     quota = result.quota;
-    disabledModels = result.disabledModels;
+    disabledModels = result.disabledModels ?? [];
   } catch {
     // Quota can be refreshed after the account has been persisted.
   }
