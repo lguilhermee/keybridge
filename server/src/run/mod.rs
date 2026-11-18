@@ -22,3 +22,4 @@ pub use handle::*;
 pub(crate) use model_cycle::is_rejected_request;
 pub use model_cycle::*;
 pub use port::*;
+pub(crate) use refusal_reply::is_refusal;

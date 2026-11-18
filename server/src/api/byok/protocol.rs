@@ -99,14 +99,16 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
 }
 
 /// Reasoning effort and Fast tier a caller picks per request: Chat `reasoning_effort`, Responses
-/// `reasoning.effort`, and the OpenAI `service_tier: "priority"` both of them carry.
+/// `reasoning.effort`, Messages `output_config.effort`, and the OpenAI `service_tier: "priority"`.
 fn apply_selected_settings(protocol: ApiProtocol, body: &Value, model: &mut ModelSpec) {
     let effort = match protocol {
         ApiProtocol::Chat => body.get("reasoning_effort"),
         ApiProtocol::Responses => body
             .get("reasoning")
             .and_then(|reasoning| reasoning.get("effort")),
-        ApiProtocol::Messages => None,
+        ApiProtocol::Messages => body
+            .get("output_config")
+            .and_then(|config| config.get("effort")),
     }
     .and_then(Value::as_str)
     .map(str::trim)
@@ -655,6 +657,20 @@ mod tests {
         assert!(model.reasoning.enabled);
         assert_eq!(model.reasoning.effort.as_deref(), Some("xhigh"));
         assert_eq!(model.latency, ModelLatency::Fast);
+    }
+
+    #[test]
+    fn messages_requests_carry_selected_effort() {
+        let body = json!({
+            "model": "m",
+            "max_tokens": 16,
+            "messages": [{"role": "user", "content": "hi"}],
+            "thinking": {"type": "adaptive"},
+            "output_config": {"effort": "xhigh"},
+        });
+        let model = parse(ApiProtocol::Messages, &body).unwrap().request.model;
+        assert!(model.reasoning.enabled);
+        assert_eq!(model.reasoning.effort.as_deref(), Some("xhigh"));
     }
 
     #[test]

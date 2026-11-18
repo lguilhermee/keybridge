@@ -1,4 +1,6 @@
 //! Recognizes explicit declines throughout a completed Markdown reply.
+#[path = "detection/policy_decline.rs"]
+mod policy_decline;
 use std::{collections::HashMap, sync::OnceLock};
 
 use pulldown_cmark::{Event, Parser, Tag, TagEnd};
@@ -6,7 +8,7 @@ use regex::Regex;
 
 /// Text matching supplements protocol refusal signals. Require a decline and
 /// an action: apologies and "as an AI" alone also occur in helpful answers.
-pub(super) fn is_refusal(text: &str) -> bool {
+pub(crate) fn is_refusal(text: &str) -> bool {
     prose_refuses(&assistant_prose(text))
 }
 
@@ -190,7 +192,7 @@ fn prose_refuses(text: &str) -> bool {
                 .split_whitespace()
                 .next()
                 .is_some_and(|word| word.eq_ignore_ascii_case("but")))
-    })
+    }) || policy_decline::is_refusal(text)
 }
 
 /// Remove prose quotations in one pass, preserving contractions and possessives.
@@ -271,6 +273,133 @@ fn unquoted_prose(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn live_policy_refusals_keep_ownership_boundaries() {
+        let replies: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/live-policy-refusals.json"
+        )))
+        .unwrap();
+        for reply in replies.as_array().unwrap() {
+            let text = reply["text"].as_str().unwrap();
+            assert!(is_refusal(text), "{}: {text}", reply["case"]);
+            assert!(!is_refusal(&format!("````text\n{text}\n````")));
+            let quoted = text
+                .lines()
+                .map(|line| format!("> {line}\n"))
+                .collect::<String>();
+            assert!(!is_refusal(&quoted));
+        }
+    }
+
+    #[test]
+    fn policy_reason_before_stopping_is_detected() {
+        assert!(is_refusal(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/reason-before-stopping-policy.md"
+        ))));
+        let text = "The documented retail launch path relies on an anti-cheat replacement, so I stopped before using it.";
+        assert!(is_refusal(text));
+        assert!(is_refusal(
+            "I did not start a new timed run. The documented route relies on an anti-cheat replacement, so I stopped before using it."
+        ));
+        assert!(!is_refusal(&format!("A past response said: «{text}»")));
+    }
+
+    #[test]
+    fn reported_stopped_before_launching_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/stopped-before-launching-policy.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I reviewed the logs. ".repeat(100)
+        )));
+        for quoted in [
+            format!("```text\n{reply}\n```"),
+            reply
+                .lines()
+                .map(|line| format!("> {line}\n"))
+                .collect::<String>(),
+            format!("A previous response said: «{reply}»"),
+        ] {
+            assert!(!is_refusal(&quoted), "{quoted}");
+            assert!(is_refusal(&format!(
+                "{quoted}\n\nI cannot help with this request."
+            )));
+        }
+    }
+
+    #[test]
+    fn reported_did_not_start_policy_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/did-not-start-policy.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I reviewed the logs. ".repeat(100)
+        )));
+        for quoted in [
+            format!("```text\n{reply}\n```"),
+            reply
+                .lines()
+                .map(|line| format!("> {line}\n"))
+                .collect::<String>(),
+            format!("A previous response said: «{reply}»"),
+        ] {
+            assert!(!is_refusal(&quoted), "{quoted}");
+            assert!(is_refusal(&format!(
+                "{quoted}\n\nI cannot help with this request."
+            )));
+        }
+    }
+
+    #[test]
+    fn reported_did_not_run_policy_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/did-not-run-policy.md"
+        ));
+        assert!(is_refusal(reply));
+    }
+
+    #[test]
+    fn past_policy_declines_are_distinct_from_diagnostic_limits() {
+        for reply in [
+            "I did not start the application because its launch path uses an anti-cheat replacement.",
+            "I didn't launch it because the configured path relies on a VM-detection bypass.",
+            "I have not continued because doing so would require bypassing security controls.",
+            "We haven't run it because we would need to disable the anti-cheat.",
+            "I stopped before launching because the retail route depends on an anti-cheat replacement.",
+            "We paused before running because the route requires VM-detection bypasses.",
+            "I halted prior to executing because the path relies on an anti-cheat replacement and VM-detection bypasses.",
+        ] {
+            assert!(is_refusal(reply), "{reply}");
+        }
+        for reply in [
+            "I did not start a new run because the previous process is still active.",
+            "I did not run the test because the environment has no display.",
+            "I did not launch it because the anti-cheat replacement is missing.",
+            "I did not launch it because the path uses an anti-cheat replacement that crashed.",
+            "I did not start a new run. The documented path uses an anti-cheat replacement.",
+            "I did not start a new run.\n\nThe documented path uses an anti-cheat replacement.",
+            "The report says it did not start because the path uses an anti-cheat replacement.",
+            "I saved the traces. There is no verified screenshot, and the evidence does not justify a rendering change.",
+            "I did not run it because the documentation contains `uses an anti-cheat replacement`.",
+            "I stopped before launching because the existing process was still active.",
+            "We paused before running because the VM-detection bypass crashed.",
+            "I stopped before launching because the route depends on an anti-cheat replacement and VM-detection bypasses that are missing.",
+            "I stopped before launching. The documented route depends on an anti-cheat replacement.",
+            "I stopped before launching.\n\nThe documented route depends on an anti-cheat replacement.",
+        ] {
+            assert!(!is_refusal(reply), "{reply}");
+        }
+    }
 
     #[test]
     fn reported_stopping_here_reply_is_detected() {

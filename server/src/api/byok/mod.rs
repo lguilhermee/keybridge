@@ -3,6 +3,7 @@ mod direct;
 mod models;
 mod output;
 mod protocol;
+mod refusal;
 
 use std::sync::Arc;
 
@@ -18,6 +19,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     model::ModelInvocation, protocol::Protocol, provider::ProviderRegistry, store::Store, Error,
+    Result,
 };
 
 use self::protocol::ApiProtocol;
@@ -166,11 +168,27 @@ async fn generate(
     else {
         return api_error(StatusCode::NOT_FOUND, "model not found");
     };
+    let fallback = match state.store.refusal_fallback_map().await {
+        Ok(fallbacks) => fallbacks.get(&model.internal_id).cloned(),
+        Err(error) => return api_error(StatusCode::INTERNAL_SERVER_ERROR, error),
+    };
     if let Some(native) = &state.native {
         match state.store.model(&model.internal_id).await {
             Ok(Some(config)) if protocol.protocol_type() == config.protocol_type() => {
-                return match native.forward(protocol, &headers, body, &config).await {
-                    Ok(response) => response,
+                return match native
+                    .forward(protocol, &headers, body.clone(), &config)
+                    .await
+                {
+                    Ok(response) => match fallback {
+                        Some(model_id) if response.status().is_success() => {
+                            let retry = refusal::Fallback::new(state, protocol, body, model_id);
+                            match retry.inspect_native(response).await {
+                                Ok(response) => response,
+                                Err(error) => api_error(StatusCode::BAD_GATEWAY, error),
+                            }
+                        }
+                        _ => response,
+                    },
                     Err(error) => api_error(StatusCode::BAD_GATEWAY, error),
                 };
             }
@@ -178,33 +196,50 @@ async fn generate(
             Err(error) => return api_error(StatusCode::INTERNAL_SERVER_ERROR, error),
         }
     }
-    let parsed = match protocol::parse(protocol, &body) {
+    let mut parsed = match protocol::parse(protocol, &body) {
         Ok(parsed) => parsed,
         Err(error) => return api_error(StatusCode::BAD_REQUEST, error),
     };
+    parsed.request.model.model_id = model.internal_id.clone();
+    match respond(&state, parsed, protocol, fallback).await {
+        Ok(response) => response,
+        Err(Error::Protocol(message)) => api_error(StatusCode::BAD_REQUEST, message),
+        Err(error) => api_error(StatusCode::BAD_GATEWAY, error),
+    }
+}
+
+async fn respond(
+    state: &ApiState,
+    parsed: protocol::ParsedRequest,
+    protocol: ApiProtocol,
+    fallback: Option<String>,
+) -> Result<Response> {
     let id = format!("external-api:{}", uuid::Uuid::new_v4());
-    let mut request = parsed.request;
-    request.model.model_id = model.internal_id.clone();
     let invocation = ModelInvocation {
         call_id: id.clone(),
         run_id: id.clone(),
         conversation_id: id.clone(),
         provider_call_index: 0,
-        request,
+        request: parsed.request,
     };
     let cancellation = CancellationToken::new();
-    let stream = state.protocol.stream(invocation, cancellation.clone());
+    let stream = refusal::stream(
+        state.protocol.clone(),
+        invocation,
+        cancellation.clone(),
+        fallback,
+    );
     if parsed.stream {
-        output::streamed(
+        Ok(output::streamed(
             protocol,
             stream,
             cancellation,
             id,
             parsed.public_model_id,
             parsed.namespaced_tools,
-        )
+        ))
     } else {
-        match output::complete(
+        output::complete(
             protocol,
             stream,
             &id,
@@ -212,10 +247,6 @@ async fn generate(
             parsed.namespaced_tools,
         )
         .await
-        {
-            Ok(response) => response.into_response(),
-            Err(Error::Protocol(message)) => api_error(StatusCode::BAD_REQUEST, message),
-            Err(error) => api_error(StatusCode::BAD_GATEWAY, error),
-        }
+        .map(IntoResponse::into_response)
     }
 }

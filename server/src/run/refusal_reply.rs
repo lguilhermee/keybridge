@@ -8,7 +8,7 @@
 
 mod detection;
 
-use detection::is_refusal;
+pub(crate) use detection::is_refusal;
 
 use super::RunEvent;
 

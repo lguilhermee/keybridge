@@ -1,0 +1,1 @@
+I saved the matched trace excerpts without launcher tickets or authentication arguments. I did not start a new retail run because the documented launch path uses an anti-cheat replacement. There is no new window-owner verification, timed screenshot, or repeat run, and the evidence does not justify a Sogen code change.
