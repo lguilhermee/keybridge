@@ -14,6 +14,7 @@ const CURSOR_TAKEOVER_ENABLED_KEY: &str = "cursor_takeover_enabled";
 const PRICING_SETTINGS_KEY: &str = "token_pricing";
 const EXTERNAL_API_SETTINGS_KEY: &str = "external_api";
 const CODEX_TAKEOVER_KEY: &str = "codex_takeover";
+const CLAUDE_CODE_TAKEOVER_KEY: &str = "claude_code_takeover";
 const HEADROOM_SETTINGS_KEY: &str = "headroom";
 
 /// Embedded default system prompts for commit message generation.
@@ -49,6 +50,19 @@ pub struct CodexTakeover {
     /// config and restored when Keybridge is removed from it.
     #[serde(default)]
     pub previous: Option<CodexSelection>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct ClaudeCodeTakeover {
+    pub enabled: bool,
+    #[serde(default)]
+    pub previous: Option<ClaudeCodeSelection>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct ClaudeCodeSelection {
+    pub model: Option<serde_json::Value>,
+    pub env: std::collections::BTreeMap<String, Option<serde_json::Value>>,
 }
 
 /// Optional per-model price overrides keyed by the upstream `model_id` seen on
@@ -346,6 +360,35 @@ impl Store {
             "INSERT INTO service_settings(setting_key, value_json, updated_at_ms) VALUES (?, ?, ?) ON CONFLICT(setting_key) DO UPDATE SET value_json = excluded.value_json, updated_at_ms = excluded.updated_at_ms",
         )
         .bind(CODEX_TAKEOVER_KEY)
+        .bind(value_json)
+        .bind(now_ms())
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    pub(crate) async fn claude_code_takeover(&self) -> Result<ClaudeCodeTakeover> {
+        let value = sqlx::query_scalar::<_, String>(
+            "SELECT value_json FROM service_settings WHERE setting_key = ?",
+        )
+        .bind(CLAUDE_CODE_TAKEOVER_KEY)
+        .fetch_optional(&self.pool)
+        .await?;
+        value
+            .map(|value| serde_json::from_str(&value).map_err(Into::into))
+            .unwrap_or_else(|| Ok(ClaudeCodeTakeover::default()))
+    }
+
+    pub(crate) async fn set_claude_code_takeover(
+        &self,
+        takeover: &ClaudeCodeTakeover,
+    ) -> Result<()> {
+        let value_json = serde_json::to_string(takeover)?;
+        let _write = self.writes.lock().await;
+        sqlx::query(
+            "INSERT INTO service_settings(setting_key, value_json, updated_at_ms) VALUES (?, ?, ?) ON CONFLICT(setting_key) DO UPDATE SET value_json = excluded.value_json, updated_at_ms = excluded.updated_at_ms",
+        )
+        .bind(CLAUDE_CODE_TAKEOVER_KEY)
         .bind(value_json)
         .bind(now_ms())
         .execute(&self.pool)

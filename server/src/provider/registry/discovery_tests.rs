@@ -116,6 +116,13 @@ defineProvider({
         .collect::<Vec<_>>();
     ids.sort_unstable();
     assert_eq!(ids, ["only-fresh", "only-transient", "shared"]);
+    let shared = models.iter().find(|model| model.id == "shared").unwrap();
+    assert_eq!(shared.resource_models.len(), 2);
+    let fresh_only = models
+        .iter()
+        .find(|model| model.id == "only-fresh")
+        .unwrap();
+    assert_eq!(fresh_only.resource_models.len(), 1);
     let records = state.resources("test.discovery", "account").await.unwrap();
     let fresh = records
         .iter()

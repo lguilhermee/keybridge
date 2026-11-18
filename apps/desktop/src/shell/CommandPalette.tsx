@@ -78,6 +78,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     { id: "page-providers", group: t("Pages"), label: t("Providers"), icon: providerIcon, run: go("/providers") },
     { id: "page-cursor", group: t("Pages"), label: "Cursor", icon: cursorIconUrl, run: go("/cursor") },
     { id: "page-codex", group: t("Pages"), label: "Codex", icon: openAiIcon, run: go("/codex") },
+    { id: "page-claude-code", group: t("Pages"), label: "Claude Code", icon: claudeIcon, run: go("/claude-code") },
     { id: "page-settings", group: t("Pages"), label: t("Settings"), icon: settingsIcon, run: go("/settings") },
     ...settingsSectionIds.map((section) => ({
       id: `section-${section}`,

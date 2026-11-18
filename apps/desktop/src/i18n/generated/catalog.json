@@ -132,14 +132,24 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 17,
+          "column": 51
+        },
+        {
           "file": "features/codex/CodexPage.tsx",
           "line": 17,
           "column": 51
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 36,
+          "line": 37,
           "column": 74
+        },
+        {
+          "file": "shell/IconRail.tsx",
+          "line": 43,
+          "column": 90
         }
       ]
     },
@@ -162,22 +172,22 @@
       "refs": [
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 170,
+          "line": 171,
           "column": 21
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 185,
+          "line": 186,
           "column": 25
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 44,
+          "line": 51,
           "column": 31
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 45,
+          "line": 52,
           "column": 65
         }
       ]
@@ -306,7 +316,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 450,
+          "line": 447,
           "column": 17
         }
       ]
@@ -740,7 +750,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 447,
+          "line": 444,
           "column": 17
         }
       ]
@@ -752,7 +762,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 319,
+          "line": 316,
           "column": 23
         }
       ]
@@ -776,12 +786,12 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 412,
+          "line": 409,
           "column": 18
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 416,
+          "line": 413,
           "column": 16
         }
       ]
@@ -827,17 +837,17 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 263,
+          "line": 260,
           "column": 41
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 307,
+          "line": 304,
           "column": 22
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 404,
+          "line": 401,
           "column": 123
         },
         {
@@ -982,7 +992,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 580,
+          "line": 588,
           "column": 21
         }
       ]
@@ -1051,17 +1061,17 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 261,
+          "line": 258,
           "column": 78
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 308,
+          "line": 305,
           "column": 21
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 403,
+          "line": 400,
           "column": 128
         },
         {
@@ -1122,7 +1132,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 311,
+          "line": 308,
           "column": 14
         },
         {
@@ -1439,14 +1449,24 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 16,
+          "column": 7
+        },
+        {
           "file": "features/codex/CodexPage.tsx",
           "line": 16,
           "column": 7
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 36,
+          "line": 37,
           "column": 57
+        },
+        {
+          "file": "shell/IconRail.tsx",
+          "line": 43,
+          "column": 73
         }
       ]
     },
@@ -1546,8 +1566,20 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 30,
+          "line": 31,
           "column": 73
+        }
+      ]
+    },
+    "24e3fe4ba2731889": {
+      "source": "Claude Code is using its own settings until the External API is enabled again under Settings, Network.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 27,
+          "column": 13
         }
       ]
     },
@@ -1560,6 +1592,18 @@
           "file": "features/providers/ApiKeyProviderDetail.tsx",
           "line": 159,
           "column": 41
+        }
+      ]
+    },
+    "253a97951d399c00": {
+      "source": "Restart the Claude Code CLI after connecting or disconnecting.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 47,
+          "column": 12
         }
       ]
     },
@@ -1661,6 +1705,18 @@
           "file": "features/providers/ModelEditor.tsx",
           "line": 181,
           "column": 27
+        }
+      ]
+    },
+    "2a8749c315c34e5f": {
+      "source": "No Claude Code folder was found on this computer. It is created when you connect.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 43,
+          "column": 40
         }
       ]
     },
@@ -1820,7 +1876,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 425,
+          "line": 422,
           "column": 17
         }
       ]
@@ -2337,7 +2393,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 243,
+          "line": 240,
           "column": 15
         }
       ]
@@ -2485,6 +2541,18 @@
         }
       ]
     },
+    "4284eb3288287243": {
+      "source": "Claude Code only shows Claude or Anthropic model IDs from gateway discovery in its model picker. You can select other Keybridge IDs by typing /model followed by the model ID.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 50,
+          "column": 12
+        }
+      ]
+    },
     "4295ac6f766a5a22": {
       "source": "Group by conversation",
       "kind": "text",
@@ -2591,7 +2659,7 @@
       "refs": [
         {
           "file": "shell/IconRail.tsx",
-          "line": 43,
+          "line": 50,
           "column": 51
         }
       ]
@@ -2637,12 +2705,12 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 272,
+          "line": 269,
           "column": 10
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 407,
+          "line": 404,
           "column": 112
         },
         {
@@ -2696,12 +2764,12 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 258,
+          "line": 255,
           "column": 8
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 441,
+          "line": 438,
           "column": 48
         },
         {
@@ -2951,7 +3019,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 279,
+          "line": 276,
           "column": 27
         }
       ]
@@ -3023,6 +3091,18 @@
           "file": "features/providers/ApiKeyProviderDetail.tsx",
           "line": 59,
           "column": 9
+        }
+      ]
+    },
+    "50e18dd64ef56bee": {
+      "source": "Default model in Claude Code",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 35,
+          "column": 18
         }
       ]
     },
@@ -3110,7 +3190,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 379,
+          "line": 376,
           "column": 15
         }
       ]
@@ -3122,12 +3202,12 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 269,
+          "line": 266,
           "column": 10
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 301,
+          "line": 298,
           "column": 16
         }
       ]
@@ -3262,7 +3342,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 450,
+          "line": 447,
           "column": 38
         }
       ]
@@ -3320,7 +3400,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 30,
+          "line": 31,
           "column": 56
         }
       ]
@@ -4235,6 +4315,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 17,
+          "column": 36
+        },
+        {
           "file": "features/codex/CodexPage.tsx",
           "line": 17,
           "column": 36
@@ -4396,12 +4481,12 @@
       "refs": [
         {
           "file": "shared/store/appStore.ts",
-          "line": 267,
+          "line": 278,
           "column": 23
         },
         {
           "file": "shared/store/appStore.ts",
-          "line": 274,
+          "line": 285,
           "column": 25
         }
       ]
@@ -4437,22 +4522,22 @@
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 81,
+          "line": 82,
           "column": 54
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 84,
+          "line": 85,
           "column": 14
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 41,
+          "line": 48,
           "column": 47
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 41,
+          "line": 48,
           "column": 92
         }
       ]
@@ -4469,7 +4554,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 333,
+          "line": 330,
           "column": 21
         },
         {
@@ -4647,7 +4732,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 413,
+          "line": 410,
           "column": 17
         }
       ]
@@ -4659,7 +4744,7 @@
       "refs": [
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 184,
+          "line": 185,
           "column": 26
         }
       ]
@@ -4714,7 +4799,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 646,
+          "line": 654,
           "column": 43
         }
       ]
@@ -4763,7 +4848,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 54,
+          "line": 61,
           "column": 18
         }
       ]
@@ -4814,12 +4899,12 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 283,
+          "line": 280,
           "column": 24
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 291,
+          "line": 288,
           "column": 24
         }
       ]
@@ -5526,6 +5611,18 @@
         }
       ]
     },
+    "8f0855287f461776": {
+      "source": "Your previous Claude Code model and gateway settings are restored when you disconnect or Keybridge stops.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 49,
+          "column": 12
+        }
+      ]
+    },
     "9046da16aea909ba": {
       "source": "Pages",
       "kind": "text",
@@ -5559,6 +5656,11 @@
         {
           "file": "shell/CommandPalette.tsx",
           "line": 81,
+          "column": 38
+        },
+        {
+          "file": "shell/CommandPalette.tsx",
+          "line": 82,
           "column": 35
         }
       ]
@@ -5649,13 +5751,30 @@
           "column": 57
         },
         {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 22,
+          "column": 18
+        },
+        {
           "file": "features/codex/CodexPage.tsx",
           "line": 22,
           "column": 18
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 437,
+          "line": 434,
+          "column": 18
+        }
+      ]
+    },
+    "92413cd873a64353": {
+      "source": "Claude Code settings file",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 39,
           "column": 18
         }
       ]
@@ -5920,12 +6039,12 @@
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 92,
+          "line": 93,
           "column": 14
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 27,
+          "line": 28,
           "column": 34
         }
       ]
@@ -5937,8 +6056,20 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 331,
+          "line": 328,
           "column": 27
+        }
+      ]
+    },
+    "9a1eed3e7551a635": {
+      "source": "Claude Code connection",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 20,
+          "column": 36
         }
       ]
     },
@@ -6021,8 +6152,20 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 424,
+          "line": 421,
           "column": 18
+        }
+      ]
+    },
+    "9bf026c0f764e821": {
+      "source": "The CLI uses Keybridge through the local External API, which is turned on automatically.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 48,
+          "column": 12
         }
       ]
     },
@@ -6318,7 +6461,7 @@
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 196,
+          "line": 197,
           "column": 49
         }
       ]
@@ -6643,7 +6786,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 446,
+          "line": 443,
           "column": 18
         }
       ]
@@ -6669,6 +6812,18 @@
           "file": "features/cursor/CursorPage.tsx",
           "line": 103,
           "column": 115
+        }
+      ]
+    },
+    "ad33908775058e1b": {
+      "source": "Models available through Keybridge",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 31,
+          "column": 18
         }
       ]
     },
@@ -6725,7 +6880,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 330,
+          "line": 327,
           "column": 29
         }
       ]
@@ -7007,7 +7162,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 26,
+          "line": 27,
           "column": 30
         }
       ]
@@ -7710,7 +7865,7 @@
       "refs": [
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 332,
+          "line": 329,
           "column": 34
         }
       ]
@@ -7747,12 +7902,12 @@
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 99,
+          "line": 100,
           "column": 14
         },
         {
           "file": "shell/CommandPalette.tsx",
-          "line": 107,
+          "line": 108,
           "column": 14
         }
       ]
@@ -7918,7 +8073,7 @@
         },
         {
           "file": "shell/IconRail.tsx",
-          "line": 25,
+          "line": 26,
           "column": 25
         }
       ]
@@ -8026,7 +8181,7 @@
       "refs": [
         {
           "file": "shared/api.ts",
-          "line": 641,
+          "line": 649,
           "column": 43
         }
       ]
@@ -8057,6 +8212,18 @@
         }
       ]
     },
+    "dad252a1ef19c315": {
+      "source": "Connect Claude Code",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 14,
+          "column": 58
+        }
+      ]
+    },
     "db588384668f89e1": {
       "source": "Version {version} is available in Settings",
       "kind": "template",
@@ -8066,7 +8233,7 @@
       "refs": [
         {
           "file": "App.tsx",
-          "line": 64,
+          "line": 81,
           "column": 21
         }
       ]
@@ -8112,12 +8279,12 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 263,
+          "line": 260,
           "column": 24
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 404,
+          "line": 401,
           "column": 106
         },
         {
@@ -8190,6 +8357,18 @@
           "file": "features/providers/ProvidersPage.tsx",
           "line": 236,
           "column": 140
+        }
+      ]
+    },
+    "dd4f4854e030fd6d": {
+      "source": "Claude Code is using its own settings until a model is added on the Providers page.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 28,
+          "column": 13
         }
       ]
     },
@@ -8803,6 +8982,18 @@
         }
       ]
     },
+    "ec7b6775d18ca497": {
+      "source": "Disconnect Claude Code",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 14,
+          "column": 28
+        }
+      ]
+    },
     "ed1f88240f6c39a2": {
       "source": "Cache reads and writes are included in prompt-side statistics.",
       "kind": "text",
@@ -9080,7 +9271,7 @@
         },
         {
           "file": "features/settings/sections/CursorSection.tsx",
-          "line": 329,
+          "line": 326,
           "column": 28
         }
       ]
@@ -9145,6 +9336,18 @@
           "file": "features/settings/sections/UsageDataSection.tsx",
           "line": 208,
           "column": 17
+        }
+      ]
+    },
+    "f8890c7c27d3bd04": {
+      "source": "The standalone Claude desktop app and its VS Code extension use separate gateway settings.",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/claude-code/ClaudeCodePage.tsx",
+          "line": 51,
+          "column": 12
         }
       ]
     },
@@ -9292,7 +9495,7 @@
       "refs": [
         {
           "file": "shell/IconRail.tsx",
-          "line": 41,
+          "line": 48,
           "column": 66
         }
       ]

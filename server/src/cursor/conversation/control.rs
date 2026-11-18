@@ -32,6 +32,12 @@ pub(super) fn pauses_conversation(user: &pb::UserMessage) -> bool {
     )
 }
 
+pub(super) fn is_user_stop(cancel: &pb::CancelAction) -> bool {
+    // Internal aborts cancel this connection; only the native Stop button
+    // requests a persistent pause that must also block later retries.
+    cancel.reason == "user_stopped_generation"
+}
+
 pub(super) fn background_completion(
     request: &pb::AgentRunRequest,
 ) -> Option<&pb::BackgroundTaskCompletionAction> {

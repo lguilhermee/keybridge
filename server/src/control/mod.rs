@@ -258,6 +258,14 @@ pub fn api_router(service: ControlService) -> Router {
             "/__byok-api__/api/harness/codex/enabled",
             put(harness::set_codex_enabled),
         )
+        .route(
+            "/__byok-api__/api/harness/claude-code/status",
+            get(harness::claude_code_status),
+        )
+        .route(
+            "/__byok-api__/api/harness/claude-code/enabled",
+            put(harness::set_claude_code_enabled),
+        )
         .with_state(service)
         .layer(desktop_cors())
 }

@@ -2,7 +2,7 @@
 
 <img src="./docs/keybridge-logo.png" alt="Keybridge" width="440" />
 
-**Your models. Your subscriptions. In Cursor and Codex.**
+**Your models. Your subscriptions. In Cursor, Codex, and Claude Code.**
 
 Keybridge is a desktop app that connects your AI accounts, API keys, and local models to the coding tools you already use. Pick a model and keep working in your editor.
 
@@ -14,6 +14,7 @@ Keybridge is a desktop app that connects your AI accounts, API keys, and local m
 
 - **Cursor integration** — use your models with Agent, Plan, Debug, file edits, terminal commands, MCP, subagents, and Computer Use.
 - **Codex app and CLI integration** — use the same configured models, with reasoning effort and Fast options where supported.
+- **Claude Code CLI integration** — connect its local sessions to configured models through the Anthropic Messages API.
 - **Token-saving tools** — optional Headroom integration compresses request context to reduce input tokens. Cache-friendly conversation history also helps reuse provider prompt caches. Install and enable Headroom in **Settings → Cursor → Headroom**.
 - **Model combos** — put several models under one name. Start in order, rotate, or choose randomly; switch to the next model on errors, rate limits, or refusals.
 - **Refusal switching** — choose a replacement model for individual models, with bulk editing for larger lists.
@@ -37,9 +38,12 @@ Available models and usage limits depend on the provider and your account.
 3. Connect your coding tool:
    - **Cursor:** open the **Cursor** page, click **Initialize CA**, follow the certificate trust prompts, and enable **local Cursor integration**.
    - **Codex:** open the **Codex** page, turn on **Connect Codex**, then restart Codex to load the model list.
-4. Keep Keybridge running and choose your model in Cursor or Codex.
+   - **Claude Code CLI:** open the **Claude Code** page, turn on **Connect Claude Code**, then restart the CLI. The first configured model becomes its default.
+4. Keep Keybridge running and choose your model in your coding tool.
 
-Cursor connects through a local HTTPS proxy using a certificate you trust during setup. Codex connects through the local API; its previous model settings are restored when you disconnect or Keybridge shuts down. Requests go to the model provider you choose.
+Cursor connects through a local HTTPS proxy using a certificate you trust during setup. Codex and the Claude Code CLI connect through the local API; their previous model settings are restored when you disconnect or Keybridge shuts down. Requests go to the model provider you choose.
+
+Claude Code's gateway model discovery shows only IDs containing `claude` or `anthropic` in its `/model` picker. Other configured model IDs can be selected by typing `/model <id>`. The standalone Claude desktop app and Claude Code's VS Code extension use separate gateway configuration.
 
 Codex's built-in web search is unavailable with Keybridge models. For Cursor Remote SSH setup and current verification limits, see the [Remote SSH guide](./docs/remote-ssh.md).
 

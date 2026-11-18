@@ -569,6 +569,15 @@ async fn runtime_cancel_action_during_prepare_still_cancels_the_run() {
 
 #[tokio::test]
 async fn stop_after_turn_ended_closes_the_continuation_instead_of_ignoring_stop() {
+    cancel_after_turn_ended("user_stopped_generation", true).await;
+}
+
+#[tokio::test]
+async fn non_user_abort_allows_client_resume_instead_of_permanently_pausing() {
+    cancel_after_turn_ended("signal is aborted without reason", false).await;
+}
+
+async fn cancel_after_turn_ended(reason: &str, expected_pause: bool) {
     let (_directory, store) = fixtures::temp_store().await;
     let protocol = fake_protocol::FakeProtocol::default();
     protocol.push(text_response("finished"));
@@ -579,19 +588,33 @@ async fn stop_after_turn_ended_closes_the_continuation_instead_of_ignoring_stop(
     )
     .unwrap();
     let registry = TransportRegistry::new(
-        store,
+        store.clone(),
         Arc::new(protocol.clone()),
         PromptCompiler::new(assets),
     );
     let handle = registry.get_or_create("stop-finished").await.unwrap();
     let mut output = handle.subscribe();
+    let goal = pb::GoalState {
+        conversation_id: "stop-finished-conversation".into(),
+        goal_id: "d858941d-322a-45d8-83e6-2ee2c4ac1f99".into(),
+        objective: "keep working until the build passes".into(),
+        status: pb::GoalStatus::Active as i32,
+        continuation_count: 5,
+        ..Default::default()
+    };
+    let goal_state = pb::ConversationStateStructure {
+        mode: Some(pb::AgentMode::Agent as i32),
+        goal_state: Some(goal.clone()),
+        ..Default::default()
+    };
+    let mut initial = client_run_for("stop-finished", "stop-finished-conversation");
+    if let Some(pb::agent_client_message::Message::RunRequest(run)) = initial.message.as_mut() {
+        run.conversation_state = Some(goal_state.clone());
+    }
     handle
         .command(TransportCommand::Append {
             seqno: 0,
-            message: Box::new(client_run_for(
-                "stop-finished",
-                "stop-finished-conversation",
-            )),
+            message: Box::new(initial),
         })
         .await
         .unwrap();
@@ -601,7 +624,7 @@ async fn stop_after_turn_ended_closes_the_continuation_instead_of_ignoring_stop(
     handle
         .command(TransportCommand::Append {
             seqno,
-            message: Box::new(runtime_cancel_action()),
+            message: Box::new(runtime_cancel_action_with_reason(reason)),
         })
         .await
         .unwrap();
@@ -626,6 +649,37 @@ async fn stop_after_turn_ended_closes_the_continuation_instead_of_ignoring_stop(
     .await
     .expect("Stop was ignored after the model finished");
     assert_eq!(protocol.requests().len(), 1);
+    assert_eq!(
+        store
+            .conversation_paused(&ConversationId::new("stop-finished-conversation"))
+            .await
+            .unwrap(),
+        expected_pause,
+        "an aborted connection is not an instruction to permanently pause the conversation"
+    );
+    if !expected_pause {
+        protocol.push(text_response("resumed after the interrupted connection"));
+        let mut request = client_run_for("resume-after-abort", "stop-finished-conversation");
+        let Some(pb::agent_client_message::Message::RunRequest(run)) = request.message.as_mut()
+        else {
+            unreachable!()
+        };
+        run.action.as_mut().unwrap().action = Some(pb::conversation_action::Action::ResumeAction(
+            pb::ResumeAction::default(),
+        ));
+        run.conversation_state = Some(goal_state);
+        let resumed = run_to_end(&registry, "resume-after-abort", request).await;
+        assert_eq!(
+            resumed.goal_state,
+            Some(goal),
+            "reconnecting must continue the same active goal"
+        );
+        assert_eq!(
+            protocol.requests().len(),
+            2,
+            "the native retry never reached the provider"
+        );
+    }
 }
 
 #[tokio::test]
@@ -2167,11 +2221,18 @@ fn kv_ack(id: u32) -> pb::AgentClientMessage {
 }
 
 fn runtime_cancel_action() -> pb::AgentClientMessage {
+    runtime_cancel_action_with_reason("user_stopped_generation")
+}
+
+fn runtime_cancel_action_with_reason(reason: &str) -> pb::AgentClientMessage {
     pb::AgentClientMessage {
         message: Some(pb::agent_client_message::Message::ConversationAction(
             pb::ConversationAction {
                 action: Some(pb::conversation_action::Action::CancelAction(
-                    pb::CancelAction::default(),
+                    pb::CancelAction {
+                        reason: reason.into(),
+                        ..Default::default()
+                    },
                 )),
                 ..Default::default()
             },

@@ -192,8 +192,17 @@ impl ProviderRegistry {
         providers
     }
 
-    /// All provider models whose invocation prerequisites are satisfied; each enters the Cursor catalog independently.
+    /// All configured provider models, including those whose accounts are temporarily cooling down.
     pub async fn configured_models(&self) -> Vec<ProviderModelDescriptor> {
+        self.models_for_catalog(false).await
+    }
+
+    /// Models that can currently be selected in Cursor. Saved model settings remain intact while every account cools down.
+    pub async fn selectable_models(&self) -> Vec<ProviderModelDescriptor> {
+        self.models_for_catalog(true).await
+    }
+
+    async fn models_for_catalog(&self, selectable_only: bool) -> Vec<ProviderModelDescriptor> {
         let Some(executable) = self.inner.runtime.executable() else {
             return Vec::new();
         };
@@ -202,7 +211,9 @@ impl ProviderRegistry {
         self.refresh_stale_catalogs(&entries, &executable).await;
         for entry in entries {
             for channel in &entry.definition.channels {
-                if !self.channel_configured(&entry, channel).await {
+                if !self.channel_configured(&entry, channel).await
+                    || (selectable_only && !self.channel_selectable(&entry, channel).await)
+                {
                     continue;
                 }
                 let stored = self
@@ -211,15 +222,59 @@ impl ProviderRegistry {
                     .models(&entry.manifest.id, &channel.id)
                     .await
                     .unwrap_or_default();
-                models.extend(stored.iter().filter(|model| model.enabled).map(|model| {
-                    ProviderModelDescriptor::new(
-                        &entry.manifest.id,
-                        &entry.manifest.name,
-                        &entry.icon,
-                        channel,
-                        model,
-                    )
-                }));
+                let ready_resources = if selectable_only {
+                    channel.resource_type.as_ref().map(|resource_type| {
+                        self.inner
+                            .state
+                            .resources(&entry.manifest.id, resource_type)
+                    })
+                } else {
+                    None
+                };
+                let ready_ids: Option<std::collections::HashSet<String>> = match ready_resources {
+                    Some(records) => Some(
+                        records
+                            .await
+                            .unwrap_or_default()
+                            .into_iter()
+                            .filter(|record| record.state.is_ready(now_ms()))
+                            .map(|record| record.id)
+                            .collect(),
+                    ),
+                    None => None,
+                };
+                models.extend(
+                    stored
+                        .iter()
+                        .filter(|model| {
+                            model.enabled
+                                && ready_ids.as_ref().is_none_or(|ids| {
+                                    ids.iter().any(|id| model.resource_models.contains_key(id))
+                                })
+                        })
+                        .map(|model| {
+                            let mut descriptor = ProviderModelDescriptor::new(
+                                &entry.manifest.id,
+                                &entry.manifest.name,
+                                &entry.icon,
+                                channel,
+                                model,
+                            );
+                            if let Some(ids) = &ready_ids {
+                                descriptor.context_window = ids
+                                    .iter()
+                                    .filter_map(|id| model.snapshot_for_resource(id))
+                                    .filter_map(|snapshot| {
+                                        snapshot
+                                            .get("contextWindow")
+                                            .and_then(serde_json::Value::as_u64)
+                                    })
+                                    .max()
+                                    .or(descriptor.context_window);
+                            }
+                            descriptor
+                        }),
+                );
             }
         }
         models
@@ -280,10 +335,18 @@ impl ProviderRegistry {
                     .select_resources(&provider_id, resource_type)
                     .await?
                     .into_iter()
+                    .filter(|record| record.state.is_ready(now_ms())
+                        && stored.snapshot_for_resource_with_context(
+                            &record.id,
+                            invocation.request.model.context_window_tokens,
+                        ).is_some())
                     .map(|record| Some((resource_type.clone(), record)))
                     .collect(),
                 None => vec![None],
             };
+            if candidates.is_empty() {
+                Err(Error::Provider("no account currently offers this model and context window".into()))?;
+            }
             let total_candidates = candidates.len();
             let request = wire::llm_request(&invocation)?;
             let worker = registry.worker(&entry, &executable).await;
@@ -291,7 +354,9 @@ impl ProviderRegistry {
             for (attempt_index, resource) in candidates.into_iter().enumerate() {
                 let params = serde_json::json!({
                     "channelId": channel_id,
-                    "model": stored.snapshot(),
+                    "model": resource.as_ref()
+                        .and_then(|(_, record)| stored.snapshot_for_resource(&record.id))
+                        .cloned().unwrap_or_else(|| stored.snapshot()),
                     "resource": resource.as_ref().map(|(resource_type, record)| record.snapshot(resource_type)),
                     "request": request,
                 });
@@ -1068,6 +1133,7 @@ impl ProviderRegistry {
                 .await
                 .unwrap_or_default();
             let configured = self.channel_configured(entry, channel).await;
+            let selectable = configured && self.channel_selectable(entry, channel).await;
             channels.push(ChannelDescriptor {
                 id: channel.id.clone(),
                 provider_id: provider_id.clone(),
@@ -1077,6 +1143,7 @@ impl ProviderRegistry {
                 resource_type: channel.resource_type.clone(),
                 has_models: channel.has_models,
                 configured,
+                selectable,
                 models: stored
                     .iter()
                     .map(|model| {
@@ -1200,6 +1267,18 @@ impl ProviderRegistry {
         }
     }
 
+    async fn channel_selectable(&self, entry: &ProviderEntry, channel: &ChannelDefinition) -> bool {
+        let Some(resource_type) = &channel.resource_type else {
+            return true;
+        };
+        let now = now_ms();
+        self.inner
+            .state
+            .resources(&entry.manifest.id, resource_type)
+            .await
+            .is_ok_and(|records| resources_selectable(&records, now))
+    }
+
     /// Refreshes the Provider model catalog using that resource type once a resource lands; failures are reported, not fatal.
     async fn sync_channel_models_for_resource(
         &self,
@@ -1235,27 +1314,22 @@ impl ProviderRegistry {
         let resources = match &channel.resource_type {
             Some(resource_type) => {
                 let ranked = self.select_resources(provider_id, resource_type).await?;
-                let now = now_ms();
-                let ready: Vec<_> = ranked
-                    .iter()
-                    .filter(|record| record.state.is_ready(now))
-                    .cloned()
-                    .collect();
-                let chosen = if ready.is_empty() {
-                    ranked.into_iter().take(1).collect()
-                } else {
-                    ready
-                };
-                chosen.into_iter().map(Some).collect()
+                ranked
+                    .into_iter()
+                    .filter(|record| {
+                        !matches!(record.state, super::state::ResourceState::Invalid { .. })
+                    })
+                    .map(Some)
+                    .collect()
             }
             None => vec![None],
         };
         let worker = self.worker(entry, executable).await;
         let mut models = Vec::new();
-        let mut seen = std::collections::HashSet::new();
         let mut any_succeeded = false;
         let mut last_error: Option<Error> = None;
         for resource in resources {
+            let resource_id = resource.as_ref().map(|record| record.id.clone());
             let discovery = async {
                 let resource = match (resource, channel.resource_type.as_deref()) {
                     (Some(record), Some(resource_type)) => {
@@ -1297,10 +1371,12 @@ impl ProviderRegistry {
                     .await
             };
             match discovery.await {
-                Ok(value) => match append_channel_models(&value, &mut seen, &mut models) {
-                    Ok(()) => any_succeeded = true,
-                    Err(error) => last_error = Some(error),
-                },
+                Ok(value) => {
+                    match append_channel_models(&value, resource_id.as_deref(), &mut models) {
+                        Ok(()) => any_succeeded = true,
+                        Err(error) => last_error = Some(error),
+                    }
+                }
                 Err(error) => last_error = Some(error),
             }
         }
@@ -1518,7 +1594,7 @@ struct ImportParseResult {
 
 fn append_channel_models(
     value: &serde_json::Value,
-    seen: &mut std::collections::HashSet<String>,
+    resource_id: Option<&str>,
     models: &mut Vec<StoredModel>,
 ) -> Result<()> {
     let definitions = value
@@ -1528,8 +1604,16 @@ fn append_channel_models(
         .iter()
         .map(StoredModel::from_definition)
         .collect::<Result<Vec<_>>>()?;
-    for model in definitions {
-        if seen.insert(model.id.clone()) {
+    for mut model in definitions {
+        if let Some(resource_id) = resource_id {
+            let snapshot = model.snapshot();
+            model
+                .resource_models
+                .insert(resource_id.to_owned(), snapshot);
+        }
+        if let Some(existing) = models.iter_mut().find(|existing| existing.id == model.id) {
+            existing.resource_models.extend(model.resource_models);
+        } else {
             models.push(model);
         }
     }
@@ -1568,6 +1652,10 @@ fn find_resource<'a>(
 }
 
 const QUOTA_LOW_THRESHOLD_PERCENT: f64 = 15.0;
+
+fn resources_selectable(records: &[ResourceRecord], now_ms: i64) -> bool {
+    records.iter().any(|record| record.state.is_ready(now_ms))
+}
 
 fn rank_resources(mut records: Vec<ResourceRecord>, now_ms: i64) -> Vec<ResourceRecord> {
     records.sort_by_key(|record| resource_rank_key(record, now_ms));
@@ -1735,8 +1823,31 @@ mod tests {
     }
 
     #[test]
+    fn exhausted_resources_leave_and_reenter_selection_at_reset() {
+        let reset = 1_100;
+        let cooling = record(
+            "cooling",
+            ResourceState::Cooling {
+                retry_at_ms: Some(reset),
+                message: None,
+            },
+            serde_json::json!({}),
+        );
+        let invalid = record(
+            "invalid",
+            ResourceState::Invalid { message: None },
+            serde_json::json!({}),
+        );
+        assert!(!resources_selectable(
+            &[cooling.clone(), invalid.clone()],
+            reset - 1
+        ));
+        assert!(resources_selectable(&[cooling, invalid], reset));
+        assert!(!resources_selectable(&[], reset));
+    }
+
+    #[test]
     fn merges_models_across_multiple_resources_without_duplicates() {
-        let mut seen = std::collections::HashSet::new();
         let mut models = Vec::new();
         let first = serde_json::json!([
             { "id": "claude-sonnet-4-6", "displayName": "Claude Sonnet 4.6" }
@@ -1746,8 +1857,8 @@ mod tests {
             { "id": "gemini-4-hydrogen", "displayName": "Gemini 4 Hydrogen" },
             { "id": "gemini-4-hydrogen-xhigh", "displayName": "Gemini 4 Hydrogen (XHigh)" }
         ]);
-        append_channel_models(&first, &mut seen, &mut models).unwrap();
-        append_channel_models(&second, &mut seen, &mut models).unwrap();
+        append_channel_models(&first, None, &mut models).unwrap();
+        append_channel_models(&second, None, &mut models).unwrap();
         let ids: Vec<&str> = models.iter().map(|m| m.id.as_str()).collect();
         assert_eq!(
             ids,
@@ -1758,5 +1869,42 @@ mod tests {
             ]
         );
         assert_eq!(models[0].display_name, "Claude Sonnet 4.6");
+    }
+
+    #[test]
+    fn account_model_catalogs_do_not_share_members_or_availability() {
+        let mut models = Vec::new();
+        let pro = serde_json::json!([{
+            "id": "glm-5.2", "displayName": "GLM-5.2", "contextWindow": 1_000_000,
+            "privateData": { "members": [{ "id": "glm-5-2-1m" }] }
+        }]);
+        let free = serde_json::json!([{
+            "id": "glm-5.2", "displayName": "GLM-5.2", "contextWindow": 200_000,
+            "privateData": { "members": [{ "id": "glm-5-2" }] }
+        }]);
+        append_channel_models(&pro, Some("pro"), &mut models).unwrap();
+        append_channel_models(&free, Some("free"), &mut models).unwrap();
+        assert_eq!(models.len(), 1);
+        assert_eq!(
+            models[0].snapshot_for_resource("pro").unwrap()["privateData"]["members"][0]["id"],
+            "glm-5-2-1m"
+        );
+        assert_eq!(
+            models[0].snapshot_for_resource("free").unwrap()["privateData"]["members"][0]["id"],
+            "glm-5-2"
+        );
+        assert!(
+            models[0].snapshot_for_resource("free").unwrap()["contextWindow"]
+                .as_u64()
+                .unwrap()
+                < 1_000_000
+        );
+        assert!(models[0]
+            .snapshot_for_resource_with_context("free", Some(1_000_000))
+            .is_none());
+        assert!(models[0]
+            .snapshot_for_resource_with_context("pro", Some(1_000_000))
+            .is_some());
+        assert!(models[0].snapshot_for_resource("missing").is_none());
     }
 }

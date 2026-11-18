@@ -10,7 +10,7 @@ import { chevronRightIcon, searchIcon, windowCloseIcon } from "../../../shared/u
 import { useMessage } from "../../../shared/ui/message";
 import { Modal } from "../../../shared/ui/Modal";
 import { ModelSelect, type ModelSelectOption } from "../../../shared/ui/ModelSelect";
-import { configuredModelOptions } from "../../../shared/utils/configuredModelOptions";
+import { selectableModelOptions } from "../../../shared/utils/selectableModelOptions";
 import { VirtualList } from "../../../shared/virtual/VirtualList";
 import { SectionCard } from "../SectionCard";
 import styles from "./sections.module.scss";
@@ -74,7 +74,7 @@ export function RefusalFallbackGroup() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [providerFilter, setProviderFilter] = useState<string | null>(null);
 
-  const options = useMemo(() => configuredModelOptions(models, providers, locale), [locale, models, providers]);
+  const options = useMemo(() => selectableModelOptions(models, providers, locale), [locale, models, providers]);
   const optionByValue = useMemo(() => new Map(options.map((option) => [option.value, option])), [options]);
   const saved = useMemo(() => fallbackMap(refusalFallbacks), [refusalFallbacks]);
 

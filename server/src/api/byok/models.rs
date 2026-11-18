@@ -223,6 +223,8 @@ pub(super) fn response(models: &[ListedModel]) -> Value {
         "created":0,
         "owned_by":model.provider_name,
         "name":model.labeled_display_name(),
+        "display_name":model.labeled_display_name(),
+        "description":format!("Keybridge · {}", model.provider_name),
     })).collect::<Vec<_>>()})
 }
 

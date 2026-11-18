@@ -147,6 +147,9 @@ pub struct StoredModel {
     pub enabled: bool,
     #[serde(default)]
     pub private_data: serde_json::Value,
+    /// The model definition returned for each account that actually offers it.
+    #[serde(default)]
+    pub resource_models: std::collections::HashMap<String, serde_json::Value>,
 }
 
 fn default_model_enabled() -> bool {
@@ -260,6 +263,7 @@ impl StoredModel {
                 .get("privateData")
                 .cloned()
                 .unwrap_or(serde_json::Value::Null),
+            resource_models: std::collections::HashMap::new(),
         })
     }
 
@@ -274,6 +278,25 @@ impl StoredModel {
             "capabilities": { "images": self.images },
             "options": self.options,
             "privateData": self.private_data,
+        })
+    }
+
+    pub fn snapshot_for_resource(&self, resource_id: &str) -> Option<&serde_json::Value> {
+        self.resource_models.get(resource_id)
+    }
+
+    pub fn snapshot_for_resource_with_context(
+        &self,
+        resource_id: &str,
+        requested_context: Option<u64>,
+    ) -> Option<&serde_json::Value> {
+        self.snapshot_for_resource(resource_id).filter(|model| {
+            let available = model
+                .get("contextWindow")
+                .and_then(serde_json::Value::as_u64);
+            available.is_none_or(|available| {
+                requested_context.is_none_or(|requested| requested <= available)
+            })
         })
     }
 }

@@ -74,7 +74,7 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
         }
         ApiProtocol::Messages => {
             prompt.instructions = text_content(body.get("system")).unwrap_or_default();
-            parse_anthropic_messages(body.get("messages"), &mut history)?;
+            parse_anthropic_messages(body.get("messages"), &mut prompt, &mut history)?;
             parse_tools(body.get("tools"), protocol, &mut prompt)?;
             model.max_output_tokens = body.get("max_tokens").and_then(Value::as_u64);
         }
@@ -434,6 +434,7 @@ fn parse_responses_input(
 
 fn parse_anthropic_messages(
     value: Option<&Value>,
+    prompt: &mut PromptSpec,
     history: &mut Vec<ProjectedMessage>,
 ) -> Result<()> {
     let messages = value
@@ -444,6 +445,15 @@ fn parse_anthropic_messages(
         let content = message
             .get("content")
             .ok_or_else(|| Error::Protocol("content is required".into()))?;
+        if role == "system" {
+            let text = text_content(Some(content))
+                .ok_or_else(|| Error::Protocol("system content must be text".into()))?;
+            if !prompt.instructions.is_empty() {
+                prompt.instructions.push_str("\n\n");
+            }
+            prompt.instructions.push_str(&text);
+            continue;
+        }
         if let Some(blocks) = content.as_array() {
             let mut text_parts = Vec::new();
             let mut calls = Vec::new();

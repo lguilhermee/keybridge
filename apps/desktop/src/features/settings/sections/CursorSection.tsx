@@ -13,7 +13,7 @@ import { Select } from "../../../shared/ui/Select";
 import { Switch } from "../../../shared/ui/Switch";
 import { TextInput } from "../../../shared/ui/FormControls";
 import controls from "../../../shared/ui/Controls.module.scss";
-import { configuredModelOptions } from "../../../shared/utils/configuredModelOptions";
+import { selectableModelOptions } from "../../../shared/utils/selectableModelOptions";
 import type { VirtualPageSection } from "../../../shell/layout/VirtualPage";
 import { SectionCard } from "../SectionCard";
 import { RefusalFallbackGroup } from "./RefusalFallbackGroup";
@@ -177,13 +177,10 @@ function CommitGroup() {
   const modelOptions = useMemo(() => {
     const options: ModelSelectOption[] = [
       { value: "", label: t("Direct"), group: "Cursor" },
-      ...configuredModelOptions(models, providers, locale),
+      ...selectableModelOptions(models, providers, locale),
     ];
-    if (view?.model_id && !options.some((option) => option.value === view.model_id)) {
-      options.push({ value: view.model_id, label: view.model_id, group: "Cursor" });
-    }
     return options;
-  }, [locale, models, providers, view]);
+  }, [locale, models, providers]);
 
   const persist = useCallback(
     async (modelId: string, prompt: string) => {
@@ -259,7 +256,7 @@ function CommitGroup() {
   const action = editing ? (
     <div className={styles.actions}>
       <Button size="small" disabled={savingModel} onClick={cancelModelEdit}>{t("Cancel")}</Button>
-      <Button variant="primary" size="small" disabled={savingModel} onClick={() => void saveModel()}>
+      <Button variant="primary" size="small" disabled={savingModel || !modelOptions.some((option) => option.value === modelDraft)} onClick={() => void saveModel()}>
         {savingModel ? t("Saving...") : t("Save")}
       </Button>
     </div>

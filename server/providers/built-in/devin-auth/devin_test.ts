@@ -260,6 +260,31 @@ Deno.test("Catalog collapses each family into one model with its Effort and Fast
   );
 });
 
+Deno.test("Catalog excludes account-disabled Devin models and family members", () => {
+  const disabled = (model: Record<string, unknown>) => ({
+    ...model,
+    disabled: true,
+    disabledReason: { shortReason: "Pro", description: "Upgrade to access this model" },
+  });
+  const models = parseModels({
+    clientModelConfigs: [
+      disabled(familyModel("swe-2-high", "swe-2", { effort: "High" }, true)),
+      disabled(familyModel("swe-2-medium", "swe-2", { effort: "Medium" })),
+      familyModel("opus-low", "opus", { effort: "Low" }),
+      disabled(familyModel("opus-high", "opus", { effort: "High" }, true)),
+    ],
+  });
+  equal(models.map((model) => model.id), ["opus"]);
+  equal(
+    requestModelId(models[0], {
+      reasoning: { enabled: true, effort: "high" },
+      latency: "standard",
+      contextWindow: 200_000,
+    }),
+    "opus-low",
+  );
+});
+
 Deno.test("Calls pick the family member matching Effort, Fast and Context", () => {
   const [opus, sonnet] = parseModels({ clientModelConfigs: [...OPUS_FAMILY, ...SONNET_FAMILY] });
   const pick = (
@@ -656,6 +681,47 @@ Deno.test("Provider maps account quota exhaustion into bounded cooling", async (
   );
   equal(result.status, "resource-error");
   equal(result.patch?.state?.status, "cooling");
+});
+
+Deno.test("Unavailable model on one Devin account can move to another account", async () => {
+  const context: ProviderContext = {
+    signal: new AbortController().signal,
+    network: {
+      fetch: () => Promise.reject(new Error("fetch is not used")),
+      stream: () => Promise.reject(new Error("SSE is not used")),
+      streamBytes: async () => ({
+        status: 200,
+        headers: {},
+        chunks: chunks(
+          endFrame({
+            error: {
+              code: "not_found",
+              message:
+                "This model is no longer available for your account. Please switch to a different model.",
+            },
+          }),
+          3,
+        ),
+      }),
+    },
+  };
+  const result = await devinChannel.invoke(
+    {
+      model: { id: "swe-2", displayName: "SWE-2" },
+      resource: {
+        id: "free-account",
+        type: "devin-account",
+        key: "free-account",
+        privateData: { token: "devin-session-token$test", apiKey: null, displayName: "Free" },
+        state: { status: "ready" },
+      },
+      request: request(),
+    },
+    { emit: () => {} },
+    context,
+  );
+  equal(result.status, "resource-error");
+  equal(result.patch, {});
 });
 
 Deno.test("A request refused by the model's content policy ends as a refusal", async () => {

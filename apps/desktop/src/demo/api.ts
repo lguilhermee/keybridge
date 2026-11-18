@@ -2,6 +2,7 @@ import {
   pricingForModel,
   type CallDetail,
   type CodexHarnessStatus,
+  type ClaudeCodeHarnessStatus,
   type CursorHarnessStatus,
   type ExternalApiSettings,
   type LlmCall,
@@ -107,6 +108,14 @@ let codexStatus: CodexHarnessStatus = {
   model: null,
 };
 
+let claudeCodeStatus: ClaudeCodeHarnessStatus = {
+  integration: "disabled",
+  installed: true,
+  config_path: "~/.claude/settings.json",
+  configured_models: models.length,
+  model: null,
+};
+
 let detailed = true;
 let portSettings = { proxy_port: 0, service_port: 0 };
 let externalApiSettings: ExternalApiSettings = { enabled: false, api_key: "" };
@@ -183,6 +192,16 @@ export function installDemoApi() {
       model: enabled ? models[0]?.model_id ?? null : null,
     };
     return json(codexStatus);
+  }
+  if (path === "/harness/claude-code/status") return json(claudeCodeStatus);
+  if (path === "/harness/claude-code/enabled") {
+    const enabled = Boolean((body as { enabled?: unknown } | null)?.enabled);
+    claudeCodeStatus = {
+      ...claudeCodeStatus,
+      integration: enabled ? "enabled" : "disabled",
+      model: enabled ? models[0]?.model_id ?? null : null,
+    };
+    return json(claudeCodeStatus);
   }
     if (path === "/settings/observability" && method === "GET") return json({ detailed });
     if (path === "/settings/observability") {

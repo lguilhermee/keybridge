@@ -488,8 +488,12 @@ impl ConversationRuntime {
                                             )
                                             .await;
                                         }
-                                        Some(pb::conversation_action::Action::CancelAction(_)) => {
-                                            if let Some(conversation_id) = handle.conversation_id()
+                                        Some(pb::conversation_action::Action::CancelAction(
+                                            action,
+                                        )) => {
+                                            if let Some(conversation_id) = handle
+                                                .conversation_id()
+                                                .filter(|_| super::control::is_user_stop(&action))
                                             {
                                                 if let Err(error) = registry
                                                     .set_paused(

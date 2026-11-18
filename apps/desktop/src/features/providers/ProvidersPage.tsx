@@ -1,6 +1,6 @@
 import type { IconifyIcon } from "@iconify/react/offline";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { configuredProviderModels, type Combo, type Model, type ProviderDescriptor } from "../../shared/api";
+import { selectableProviderModels, type Combo, type Model, type ProviderDescriptor } from "../../shared/api";
 import { appStore, useAppStore } from "../../shared/store/appStore";
 import { Button } from "../../shared/ui/Button";
 import controls from "../../shared/ui/Controls.module.scss";
@@ -120,7 +120,7 @@ export function ProvidersPage() {
     });
   }, [providers, groups, combos]);
 
-  const providerModels = configuredProviderModels(providers);
+  const providerModels = selectableProviderModels(providers);
   const testTargets = [
     ...models.map((model) => ({ model_hash: model.model_hash, display_name: model.display_name })),
     ...providerModels.map((model) => ({ model_hash: model.id, display_name: model.displayName })),

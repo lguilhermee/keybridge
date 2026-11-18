@@ -339,6 +339,49 @@ async fn all_three_protocols_use_the_public_model_id() {
 }
 
 #[tokio::test]
+async fn messages_accepts_system_entries_sent_by_claude_desktop() {
+    let (router, protocol, store, _directory) = setup().await;
+    store
+        .set_external_api_settings(ExternalApiSettings {
+            enabled: true,
+            api_key: "secret".into(),
+        })
+        .await
+        .unwrap();
+    protocol.push(vec![
+        ModelEvent::TextDelta("OK".into()),
+        ModelEvent::Done(FinishReason::Stop),
+    ]);
+    let (status, response) = send(
+        router,
+        "POST",
+        "/byok/v1/messages",
+        Some("secret"),
+        json!({
+            "model":"work/qwen/model",
+            "max_tokens":8,
+            "output_config":{"effort":"medium"},
+            "system":"Top-level instruction",
+            "messages":[
+                {"role":"system","content":[{"type":"text","text":"Desktop instruction"}]},
+                {"role":"user","content":"Reply OK"}
+            ]
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{response}");
+    assert_eq!(
+        protocol.requests()[0].prompt.instructions,
+        "Top-level instruction\n\nDesktop instruction"
+    );
+    assert_eq!(protocol.requests()[0].history.len(), 1);
+    assert_eq!(
+        protocol.requests()[0].model.reasoning.effort.as_deref(),
+        Some("medium")
+    );
+}
+
+#[tokio::test]
 async fn streaming_chat_returns_incremental_sse_and_tool_calls() {
     let (router, protocol, store, _directory) = setup().await;
     store

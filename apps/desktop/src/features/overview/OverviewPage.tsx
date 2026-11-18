@@ -202,7 +202,7 @@ export function OverviewPage() {
       icon: iconFor(model.type),
     })),
     ...providers.flatMap((provider) => provider.channels.flatMap((channel) =>
-      channel.configured ? channel.models.filter((model) => model.enabled).map((model) => ({
+      channel.selectable ? channel.models.filter((model) => model.enabled).map((model) => ({
         value: model.id,
         label: model.displayName,
         group: providerText(channel.displayName, locale) || model.providerName,

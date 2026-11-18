@@ -141,6 +141,14 @@ export interface CodexHarnessStatus {
   model: string | null;
 }
 
+export interface ClaudeCodeHarnessStatus {
+  integration: IntegrationState;
+  installed: boolean;
+  config_path: string;
+  configured_models: number;
+  model: string | null;
+}
+
 export interface PortSettings {
   proxy_port: number;
   service_port: number;
@@ -372,6 +380,7 @@ export interface ChannelDescriptor {
   resourceType: string | null;
   hasModels: boolean;
   configured: boolean;
+  selectable: boolean;
   models: ProviderModelDescriptor[];
 }
 
@@ -415,6 +424,11 @@ export interface ProviderImportResult {
 export function configuredProviderModels(providers: ProviderDescriptor[]): ProviderModelDescriptor[] {
   return providers.flatMap((provider) =>
     provider.channels.flatMap((channel) => channel.configured ? channel.models.filter((model) => model.enabled) : []));
+}
+
+export function selectableProviderModels(providers: ProviderDescriptor[]): ProviderModelDescriptor[] {
+  return providers.flatMap((provider) =>
+    provider.channels.flatMap((channel) => channel.selectable ? channel.models.filter((model) => model.enabled) : []));
 }
 
 export interface OverviewMetrics {
@@ -650,6 +664,8 @@ export const api = {
   setCursorEnabled: (enabled: boolean) => request<CursorHarnessStatus>("/harness/cursor/enabled", { method: "PUT", body: JSON.stringify({ enabled }) }),
   codexHarness: () => request<CodexHarnessStatus>("/harness/codex/status"),
   setCodexEnabled: (enabled: boolean) => request<CodexHarnessStatus>("/harness/codex/enabled", { method: "PUT", body: JSON.stringify({ enabled }) }),
+  claudeCodeHarness: () => request<ClaudeCodeHarnessStatus>("/harness/claude-code/status"),
+  setClaudeCodeEnabled: (enabled: boolean) => request<ClaudeCodeHarnessStatus>("/harness/claude-code/enabled", { method: "PUT", body: JSON.stringify({ enabled }) }),
   calls: (query: CallQuery = {}) => {
     const params = new URLSearchParams();
     if (query.status) params.set("status", query.status);

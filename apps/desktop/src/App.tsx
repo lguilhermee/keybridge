@@ -8,14 +8,16 @@ import { AppLayout } from "./shell/AppLayout";
 import { CallsPage } from "./features/calls/CallsPage";
 import { CallDetailsPage } from "./features/calls/CallDetailsPage";
 import { CodexPage } from "./features/codex/CodexPage";
+import { ClaudeCodePage } from "./features/claude-code/ClaudeCodePage";
 import { CursorPage } from "./features/cursor/CursorPage";
 import { OverviewPage } from "./features/overview/OverviewPage";
 import { ProvidersPage } from "./features/providers/ProvidersPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
-import { useAppStore } from "./shared/store/appStore";
+import { appStore, useAppStore } from "./shared/store/appStore";
 import { updateStore } from "./shared/store/updateStore";
 
 const AUTO_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1_000;
+const PROVIDER_AVAILABILITY_REFRESH_MS = 30_000;
 
 export function App() {
   return (
@@ -30,6 +32,7 @@ export function App() {
               <Route path="providers" element={<ProvidersPage />} />
               <Route path="cursor" element={<CursorPage />} />
               <Route path="codex" element={<CodexPage />} />
+              <Route path="claude-code" element={<ClaudeCodePage />} />
               <Route path="settings/:section?" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -46,6 +49,20 @@ function AppMessages() {
   const previousError = useRef<string | null>(null);
   const lastAutomaticUpdateCheckAt = useRef(0);
   const showMessage = useMessage();
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void appStore.refreshProviders();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    const timer = window.setInterval(refreshWhenVisible, PROVIDER_AVAILABILITY_REFRESH_MS);
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (error && error !== previousError.current) showMessage(error);

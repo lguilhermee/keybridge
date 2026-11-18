@@ -10,7 +10,7 @@
 
 ## Build outputs and cleanup
 
-- Keep one working main local build. The current main executable is `target/debug/cursor-byok-desktop.exe`; reuse the workspace-root `target/` and its active dependency cache.
+- Keep one working main local build. The current main executable is the optimized release build at `target/release/cursor-byok-desktop.exe` (v1.3.1); reuse the workspace-root `target/` and its active dependency cache. Build release replacements with `npm run tauri:build -- --no-bundle` from `apps/desktop`, setting `CARGO_TARGET_DIR` to an absolute workspace-root target path. Use `target/verification` when isolation is needed, then promote the verified executable to the main release path.
 - Before replacing the main build, verify the replacement works end to end. Then remove superseded local executables, installers, backup copies, and alternate build directories; finish with only the working main version.
 - Run builds from the workspace root or use an absolute workspace-root target path. Keep nested `server/target/` and `apps/desktop/src-tauri/target/` absent.
 - Use `target/verification` only when checks need isolation from the running desktop. After the check processes exit, remove that directory, including after a failed check; restore any overridden environment variables.
@@ -19,7 +19,7 @@
 
 ## Verification
 
-- Rust: `cargo fmt --all -- --check`, `cargo clippy -p cursor-server --all-targets -- -D warnings`, `cargo test -p cursor-server --all-targets`. When the desktop dev build is running, set `CARGO_TARGET_DIR` to the absolute workspace-root `target/verification` path and remove it after verification as described above.
+- Rust: `cargo fmt --all -- --check`, `cargo clippy -p cursor-server --all-targets -- -D warnings`, `cargo test -p cursor-server --all-targets`. Use the absolute workspace-root `target/verification` path for `CARGO_TARGET_DIR` when verification needs isolation from the running main build; remove it afterward as described above. Keep verification builds separate from the main release executable.
 - Built-in providers (`server/providers/built-in/<provider>`): run `deno test -A <provider>_test.ts` from the provider directory with the bundled runtime at `~/.cursor-byok-v3/providers/runtime/deno/<version>/x86_64-pc-windows-msvc/deno.exe`.
 - Debug desktop builds load built-in providers from source, so a provider syntax error disables that provider (look for `ignoring invalid provider` in `~/.cursor-byok-v3/logs`). Release builds embed them with `include_str!`.
 

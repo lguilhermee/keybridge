@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { api, type CodexHarnessStatus, type Combo, type ComboInput, type CursorHarnessStatus, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type RefusalFallback, type TokenPricingSettings } from "../api";
+import { api, type ClaudeCodeHarnessStatus, type CodexHarnessStatus, type Combo, type ComboInput, type CursorHarnessStatus, type Model, type ModelInput, type Overview, type ProviderDescriptor, type ProviderRuntimeStatus, type PortSettings, type RefusalFallback, type TokenPricingSettings } from "../api";
 import { applyTheme, isThemeId, type ThemeId } from "../theme/theme";
 
 export const DEFAULT_TOKEN_PRICING: TokenPricingSettings = {
@@ -25,6 +25,8 @@ export type AppSnapshot = {
   cursorBusy: boolean;
   codexHarness: CodexHarnessStatus | null;
   codexBusy: boolean;
+  claudeCodeHarness: ClaudeCodeHarnessStatus | null;
+  claudeCodeBusy: boolean;
   providerRuntime: ProviderRuntimeStatus | null;
   providers: ProviderDescriptor[];
 };
@@ -65,6 +67,8 @@ let snapshot: AppSnapshot = {
   cursorBusy: false,
   codexHarness: null,
   codexBusy: false,
+  claudeCodeHarness: null,
+  claudeCodeBusy: false,
   providerRuntime: null,
   providers: [],
 };
@@ -95,7 +99,7 @@ export const appStore = {
   async refresh() {
     update({ busy: true, error: null });
     try {
-      const [models, combos, refusalFallbacks, overview, settings, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers] = await Promise.all([
+      const [models, combos, refusalFallbacks, overview, settings, ports, pricing, cursorHarness, codexHarness, claudeCodeHarness, providerRuntime, providers] = await Promise.all([
         api.models(),
         api.combos(),
         api.refusalFallbacks(),
@@ -105,10 +109,11 @@ export const appStore = {
         api.pricingSettings(),
         api.cursorHarness(),
         api.codexHarness(),
+        api.claudeCodeHarness(),
         api.providerRuntime(),
         api.providers(),
       ]);
-      update({ models, combos, refusalFallbacks, overview, detailed: settings.detailed, ports, pricing, cursorHarness, codexHarness, providerRuntime, providers });
+      update({ models, combos, refusalFallbacks, overview, detailed: settings.detailed, ports, pricing, cursorHarness, codexHarness, claudeCodeHarness, providerRuntime, providers });
     } catch (cause) {
       update({ error: cause instanceof Error ? cause.message : String(cause) });
     } finally {
@@ -226,6 +231,12 @@ export const appStore = {
     try { update({ codexHarness: await api.setCodexEnabled(enabled) }); }
     catch (cause) { update({ error: cause instanceof Error ? cause.message : String(cause) }); }
     finally { update({ codexBusy: false }); }
+  },
+  async setClaudeCodeEnabled(enabled: boolean) {
+    update({ claudeCodeBusy: true, error: null });
+    try { update({ claudeCodeHarness: await api.setClaudeCodeEnabled(enabled) }); }
+    catch (cause) { update({ error: cause instanceof Error ? cause.message : String(cause) }); }
+    finally { update({ claudeCodeBusy: false }); }
   },
   async createModels(models: ModelInput[]) {
     update({ cursorBusy: true, error: null });

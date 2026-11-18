@@ -13,7 +13,7 @@ use tokio_util::sync::CancellationToken;
 use url::Url;
 
 use crate::{
-    local_app::{CodexHarness, CursorHarness},
+    local_app::{ClaudeCodeHarness, CodexHarness, CursorHarness},
     model::{
         ComboConfig, ComboInput, ContentPart, CursorRunTraceArtifact, CursorRunTraceSummary,
         LlmCallRequest, LlmCallResponseChunk, LlmCallSummary, ModelConfig, ModelConfigInput,
@@ -34,6 +34,7 @@ pub struct ControlService {
     store: Store,
     cursor_harness: CursorHarness,
     codex_harness: CodexHarness,
+    claude_code_harness: ClaudeCodeHarness,
     protocol: Arc<dyn Protocol>,
     provider_runtime: ProviderRuntime,
     providers: ProviderRegistry,
@@ -165,6 +166,7 @@ impl ControlService {
         Ok(Self {
             cursor_harness: CursorHarness::new(store.clone())?,
             codex_harness: CodexHarness::managed(store.clone(), providers.clone())?,
+            claude_code_harness: ClaudeCodeHarness::managed(store.clone(), providers.clone())?,
             store,
             protocol,
             provider_runtime,
@@ -183,11 +185,15 @@ impl ControlService {
         &self.codex_harness
     }
 
-    /// Keeps the Codex connection in step after a change to the configured models
-    /// or to the external API that Codex reaches them through.
-    async fn codex_follows<T>(&self, result: Result<T>) -> Result<T> {
+    pub fn claude_code_harness(&self) -> &ClaudeCodeHarness {
+        &self.claude_code_harness
+    }
+
+    /// Keeps the Codex and Claude Code connections in step after model or API changes.
+    async fn coding_clients_follow<T>(&self, result: Result<T>) -> Result<T> {
         if result.is_ok() {
             self.codex_harness.refresh().await;
+            self.claude_code_harness.refresh().await;
         }
         result
     }
@@ -227,7 +233,7 @@ impl ControlService {
         &self,
         session_id: &str,
     ) -> Result<crate::provider::OAuthPollResponse> {
-        self.codex_follows(self.providers.oauth_poll(session_id).await)
+        self.coding_clients_follow(self.providers.oauth_poll(session_id).await)
             .await
     }
 
@@ -237,7 +243,7 @@ impl ControlService {
         resource_type: &str,
         files: serde_json::Value,
     ) -> Result<crate::provider::ImportResponse> {
-        self.codex_follows(
+        self.coding_clients_follow(
             self.providers
                 .import_resources(provider_id, resource_type, files)
                 .await,
@@ -285,7 +291,7 @@ impl ControlService {
         resource_type: &str,
         resource_id: &str,
     ) -> Result<()> {
-        self.codex_follows(
+        self.coding_clients_follow(
             self.providers
                 .delete_resource(provider_id, resource_type, resource_id)
                 .await,
@@ -294,7 +300,7 @@ impl ControlService {
     }
 
     pub async fn provider_sync_models(&self, provider_id: &str, channel_id: &str) -> Result<usize> {
-        self.codex_follows(self.providers.sync_models(provider_id, channel_id).await)
+        self.coding_clients_follow(self.providers.sync_models(provider_id, channel_id).await)
             .await
     }
 
@@ -305,7 +311,7 @@ impl ControlService {
         model_id: &str,
         enabled: bool,
     ) -> Result<()> {
-        self.codex_follows(
+        self.coding_clients_follow(
             self.providers
                 .set_model_enabled(provider_id, channel_id, model_id, enabled)
                 .await,
@@ -314,7 +320,7 @@ impl ControlService {
     }
 
     pub async fn remove_provider_configuration(&self, provider_id: &str) -> Result<()> {
-        self.codex_follows(self.providers.remove(provider_id).await)
+        self.coding_clients_follow(self.providers.remove(provider_id).await)
             .await
     }
 
@@ -354,17 +360,17 @@ impl ControlService {
     }
 
     pub async fn create_models(&self, models: &[ModelConfigInput]) -> Result<Vec<ModelConfig>> {
-        self.codex_follows(self.store.create_models(models).await)
+        self.coding_clients_follow(self.store.create_models(models).await)
             .await
     }
 
     pub async fn reorder_models(&self, model_hashes: &[String]) -> Result<Vec<ModelConfig>> {
-        self.codex_follows(self.store.reorder_models(model_hashes).await)
+        self.coding_clients_follow(self.store.reorder_models(model_hashes).await)
             .await
     }
 
     pub async fn delete_models(&self, model_hashes: &[String]) -> Result<()> {
-        self.codex_follows(self.store.delete_models(model_hashes).await)
+        self.coding_clients_follow(self.store.delete_models(model_hashes).await)
             .await
     }
 
@@ -440,7 +446,7 @@ impl ControlService {
         model_hash: &str,
         input: &ModelConfigInput,
     ) -> Result<ModelConfig> {
-        self.codex_follows(self.store.update_model(model_hash, input).await)
+        self.coding_clients_follow(self.store.update_model(model_hash, input).await)
             .await
     }
 
@@ -631,7 +637,7 @@ impl ControlService {
     pub async fn import_v0049_models(&self) -> Result<LegacyModelImportResult> {
         let path = crate::config::v0049_config_path()?;
         let outcome = self
-            .codex_follows(self.store.import_v0049_model_config(&path).await)
+            .coding_clients_follow(self.store.import_v0049_model_config(&path).await)
             .await?;
         Ok(LegacyModelImportResult {
             imported: outcome.imported,
@@ -786,7 +792,7 @@ impl ControlService {
         &self,
         settings: ExternalApiSettings,
     ) -> Result<ExternalApiSettings> {
-        self.codex_follows(self.store.set_external_api_settings(settings).await)
+        self.coding_clients_follow(self.store.set_external_api_settings(settings).await)
             .await
     }
 

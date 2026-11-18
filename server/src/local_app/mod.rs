@@ -1,11 +1,13 @@
 //! Exposes the local desktop application integration.
 mod account;
 mod ca;
+mod claude_code;
 mod codex;
 mod process;
 mod proxy;
 mod settings;
 
+pub use claude_code::{ClaudeCodeHarness, ClaudeCodeHarnessStatus};
 pub use codex::{CodexHarness, CodexHarnessStatus};
 
 use std::{net::SocketAddr, sync::Arc};

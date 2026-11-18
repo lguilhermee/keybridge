@@ -3,8 +3,8 @@ import type { ModelSelectOption } from "../ui/ModelSelect";
 import { claudeIcon, flatColorOrganizationIcon, openAiIcon } from "../ui/icons";
 import { modelProviderName } from "./modelProvider";
 
-/** ModelSelect options for every configured model: API-key models by `model_hash`, provider models by `provider:` id. */
-export function configuredModelOptions(models: Model[], providers: ProviderDescriptor[], locale: string): ModelSelectOption[] {
+/** ModelSelect options for models usable now: API-key models by `model_hash`, provider models by `provider:` id. */
+export function selectableModelOptions(models: Model[], providers: ProviderDescriptor[], locale: string): ModelSelectOption[] {
   const options: ModelSelectOption[] = models.map((model) => ({
     value: model.model_hash,
     label: model.display_name && model.display_name !== model.model_id
@@ -15,7 +15,7 @@ export function configuredModelOptions(models: Model[], providers: ProviderDescr
   }));
   for (const provider of providers) {
     for (const channel of provider.channels) {
-      if (!channel.configured) continue;
+      if (!channel.selectable) continue;
       const group = providerText(channel.displayName, locale) || provider.name;
       for (const model of channel.models.filter((model) => model.enabled)) {
         options.push({

@@ -29,7 +29,9 @@ Credentials are never bundled in source or shown in account cards.
 
 - Imports use the official CLI's `windsurf_api_key` field. Model discovery uses
   `GetCliModelConfigs`; model IDs and image/output limits come from that
-  catalog. Model routers that require `AssignModel` are excluded.
+  catalog. Account-disabled models and model routers that require `AssignModel`
+  are excluded. If an account loses access to a model after discovery, the
+  channel tries the next ready account before reporting the rejection.
 - Devin publishes Fast Mode as separate model IDs (`-fast`, `-priority`,
   `-lightning`). The catalog links each standard model to the sibling in the
   same `modelFamilyUid` that differs only in its `Fast Mode` family entry, and

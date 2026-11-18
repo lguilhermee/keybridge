@@ -26,6 +26,7 @@ pub struct App {
     registry: TransportRegistry,
     harness: CursorHarness,
     codex: CodexHarness,
+    claude_code: crate::local_app::ClaudeCodeHarness,
     headroom: crate::headroom::HeadroomRuntime,
     store: Store,
 }
@@ -89,6 +90,7 @@ impl App {
         )?;
         let harness = control.cursor_harness().clone();
         let codex = control.codex_harness().clone();
+        let claude_code = control.claude_code_harness().clone();
         let mut router = api::router(registry.clone(), clients)?.merge(byok);
         router = match &config.console {
             Some(ConsoleSource::Directory(directory)) => {
@@ -104,6 +106,7 @@ impl App {
             registry,
             harness,
             codex,
+            claude_code,
             headroom,
             store,
             config,
@@ -154,12 +157,15 @@ impl App {
         let address = listener.local_addr()?;
         self.harness.set_backend_addr(address);
         self.codex.set_backend_addr(address);
+        self.claude_code.set_backend_addr(address);
         tracing::info!(%address, "cursor server listening");
         // The service port can differ between runs, so Codex is pointed at this one.
         self.codex.refresh().await;
+        self.claude_code.refresh().await;
         let registry = self.registry;
         let harness = self.harness;
         let codex = self.codex;
+        let claude_code = self.claude_code;
         let graceful = shutdown.clone();
         let server = axum::serve(listener, self.router)
             .with_graceful_shutdown(async move {
@@ -178,6 +184,9 @@ impl App {
                 if let Err(error) = codex.release().await {
                     tracing::warn!(%error, "failed to release the Codex config after server stop");
                 }
+                if let Err(error) = claude_code.release().await {
+                    tracing::warn!(%error, "failed to release the Claude Code settings after server stop");
+                }
                 result?
             },
             () = shutdown.cancelled() => {
@@ -187,6 +196,9 @@ impl App {
                 }
                 if let Err(error) = codex.release().await {
                     tracing::warn!(%error, "failed to release the Codex config during shutdown");
+                }
+                if let Err(error) = claude_code.release().await {
+                    tracing::warn!(%error, "failed to release the Claude Code settings during shutdown");
                 }
                 registry.shutdown().await;
                 match tokio::time::timeout(Duration::from_secs(10), &mut server).await {

@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import cursorIconUrl from "../shared/assets/icons/cursor.svg";
 import { Icon } from "../shared/ui/Icon";
 import { TooltipTrigger } from "../shared/ui/TooltipTrigger";
-import { activityIcon, homeIcon, openAiIcon, providerIcon, searchIcon, settingsIcon } from "../shared/ui/icons";
+import { activityIcon, claudeIcon, homeIcon, openAiIcon, providerIcon, searchIcon, settingsIcon } from "../shared/ui/icons";
 import { useAppStore } from "../shared/store/appStore";
 import { useUpdateStore } from "../shared/store/updateStore";
 import styles from "./IconRail.module.scss";
@@ -13,14 +13,15 @@ type RailItem = {
   path: string;
   label: string;
   icon: IconifyIcon | string;
-  badge?: "cursor" | "codex" | "update";
+  badge?: "cursor" | "codex" | "claude-code" | "update";
 };
 
 export function IconRail({ onOpenPalette }: { onOpenPalette: () => void }) {
-  const { cursorHarness, codexHarness } = useAppStore();
+  const { cursorHarness, codexHarness, claudeCodeHarness } = useAppStore();
   const { availableVersion } = useUpdateStore();
   const cursorLocal = cursorHarness?.settings_applied ?? false;
   const codexConnected = codexHarness?.integration === "enabled";
+  const claudeCodeConnected = claudeCodeHarness?.integration === "enabled";
   const items: RailItem[] = [
     { path: "/", label: t("Overview"), icon: homeIcon },
     { path: "/calls", label: t("Calls"), icon: activityIcon },
@@ -36,6 +37,12 @@ export function IconRail({ onOpenPalette }: { onOpenPalette: () => void }) {
       label: codexHarness ? `Codex · ${codexConnected ? t("Connected") : t("Not connected")}` : "Codex",
       icon: openAiIcon,
       badge: "codex",
+    },
+    {
+      path: "/claude-code",
+      label: claudeCodeHarness ? `Claude Code · ${claudeCodeConnected ? t("Connected") : t("Not connected")}` : "Claude Code",
+      icon: claudeIcon,
+      badge: "claude-code",
     },
   ];
   const settingsLabel = availableVersion ? `${t("Settings")} · ${t("Update available")}` : t("Settings");
@@ -54,6 +61,7 @@ export function IconRail({ onOpenPalette }: { onOpenPalette: () => void }) {
           title={t("Local proxy configuration only; Remote SSH is not verified.")}
         />}
         {item.badge === "codex" && codexHarness && <span className={styles.badge} data-on={codexConnected || undefined} aria-hidden="true" />}
+        {item.badge === "claude-code" && claudeCodeHarness && <span className={styles.badge} data-on={claudeCodeConnected || undefined} aria-hidden="true" />}
       </RailLink>)}
     </div>
     <div className={styles.bottom}>

@@ -119,7 +119,10 @@ export function parseModels(body: Record<string, any>): ModelDefinition[] {
   const seen = new Set<string>();
   for (const model of body.clientModelConfigs as CatalogModel[]) {
     const id = model.modelUid;
-    if (typeof id !== "string" || !id || seen.has(id) || model.isModelRouter) continue;
+    if (
+      typeof id !== "string" || !id || seen.has(id) || model.isModelRouter ||
+      model.disabled === true
+    ) continue;
     seen.add(id);
     const family = model.modelInfo?.modelFamilyUid;
     const key = typeof family === "string" && family ? family : id;

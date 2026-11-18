@@ -10,7 +10,7 @@ import { useMessage } from "../../shared/ui/message";
 import { ModelSelect } from "../../shared/ui/ModelSelect";
 import { Select } from "../../shared/ui/Select";
 import { TruncatedButton } from "../../shared/ui/TruncatedButton";
-import { configuredModelOptions } from "../../shared/utils/configuredModelOptions";
+import { selectableModelOptions } from "../../shared/utils/selectableModelOptions";
 import { VirtualPage, type VirtualPageSection } from "../../shell/layout/VirtualPage";
 import styles from "./ProvidersPage.module.scss";
 
@@ -26,7 +26,7 @@ export function ComboDetail({ combo, onSaved }: {
   const [strategy, setStrategy] = useState<ComboStrategy>(combo?.strategy ?? "ordered");
   const [members, setMembers] = useState<string[]>(combo?.members ?? []);
   const [deleting, setDeleting] = useState(false);
-  const options = useMemo(() => configuredModelOptions(models, providers, locale), [locale, models, providers]);
+  const options = useMemo(() => selectableModelOptions(models, providers, locale), [locale, models, providers]);
   const optionByValue = useMemo(() => new Map(options.map((option) => [option.value, option])), [options]);
   const strategies: { value: ComboStrategy; label: string; hint: string }[] = [
     { value: "ordered", label: t("Ordered"), hint: t("Every message starts with the first model; the next models answer only when the previous one fails.") },

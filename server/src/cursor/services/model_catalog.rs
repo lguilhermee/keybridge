@@ -1,5 +1,5 @@
 //! Publishes the configured model catalog to Cursor.
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use axum::{
     body::{Body, Bytes},
@@ -306,9 +306,10 @@ pub async fn available_models(
     let models = registry.store().models().await?;
     let combos = registry.store().combos().await?;
     let provider_models = match registry.providers() {
-        Some(providers) => providers.configured_models().await,
+        Some(providers) => providers.selectable_models().await,
         None => Vec::new(),
     };
+    let combos = selectable_combos(combos, &models, &provider_models);
     tracing::info!(
         model_count = models.len(),
         combo_count = combos.len(),
@@ -357,9 +358,10 @@ pub async fn usable_models(
     let models = registry.store().models().await?;
     let combos = registry.store().combos().await?;
     let provider_models = match registry.providers() {
-        Some(providers) => providers.configured_models().await,
+        Some(providers) => providers.selectable_models().await,
         None => Vec::new(),
     };
+    let combos = selectable_combos(combos, &models, &provider_models);
     tracing::info!(
         model_count = models.len(),
         combo_count = combos.len(),
@@ -388,7 +390,7 @@ pub async fn default_model_for_cli(
     State(registry): State<TransportRegistry>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let provider_models = configured_provider_models(&registry).await;
+    let provider_models = selectable_provider_models(&registry).await;
     Ok(local_response(
         agent::GetDefaultModelForCliResponse {
             model: default_model_details(&models, &provider_models),
@@ -399,7 +401,7 @@ pub async fn default_model_for_cli(
 
 pub async fn default_model(State(registry): State<TransportRegistry>) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let provider_models = configured_provider_models(&registry).await;
+    let provider_models = selectable_provider_models(&registry).await;
     Ok(local_response(
         default_model_response(&models, &provider_models).encode_to_vec(),
     ))
@@ -409,17 +411,38 @@ pub async fn default_model_nudge(
     State(registry): State<TransportRegistry>,
 ) -> Result<Response<Body>> {
     let models = registry.store().models().await?;
-    let provider_models = configured_provider_models(&registry).await;
+    let provider_models = selectable_provider_models(&registry).await;
     Ok(local_response(
         default_model_nudge_response(&models, &provider_models).encode_to_vec(),
     ))
 }
 
-async fn configured_provider_models(registry: &TransportRegistry) -> Vec<ProviderModelDescriptor> {
+async fn selectable_provider_models(registry: &TransportRegistry) -> Vec<ProviderModelDescriptor> {
     match registry.providers() {
-        Some(providers) => providers.configured_models().await,
+        Some(providers) => providers.selectable_models().await,
         None => Vec::new(),
     }
+}
+
+fn selectable_combos(
+    combos: Vec<ComboConfig>,
+    models: &[ModelConfig],
+    provider_models: &[ProviderModelDescriptor],
+) -> Vec<ComboConfig> {
+    let selectable: HashSet<&str> = models
+        .iter()
+        .map(|model| model.model_hash.as_str())
+        .chain(provider_models.iter().map(|model| model.id.as_str()))
+        .collect();
+    combos
+        .into_iter()
+        .filter(|combo| {
+            combo
+                .members
+                .iter()
+                .any(|member| selectable.contains(member.as_str()))
+        })
+        .collect()
 }
 
 fn default_model_details(
@@ -1019,6 +1042,32 @@ mod tests {
         assert_eq!(
             nudge.models_with_no_default_switch,
             vec!["local-model-hash"]
+        );
+    }
+
+    #[test]
+    fn combos_with_only_cooling_provider_members_leave_the_picker() {
+        let combo = |id: &str, members: &[&str]| ComboConfig {
+            combo_id: id.into(),
+            sort_order: 0,
+            display_name: id.into(),
+            strategy: crate::model::ComboStrategy::Ordered,
+            members: members.iter().map(|member| (*member).into()).collect(),
+            created_at_ms: 0,
+            updated_at_ms: 0,
+        };
+        let hidden = combo("hidden", &["provider:test/channel/family"]);
+        let usable = combo(
+            "usable",
+            &["provider:test/channel/family", "local-model-hash"],
+        );
+        let selected = selectable_combos(vec![hidden, usable], &[model()], &[]);
+        assert_eq!(
+            selected
+                .iter()
+                .map(|combo| combo.combo_id.as_str())
+                .collect::<Vec<_>>(),
+            ["usable"]
         );
     }
 

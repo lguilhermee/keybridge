@@ -124,11 +124,16 @@ export const devinChannel: ChannelSupport = {
             patch: {
               state: {
                 status: "invalid",
-                message:
-                  "Devin session expired; import fresh credentials or a renewable API key",
+                message: "Devin session expired; import fresh credentials or a renewable API key",
               },
             },
           };
+        }
+        if (
+          error instanceof ConnectError && error.code === "not_found" &&
+          error.detail.toLowerCase().includes("model is no longer available for your account")
+        ) {
+          return { status: "resource-error", message, patch: {} };
         }
         if (isDevinQuotaError(error)) {
           return {

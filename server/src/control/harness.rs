@@ -2,7 +2,7 @@
 use axum::{extract::State, Json};
 
 use crate::{
-    local_app::{CodexHarnessStatus, CursorHarnessStatus, SetEnabled},
+    local_app::{ClaudeCodeHarnessStatus, CodexHarnessStatus, CursorHarnessStatus, SetEnabled},
     Result,
 };
 
@@ -20,6 +20,24 @@ pub async fn set_codex_enabled(
 ) -> Result<Json<CodexHarnessStatus>> {
     Ok(Json(
         service.codex_harness().set_enabled(input.enabled).await?,
+    ))
+}
+
+pub async fn claude_code_status(
+    State(service): State<ControlService>,
+) -> Result<Json<ClaudeCodeHarnessStatus>> {
+    Ok(Json(service.claude_code_harness().status().await?))
+}
+
+pub async fn set_claude_code_enabled(
+    State(service): State<ControlService>,
+    Json(input): Json<SetEnabled>,
+) -> Result<Json<ClaudeCodeHarnessStatus>> {
+    Ok(Json(
+        service
+            .claude_code_harness()
+            .set_enabled(input.enabled)
+            .await?,
     ))
 }
 

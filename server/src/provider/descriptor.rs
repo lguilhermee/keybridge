@@ -1,7 +1,7 @@
 //! Defines serializable provider capability definitions and desktop descriptors.
 use serde::{Deserialize, Serialize};
 
-use super::state::{ModelOptions, ResourceRecord, ResourceState, StoredModel};
+use super::state::{now_ms, ModelOptions, ResourceRecord, ResourceState, StoredModel};
 
 /// Capability summary produced by collect.ts; contains no executable content.
 #[derive(Clone, Debug, Deserialize)]
@@ -119,6 +119,8 @@ pub struct ChannelDescriptor {
     pub has_models: bool,
     /// Invocation prerequisites satisfied: a non-empty model catalog and at least one resource when required.
     pub configured: bool,
+    /// At least one account is ready now; exhausted accounts remain configured and recover after cooldown.
+    pub selectable: bool,
     pub models: Vec<ProviderModelDescriptor>,
 }
 
@@ -252,7 +254,11 @@ impl ProviderResourceView {
     pub fn from_record(record: &ResourceRecord, presentation: ResourcePresentation) -> Self {
         Self {
             id: record.id.clone(),
-            state: record.state.clone(),
+            state: if record.state.is_ready(now_ms()) {
+                ResourceState::Ready
+            } else {
+                record.state.clone()
+            },
             display_name: presentation.display_name,
             description: presentation.description,
             metrics: presentation.metrics,
