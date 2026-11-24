@@ -1178,3 +1178,156 @@ async fn responses_stream_reports_an_upstream_failure_as_response_failed() {
         "{failed}"
     );
 }
+
+#[tokio::test]
+async fn thinking_and_tools_stream_with_contiguous_indices_across_all_three_protocols() {
+    let (router, protocol, store, _directory) = setup().await;
+    store
+        .set_external_api_settings(ExternalApiSettings {
+            enabled: true,
+            api_key: "secret".into(),
+        })
+        .await
+        .unwrap();
+
+    let turn = || {
+        vec![
+            ModelEvent::ThinkingStart,
+            ModelEvent::ThinkingDelta("plan step".into()),
+            ModelEvent::ThinkingEnd,
+            ModelEvent::TextStart,
+            ModelEvent::TextDelta("answer".into()),
+            ModelEvent::TextEnd,
+            ModelEvent::ToolCallStart {
+                index: 0,
+                call_id: "call_1".into(),
+                name: "lookup".into(),
+            },
+            ModelEvent::ToolCallArgumentsDelta {
+                index: 0,
+                delta: "{\"q\":1}".into(),
+            },
+            ModelEvent::ToolCallEnd { index: 0 },
+            ModelEvent::Usage(Usage {
+                input_tokens: Some(10),
+                output_tokens: Some(5),
+                total_tokens: Some(25),
+                reasoning_tokens: Some(10),
+                ..Default::default()
+            }),
+            ModelEvent::Done(FinishReason::ToolUse),
+        ]
+    };
+
+    // Anthropic Messages streaming: thinking=0, text=1, tool_use=2
+    protocol.push(turn());
+    let (status, body) = send(
+        router.clone(),
+        "POST",
+        "/byok/v1/messages",
+        Some("secret"),
+        json!({
+            "model": "work/qwen/model",
+            "max_tokens": 64,
+            "stream": true,
+            "speed": "fast",
+            "thinking": {"type": "adaptive"},
+            "output_config": {"effort": "xhigh"},
+            "messages": [{"role": "user", "content": "hi"}]
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let starts = body
+        .lines()
+        .filter_map(|line| line.strip_prefix("data: "))
+        .filter_map(|data| serde_json::from_str::<Value>(data).ok())
+        .filter(|event| event["type"] == "content_block_start")
+        .map(|event| {
+            (
+                event["index"].as_u64().unwrap(),
+                event["content_block"]["type"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        starts,
+        vec![
+            (0, "thinking".into()),
+            (1, "text".into()),
+            (2, "tool_use".into())
+        ]
+    );
+    assert!(body.contains("thinking_delta"), "{body}");
+    assert_eq!(
+        protocol.requests()[0].model.latency,
+        cursor_server::model::ModelLatency::Fast
+    );
+    assert_eq!(
+        protocol.requests()[0].model.reasoning.effort.as_deref(),
+        Some("xhigh")
+    );
+
+    // OpenAI Responses streaming: reasoning=0, message=1, function_call=2
+    protocol.push(turn());
+    let (status, body) = send(
+        router.clone(),
+        "POST",
+        "/byok/v1/responses",
+        Some("secret"),
+        json!({
+            "model": "work/qwen/model",
+            "input": "hi",
+            "stream": true,
+            "service_tier": "priority",
+            "reasoning": {"effort": "xhigh"}
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let added = body
+        .lines()
+        .filter_map(|line| line.strip_prefix("data: "))
+        .filter_map(|data| serde_json::from_str::<Value>(data).ok())
+        .filter(|event| event["type"] == "response.output_item.added")
+        .map(|event| {
+            (
+                event["output_index"].as_u64().unwrap(),
+                event["item"]["type"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        added,
+        vec![
+            (0, "reasoning".into()),
+            (1, "message".into()),
+            (2, "function_call".into())
+        ]
+    );
+    assert!(
+        body.contains("response.reasoning_summary_text.delta"),
+        "{body}"
+    );
+
+    // OpenAI Chat non-streaming: reasoning_content + reasoning_tokens
+    protocol.push(turn());
+    let (status, body) = send(
+        router,
+        "POST",
+        "/byok/v1/chat/completions",
+        Some("secret"),
+        json!({"model": "work/qwen/model", "messages": [{"role": "user", "content": "hi"}]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let json = serde_json::from_str::<Value>(&body).unwrap();
+    assert_eq!(
+        json["choices"][0]["message"]["reasoning_content"],
+        "plan step"
+    );
+    assert_eq!(
+        json["usage"]["completion_tokens_details"]["reasoning_tokens"],
+        10
+    );
+}

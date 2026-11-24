@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     convert::Infallible,
 };
 
@@ -102,14 +102,32 @@ impl Output {
         };
         match protocol {
             ApiProtocol::Chat => {
+                let mut message = json!({
+                    "role": "assistant",
+                    "content": self.text,
+                    "tool_calls": self.tools.values().map(|tool| json!({
+                        "id": tool.id,
+                        "type": "function",
+                        "function": {"name": tool.name, "arguments": tool.arguments}
+                    })).collect::<Vec<_>>()
+                });
+                if !self.thinking.is_empty() {
+                    message["reasoning_content"] = json!(self.thinking);
+                }
                 json!({"id":id,"object":"chat.completion","created":0,"model":model,
-                "choices":[{"index":0,"message":{"role":"assistant","content":self.text,
-                    "tool_calls":self.tools.values().map(|tool| json!({"id":tool.id,"type":"function",
-                        "function":{"name":tool.name,"arguments":tool.arguments}})).collect::<Vec<_>>()},"finish_reason":finish}],
+                "choices":[{"index":0,"message":message,"finish_reason":finish}],
                 "usage":usage})
             }
             ApiProtocol::Responses => {
                 let mut items = Vec::new();
+                if !self.thinking.is_empty() {
+                    items.push(json!({
+                        "id": format!("rs_{id}"),
+                        "type": "reasoning",
+                        "status": "completed",
+                        "summary": [{"type": "summary_text", "text": self.thinking}]
+                    }));
+                }
                 if !self.text.is_empty() {
                     items.push(json!({"id":format!("msg_{id}"),"type":"message","status":"completed",
                     "role":"assistant","content":[{"type":"output_text","text":self.text,"annotations":[]}]}));
@@ -125,6 +143,9 @@ impl Output {
             }
             ApiProtocol::Messages => {
                 let mut content = Vec::new();
+                if !self.thinking.is_empty() {
+                    content.push(json!({"type":"thinking","thinking":self.thinking}));
+                }
                 if !self.text.is_empty() {
                     content.push(json!({"type":"text","text":self.text}));
                 }
@@ -217,6 +238,47 @@ impl Drop for CancelOnDrop {
     }
 }
 
+#[derive(Default)]
+struct StreamState {
+    next_index: usize,
+    thinking_index: Option<usize>,
+    thinking_closed: bool,
+    text_index: Option<usize>,
+    text_closed: bool,
+    tool_indices: HashMap<usize, usize>,
+    closed_tools: HashSet<usize>,
+}
+
+impl StreamState {
+    fn open_thinking(&mut self) -> Option<usize> {
+        if self.thinking_index.is_some() {
+            return None;
+        }
+        let idx = self.next_index;
+        self.next_index += 1;
+        self.thinking_index = Some(idx);
+        Some(idx)
+    }
+
+    fn open_text(&mut self) -> Option<usize> {
+        if self.text_index.is_some() {
+            return None;
+        }
+        let idx = self.next_index;
+        self.next_index += 1;
+        self.text_index = Some(idx);
+        Some(idx)
+    }
+
+    fn tool_index(&mut self, upstream_index: usize) -> usize {
+        *self.tool_indices.entry(upstream_index).or_insert_with(|| {
+            let idx = self.next_index;
+            self.next_index += 1;
+            idx
+        })
+    }
+}
+
 pub(super) fn streamed(
     protocol: ApiProtocol,
     mut stream: ProtocolStream,
@@ -236,38 +298,55 @@ pub(super) fn streamed(
         } else {
             yield Ok(Event::default().event("message_start").data(json!({"type":"message_start","message":{"id":id,"type":"message","role":"assistant","model":model,"content":[],"usage":{"input_tokens":0,"output_tokens":0}}}).to_string()));
         }
-        let mut text_started = false;
-        let mut text_closed = false;
-        let mut closed_tools = HashSet::new();
+        let mut state = StreamState::default();
         while let Some(result) = stream.next().await {
             match result {
                 Ok(event) => {
-                    if matches!(event, ModelEvent::TextDelta(_)) && !text_started && !matches!(protocol, ApiProtocol::Chat) {
-                        for (name, value) in stream_events(protocol, &ModelEvent::TextStart, &id, &model, &output, &mut text_started) {
+                    if matches!(event, ModelEvent::ThinkingDelta(_)) && state.thinking_index.is_none() && !matches!(protocol, ApiProtocol::Chat) {
+                        for (name, value) in stream_events(protocol, &ModelEvent::ThinkingStart, &id, &model, &output, &mut state) {
+                            yield Ok(Event::default().event(name).data(value.to_string()));
+                        }
+                    }
+                    if matches!(event, ModelEvent::TextStart | ModelEvent::TextDelta(_) | ModelEvent::ToolCallStart { .. } | ModelEvent::Done(_))
+                        && state.thinking_index.is_some()
+                        && !state.thinking_closed
+                    {
+                        for (name, value) in stream_events(protocol, &ModelEvent::ThinkingEnd, &id, &model, &output, &mut state) {
+                            yield Ok(Event::default().event(name).data(value.to_string()));
+                        }
+                        state.thinking_closed = true;
+                    }
+                    if matches!(event, ModelEvent::TextDelta(_)) && state.text_index.is_none() && !matches!(protocol, ApiProtocol::Chat) {
+                        for (name, value) in stream_events(protocol, &ModelEvent::TextStart, &id, &model, &output, &mut state) {
                             yield Ok(Event::default().event(name).data(value.to_string()));
                         }
                     }
                     if matches!(event, ModelEvent::Done(_)) {
-                        if text_started && !text_closed {
-                            for (name, value) in stream_events(protocol, &ModelEvent::TextEnd, &id, &model, &output, &mut text_started) {
+                        if state.text_index.is_some() && !state.text_closed {
+                            for (name, value) in stream_events(protocol, &ModelEvent::TextEnd, &id, &model, &output, &mut state) {
                                 yield Ok(Event::default().event(name).data(value.to_string()));
                             }
+                            state.text_closed = true;
                         }
-                        for index in output.tools.keys().filter(|index| !closed_tools.contains(*index)).copied().collect::<Vec<_>>() {
-                            for (name, value) in stream_events(protocol, &ModelEvent::ToolCallEnd { index }, &id, &model, &output, &mut text_started) {
+                        for index in output.tools.keys().filter(|index| !state.closed_tools.contains(*index)).copied().collect::<Vec<_>>() {
+                            for (name, value) in stream_events(protocol, &ModelEvent::ToolCallEnd { index }, &id, &model, &output, &mut state) {
                                 yield Ok(Event::default().event(name).data(value.to_string()));
                             }
+                            state.closed_tools.insert(index);
                         }
                     }
                     output.update(&event);
-                    for (name, value) in stream_events(protocol, &event, &id, &model, &output, &mut text_started) {
+                    for (name, value) in stream_events(protocol, &event, &id, &model, &output, &mut state) {
                         yield Ok(Event::default().event(name).data(value.to_string()));
                     }
-                    if matches!(event, ModelEvent::TextEnd | ModelEvent::Done(_)) {
-                        text_closed = true;
+                    if matches!(event, ModelEvent::ThinkingEnd) && state.thinking_index.is_some() {
+                        state.thinking_closed = true;
+                    }
+                    if matches!(event, ModelEvent::TextEnd | ModelEvent::Done(_)) && state.text_index.is_some() {
+                        state.text_closed = true;
                     }
                     if let ModelEvent::ToolCallEnd { index } = event {
-                        closed_tools.insert(index);
+                        state.closed_tools.insert(index);
                     }
                 }
                 Err(error) => {
@@ -301,10 +380,14 @@ fn stream_events(
     id: &str,
     model: &str,
     output: &Output,
-    text_started: &mut bool,
+    state: &mut StreamState,
 ) -> Vec<(&'static str, Value)> {
     match protocol {
         ApiProtocol::Chat => match event {
+            ModelEvent::ThinkingDelta(delta) => vec![(
+                "message",
+                chat_chunk(id, model, json!({"reasoning_content":delta}), Value::Null),
+            )],
             ModelEvent::TextDelta(delta) => vec![(
                 "message",
                 chat_chunk(id, model, json!({"content":delta}), Value::Null),
@@ -351,55 +434,119 @@ fn stream_events(
             _ => Vec::new(),
         },
         ApiProtocol::Responses => match event {
-            ModelEvent::TextStart if !*text_started => {
-                *text_started = true;
+            ModelEvent::ThinkingStart => {
+                let Some(idx) = state.open_thinking() else {
+                    return Vec::new();
+                };
+                let item_id = format!("rs_{id}");
                 vec![
                     (
                         "response.output_item.added",
-                        json!({"type":"response.output_item.added","output_index":0,"item":{"type":"message","id":format!("msg_{id}"),"status":"in_progress","role":"assistant","content":[]}}),
+                        json!({"type":"response.output_item.added","output_index":idx,"item":{"id":item_id,"type":"reasoning","status":"in_progress","summary":[]}}),
                     ),
                     (
-                        "response.content_part.added",
-                        json!({"type":"response.content_part.added","output_index":0,"content_index":0,"part":{"type":"output_text","text":"","annotations":[]}}),
+                        "response.reasoning_summary_part.added",
+                        json!({"type":"response.reasoning_summary_part.added","item_id":item_id,"output_index":idx,"summary_index":0,"part":{"type":"summary_text","text":""}}),
                     ),
                 ]
             }
-            ModelEvent::TextDelta(delta) => vec![(
-                "response.output_text.delta",
-                json!({"type":"response.output_text.delta","delta":delta,"output_index":0,"content_index":0}),
-            )],
-            ModelEvent::TextEnd if *text_started => vec![
-                (
-                    "response.output_text.done",
-                    json!({"type":"response.output_text.done","text":output.text,"output_index":0,"content_index":0}),
-                ),
-                (
-                    "response.content_part.done",
-                    json!({"type":"response.content_part.done","output_index":0,"content_index":0,"part":{"type":"output_text","text":output.text,"annotations":[]}}),
-                ),
-                (
-                    "response.output_item.done",
-                    json!({"type":"response.output_item.done","output_index":0,"item":{"type":"message","id":format!("msg_{id}"),"status":"completed","role":"assistant","content":[{"type":"output_text","text":output.text,"annotations":[]}]}}),
-                ),
-            ],
-            ModelEvent::ToolCallStart { index, .. } => vec![(
-                "response.output_item.added",
-                json!({"type":"response.output_item.added","output_index":index + usize::from(*text_started),"item":output.function_call(*index, "in_progress")}),
-            )],
-            ModelEvent::ToolCallArgumentsDelta { index, delta } => vec![(
-                "response.function_call_arguments.delta",
-                json!({"type":"response.function_call_arguments.delta","output_index":index + usize::from(*text_started),"delta":delta}),
-            )],
+            ModelEvent::ThinkingDelta(delta) => {
+                let Some(idx) = state.thinking_index else {
+                    return Vec::new();
+                };
+                vec![(
+                    "response.reasoning_summary_text.delta",
+                    json!({"type":"response.reasoning_summary_text.delta","item_id":format!("rs_{id}"),"output_index":idx,"summary_index":0,"delta":delta}),
+                )]
+            }
+            ModelEvent::ThinkingEnd => {
+                let Some(idx) = state.thinking_index.filter(|_| !state.thinking_closed) else {
+                    return Vec::new();
+                };
+                let item_id = format!("rs_{id}");
+                vec![
+                    (
+                        "response.reasoning_summary_text.done",
+                        json!({"type":"response.reasoning_summary_text.done","item_id":item_id,"output_index":idx,"summary_index":0,"text":output.thinking}),
+                    ),
+                    (
+                        "response.reasoning_summary_part.done",
+                        json!({"type":"response.reasoning_summary_part.done","item_id":item_id,"output_index":idx,"summary_index":0,"part":{"type":"summary_text","text":output.thinking}}),
+                    ),
+                    (
+                        "response.output_item.done",
+                        json!({"type":"response.output_item.done","output_index":idx,"item":{"id":item_id,"type":"reasoning","status":"completed","summary":[{"type":"summary_text","text":output.thinking}]}}),
+                    ),
+                ]
+            }
+            ModelEvent::TextStart => {
+                let Some(idx) = state.open_text() else {
+                    return Vec::new();
+                };
+                vec![
+                    (
+                        "response.output_item.added",
+                        json!({"type":"response.output_item.added","output_index":idx,"item":{"type":"message","id":format!("msg_{id}"),"status":"in_progress","role":"assistant","content":[]}}),
+                    ),
+                    (
+                        "response.content_part.added",
+                        json!({"type":"response.content_part.added","output_index":idx,"content_index":0,"part":{"type":"output_text","text":"","annotations":[]}}),
+                    ),
+                ]
+            }
+            ModelEvent::TextDelta(delta) => {
+                let Some(idx) = state.text_index else {
+                    return Vec::new();
+                };
+                vec![(
+                    "response.output_text.delta",
+                    json!({"type":"response.output_text.delta","delta":delta,"output_index":idx,"content_index":0}),
+                )]
+            }
+            ModelEvent::TextEnd => {
+                let Some(idx) = state.text_index.filter(|_| !state.text_closed) else {
+                    return Vec::new();
+                };
+                vec![
+                    (
+                        "response.output_text.done",
+                        json!({"type":"response.output_text.done","text":output.text,"output_index":idx,"content_index":0}),
+                    ),
+                    (
+                        "response.content_part.done",
+                        json!({"type":"response.content_part.done","output_index":idx,"content_index":0,"part":{"type":"output_text","text":output.text,"annotations":[]}}),
+                    ),
+                    (
+                        "response.output_item.done",
+                        json!({"type":"response.output_item.done","output_index":idx,"item":{"type":"message","id":format!("msg_{id}"),"status":"completed","role":"assistant","content":[{"type":"output_text","text":output.text,"annotations":[]}]}}),
+                    ),
+                ]
+            }
+            ModelEvent::ToolCallStart { index, .. } => {
+                let output_index = state.tool_index(*index);
+                vec![(
+                    "response.output_item.added",
+                    json!({"type":"response.output_item.added","output_index":output_index,"item":output.function_call(*index, "in_progress")}),
+                )]
+            }
+            ModelEvent::ToolCallArgumentsDelta { index, delta } => {
+                let output_index = state.tool_index(*index);
+                vec![(
+                    "response.function_call_arguments.delta",
+                    json!({"type":"response.function_call_arguments.delta","output_index":output_index,"delta":delta}),
+                )]
+            }
             ModelEvent::ToolCallEnd { index } => {
+                let output_index = state.tool_index(*index);
                 let item = output.function_call(*index, "completed");
                 vec![
                     (
                         "response.function_call_arguments.done",
-                        json!({"type":"response.function_call_arguments.done","output_index":index + usize::from(*text_started),"arguments":item["arguments"]}),
+                        json!({"type":"response.function_call_arguments.done","output_index":output_index,"arguments":item["arguments"]}),
                     ),
                     (
                         "response.output_item.done",
-                        json!({"type":"response.output_item.done","output_index":index + usize::from(*text_started),"item":item}),
+                        json!({"type":"response.output_item.done","output_index":output_index,"item":item}),
                     ),
                 ]
             }
@@ -410,52 +557,95 @@ fn stream_events(
             _ => Vec::new(),
         },
         ApiProtocol::Messages => match event {
+            ModelEvent::ThinkingStart => {
+                let Some(idx) = state.open_thinking() else {
+                    return Vec::new();
+                };
+                vec![(
+                    "content_block_start",
+                    json!({"type":"content_block_start","index":idx,"content_block":{"type":"thinking","thinking":""}}),
+                )]
+            }
+            ModelEvent::ThinkingDelta(delta) => {
+                let Some(idx) = state.thinking_index else {
+                    return Vec::new();
+                };
+                vec![(
+                    "content_block_delta",
+                    json!({"type":"content_block_delta","index":idx,"delta":{"type":"thinking_delta","thinking":delta}}),
+                )]
+            }
+            ModelEvent::ThinkingEnd => {
+                let Some(idx) = state.thinking_index.filter(|_| !state.thinking_closed) else {
+                    return Vec::new();
+                };
+                vec![(
+                    "content_block_stop",
+                    json!({"type":"content_block_stop","index":idx}),
+                )]
+            }
             ModelEvent::TextStart => {
-                if *text_started {
-                    Vec::new()
-                } else {
-                    *text_started = true;
-                    vec![(
-                        "content_block_start",
-                        json!({"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}),
-                    )]
-                }
+                let Some(idx) = state.open_text() else {
+                    return Vec::new();
+                };
+                vec![(
+                    "content_block_start",
+                    json!({"type":"content_block_start","index":idx,"content_block":{"type":"text","text":""}}),
+                )]
             }
             ModelEvent::TextDelta(delta) => {
                 let mut events = Vec::new();
-                if !*text_started {
-                    *text_started = true;
-                    events.push(("content_block_start",json!({"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}})));
-                }
-                events.push(("content_block_delta",json!({"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":delta}})));
+                let idx = match state.text_index {
+                    Some(idx) => idx,
+                    None => {
+                        let idx = state.open_text().expect("text index allocated");
+                        events.push((
+                            "content_block_start",
+                            json!({"type":"content_block_start","index":idx,"content_block":{"type":"text","text":""}}),
+                        ));
+                        idx
+                    }
+                };
+                events.push((
+                    "content_block_delta",
+                    json!({"type":"content_block_delta","index":idx,"delta":{"type":"text_delta","text":delta}}),
+                ));
                 events
             }
             ModelEvent::TextEnd => {
-                if *text_started {
-                    vec![(
-                        "content_block_stop",
-                        json!({"type":"content_block_stop","index":0}),
-                    )]
-                } else {
-                    Vec::new()
-                }
+                let Some(idx) = state.text_index.filter(|_| !state.text_closed) else {
+                    return Vec::new();
+                };
+                vec![(
+                    "content_block_stop",
+                    json!({"type":"content_block_stop","index":idx}),
+                )]
             }
             ModelEvent::ToolCallStart {
                 index,
                 call_id,
                 name,
-            } => vec![(
-                "content_block_start",
-                json!({"type":"content_block_start","index":index + usize::from(*text_started),"content_block":{"type":"tool_use","id":call_id,"name":name,"input":{}}}),
-            )],
-            ModelEvent::ToolCallArgumentsDelta { index, delta } => vec![(
-                "content_block_delta",
-                json!({"type":"content_block_delta","index":index + usize::from(*text_started),"delta":{"type":"input_json_delta","partial_json":delta}}),
-            )],
-            ModelEvent::ToolCallEnd { index } => vec![(
-                "content_block_stop",
-                json!({"type":"content_block_stop","index":index + usize::from(*text_started)}),
-            )],
+            } => {
+                let block_index = state.tool_index(*index);
+                vec![(
+                    "content_block_start",
+                    json!({"type":"content_block_start","index":block_index,"content_block":{"type":"tool_use","id":call_id,"name":name,"input":{}}}),
+                )]
+            }
+            ModelEvent::ToolCallArgumentsDelta { index, delta } => {
+                let block_index = state.tool_index(*index);
+                vec![(
+                    "content_block_delta",
+                    json!({"type":"content_block_delta","index":block_index,"delta":{"type":"input_json_delta","partial_json":delta}}),
+                )]
+            }
+            ModelEvent::ToolCallEnd { index } => {
+                let block_index = state.tool_index(*index);
+                vec![(
+                    "content_block_stop",
+                    json!({"type":"content_block_stop","index":block_index}),
+                )]
+            }
             ModelEvent::Done(reason) => {
                 let stop = match reason {
                     FinishReason::Stop => "end_turn",

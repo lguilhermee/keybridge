@@ -201,7 +201,8 @@ async fn generate(
         Err(error) => return api_error(StatusCode::BAD_REQUEST, error),
     };
     parsed.request.model.model_id = model.internal_id.clone();
-    match respond(&state, parsed, protocol, fallback).await {
+    let session_id = protocol::session_id(&headers, &body);
+    match respond(&state, parsed, protocol, fallback, session_id).await {
         Ok(response) => response,
         Err(Error::Protocol(message)) => api_error(StatusCode::BAD_REQUEST, message),
         Err(error) => api_error(StatusCode::BAD_GATEWAY, error),
@@ -213,12 +214,13 @@ async fn respond(
     parsed: protocol::ParsedRequest,
     protocol: ApiProtocol,
     fallback: Option<String>,
+    session_id: Option<String>,
 ) -> Result<Response> {
     let id = format!("external-api:{}", uuid::Uuid::new_v4());
     let invocation = ModelInvocation {
         call_id: id.clone(),
         run_id: id.clone(),
-        conversation_id: id.clone(),
+        conversation_id: session_id.unwrap_or_else(|| id.clone()),
         provider_call_index: 0,
         request: parsed.request,
     };

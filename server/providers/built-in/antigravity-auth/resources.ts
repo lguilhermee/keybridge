@@ -45,7 +45,9 @@ export type AccountQuota = {
   coolingUntilMs: number | null;
   updatedAtMs: number;
   claude?: QuotaMetric | null;
+  claudeWeekly?: QuotaMetric | null;
   gemini?: QuotaMetric | null;
+  geminiWeekly?: QuotaMetric | null;
 };
 
 export type AccountData = {
@@ -117,11 +119,99 @@ export async function fetchAccountProjectAndTier(
   return { projectId: "bamboo-precept-lgxtn", planLabel: "FREE" };
 }
 
+type QuotaSummary = {
+  claude?: QuotaMetric | null;
+  claudeWeekly?: QuotaMetric | null;
+  gemini?: QuotaMetric | null;
+  geminiWeekly?: QuotaMetric | null;
+};
+
+export function parseQuotaSummary(payload: unknown): QuotaSummary | null {
+  const root = object(payload);
+  if (!root) return null;
+  const buckets: Array<Record<string, unknown>> = [];
+  if (Array.isArray(root.buckets)) {
+    for (const b of root.buckets) {
+      const entry = object(b);
+      if (entry) buckets.push(entry);
+    }
+  }
+  if (Array.isArray(root.groups)) {
+    for (const g of root.groups) {
+      const group = object(g);
+      if (!group || !Array.isArray(group.buckets)) continue;
+      for (const b of group.buckets) {
+        const entry = object(b);
+        if (entry) buckets.push(entry);
+      }
+    }
+  }
+  if (buckets.length === 0) return null;
+
+  const summary: QuotaSummary = {};
+  let matched = false;
+  for (const bucket of buckets) {
+    if (bucket.disabled === true) continue;
+    const fraction = typeof bucket.remainingFraction === "number"
+      ? bucket.remainingFraction
+      : null;
+    if (fraction === null) continue;
+    const id = text(bucket.bucketId)?.toLowerCase() ?? "";
+    const window = text(bucket.window)?.toLowerCase() ?? "";
+    const resetTime = text(bucket.resetTime);
+    const parsedReset = resetTime ? Date.parse(resetTime) : NaN;
+    const metric: QuotaMetric = {
+      remainingPercent: Math.max(0, Math.min(100, Math.round(fraction * 100))),
+      resetAtMs: Number.isFinite(parsedReset) ? parsedReset : null,
+    };
+    const isWeekly = window.includes("week") || id.includes("weekly");
+    if (id.startsWith("gemini")) {
+      if (isWeekly) summary.geminiWeekly = metric;
+      else summary.gemini = metric;
+      matched = true;
+    } else if (id.startsWith("3p") || id.includes("claude")) {
+      if (isWeekly) summary.claudeWeekly = metric;
+      else summary.claude = metric;
+      matched = true;
+    }
+  }
+  return matched ? summary : null;
+}
+
+async function fetchQuotaSummary(
+  accessToken: string,
+  projectId: string,
+  network: ProviderContext["network"],
+): Promise<QuotaSummary | null> {
+  for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
+    try {
+      const response = await network.fetch(`${endpoint}/v1internal:retrieveUserQuotaSummary`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          "content-type": "application/json",
+          accept: "application/json",
+          "user-agent": ANTIGRAVITY_USER_AGENT,
+          ...ANTIGRAVITY_CLIENT_HEADERS,
+        },
+        body: JSON.stringify({ project: projectId }),
+      });
+      if (response.status < 200 || response.status >= 300) continue;
+      const parsed = parseQuotaSummary(JSON.parse(response.body));
+      if (parsed) return parsed;
+    } catch {
+      // Fall back to fetchAvailableModels quotaInfo
+    }
+  }
+  return null;
+}
+
 export async function queryAccountQuota(
   accessToken: string,
   network: ProviderContext["network"],
 ): Promise<{ quota: AccountQuota | null; projectId: string; disabledModels: string[] | null }> {
   const { projectId, planLabel } = await fetchAccountProjectAndTier(accessToken, network);
+  const summary = await fetchQuotaSummary(accessToken, projectId, network);
 
   for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
     try {
@@ -193,12 +283,14 @@ export async function queryAccountQuota(
           limitReached: false,
           coolingUntilMs: null,
           updatedAtMs: Date.now(),
-          claude: claudeFraction !== null
+          claude: summary?.claude ?? (claudeFraction !== null
             ? { remainingPercent: Math.round(claudeFraction * 100), resetAtMs: claudeResetAtMs }
-            : null,
-          gemini: geminiFraction !== null
+            : null),
+          claudeWeekly: summary?.claudeWeekly ?? null,
+          gemini: summary?.gemini ?? (geminiFraction !== null
             ? { remainingPercent: Math.round(geminiFraction * 100), resetAtMs: geminiResetAtMs }
-            : null,
+            : null),
+          geminiWeekly: summary?.geminiWeekly ?? null,
         },
       };
     } catch {
@@ -214,8 +306,10 @@ export async function queryAccountQuota(
       limitReached: false,
       coolingUntilMs: null,
       updatedAtMs: Date.now(),
-      claude: null,
-      gemini: null,
+      claude: summary?.claude ?? null,
+      claudeWeekly: summary?.claudeWeekly ?? null,
+      gemini: summary?.gemini ?? null,
+      geminiWeekly: summary?.geminiWeekly ?? null,
     },
   };
 }
@@ -370,7 +464,9 @@ export function quotaExhaustedPatch(
     coolingUntilMs,
     updatedAtMs: nowMs,
     claude: data.quota?.claude ?? null,
+    claudeWeekly: data.quota?.claudeWeekly ?? null,
     gemini: data.quota?.gemini ?? null,
+    geminiWeekly: data.quota?.geminiWeekly ?? null,
   };
   return {
     privateData: { ...data, quota } as unknown as JsonValue,
@@ -384,19 +480,41 @@ export function presentAccount(resource: ResourceSnapshot): ResourceView {
   if (data.quota?.claude) {
     metrics.push({
       id: "claude",
-      label: { "en-US": "Claude", "zh-CN": "Claude" },
+      label: data.quota.claudeWeekly
+        ? { "en-US": "Claude 5h", "zh-CN": "Claude 5小时" }
+        : { "en-US": "Claude", "zh-CN": "Claude" },
       unit: "percent",
       value: data.quota.claude.remainingPercent,
       ...(data.quota.claude.resetAtMs ? { resetAtMs: data.quota.claude.resetAtMs } : {}),
     });
   }
+  if (data.quota?.claudeWeekly) {
+    metrics.push({
+      id: "claude-weekly",
+      label: { "en-US": "Claude Weekly", "zh-CN": "Claude 周限额" },
+      unit: "percent",
+      value: data.quota.claudeWeekly.remainingPercent,
+      ...(data.quota.claudeWeekly.resetAtMs ? { resetAtMs: data.quota.claudeWeekly.resetAtMs } : {}),
+    });
+  }
   if (data.quota?.gemini) {
     metrics.push({
       id: "gemini",
-      label: { "en-US": "Gemini", "zh-CN": "Gemini" },
+      label: data.quota.geminiWeekly
+        ? { "en-US": "Gemini 5h", "zh-CN": "Gemini 5小时" }
+        : { "en-US": "Gemini", "zh-CN": "Gemini" },
       unit: "percent",
       value: data.quota.gemini.remainingPercent,
       ...(data.quota.gemini.resetAtMs ? { resetAtMs: data.quota.gemini.resetAtMs } : {}),
+    });
+  }
+  if (data.quota?.geminiWeekly) {
+    metrics.push({
+      id: "gemini-weekly",
+      label: { "en-US": "Gemini Weekly", "zh-CN": "Gemini 周限额" },
+      unit: "percent",
+      value: data.quota.geminiWeekly.remainingPercent,
+      ...(data.quota.geminiWeekly.resetAtMs ? { resetAtMs: data.quota.geminiWeekly.resetAtMs } : {}),
     });
   }
   return {

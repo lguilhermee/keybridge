@@ -87,12 +87,15 @@ function resolveAntigravityModel(modelId: string): string {
   const raw = modelId.trim();
   const lower = raw.toLowerCase();
 
-  // 1. If explicit tier is already specified in the model ID, pass it directly!
+  // 1. If explicit tier or current Antigravity wire ID is specified, pass it directly.
   if (
+    lower.startsWith("gemini-4-") ||
     lower.startsWith("gemini-3.8-flash-") ||
     lower.startsWith("gemini-3.7-flash-") ||
     lower.startsWith("gemini-3.6-flash-") ||
     lower.startsWith("gemini-3.1-pro-") ||
+    lower.startsWith("claude-opus-5-5") ||
+    lower.startsWith("claude-sonnet-5-5") ||
     lower === "gemini-3.8-flash" ||
     lower === "gemini-3.7-flash" ||
     lower === "gemini-3.6-flash" ||
@@ -292,18 +295,34 @@ function convertToCloudCodeContents(
         rawContents.push({ role: "model", parts });
       }
     } else if (msg.role === "tool") {
-      rawContents.push({
-        role: "user",
-        parts: [
-          {
-            functionResponse: {
-              id: msg.callId,
-              name: msg.name || "function",
-              response: { result: msg.content },
-            },
+      const toolText = msg.parts && msg.parts.length > 0
+        ? msg.parts
+          .filter((p): p is { type: "text"; text: string } => p.type === "text")
+          .map((p) => p.text)
+          .join("\n") || msg.content
+        : msg.content;
+      const parts: Array<Record<string, unknown>> = [
+        {
+          functionResponse: {
+            id: msg.callId,
+            name: msg.name || "function",
+            response: { result: toolText },
           },
-        ],
-      });
+        },
+      ];
+      if (msg.parts && msg.parts.length > 0) {
+        for (const p of msg.parts) {
+          if (p.type === "image") {
+            parts.push({
+              inlineData: {
+                mimeType: p.mediaType,
+                data: p.dataBase64,
+              },
+            });
+          }
+        }
+      }
+      rawContents.push({ role: "user", parts });
     } else if (msg.role === "user") {
       const parts: Array<Record<string, unknown>> = [];
       for (const p of msg.content) {
@@ -383,11 +402,19 @@ async function streamCloudCode(
     }
     : undefined;
 
-  // Priority inference is verified on Gemini 4 Argon/Carbon over cloudcode-pa; other models keep standard.
+  // Priority inference is verified on Gemini 4 (Neon/Hydrogen/Carbon/Argon) over cloudcode-pa.
   const priority = input.request.latency === "fast" && gemini4Family(actualModel) !== null;
   const sessionId = input.request.cacheKey === null
     ? null
     : await antigravitySessionId(input.request.cacheKey);
+  const modelMaxOutput = input.model.maxOutputTokens ?? 65536;
+  const maxOutputTokens = input.request.maxOutputTokens !== null &&
+      input.request.maxOutputTokens > 0
+    ? Math.min(input.request.maxOutputTokens, modelMaxOutput)
+    : modelMaxOutput;
+  const thinkingConfig = input.request.reasoning.enabled
+    ? { includeThoughts: true }
+    : undefined;
 
   const payload = {
     project: projectId || "bamboo-precept-lgxtn",
@@ -402,7 +429,8 @@ async function streamCloudCode(
       ...(tools ? { tools } : {}),
       ...(toolConfig ? { toolConfig } : {}),
       generationConfig: {
-        maxOutputTokens: 65536,
+        maxOutputTokens,
+        ...(thinkingConfig ? { thinkingConfig } : {}),
       },
       ...(sessionId ? { sessionId } : {}),
       ...(priority ? { serviceTier: "SERVICE_TIER_PRIORITY" } : {}),
@@ -419,7 +447,7 @@ async function streamCloudCode(
   if (priority) headers["X-Vertex-AI-LLM-Shared-Request-Type"] = "priority";
   if (actualModel.toLowerCase().includes("claude")) {
     headers["anthropic-beta"] =
-      "claude-code-20250219,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14";
+      "claude-code-20250219,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14,thinking-binding-controls-2026-08-01";
   }
 
   let lastError: Error | null = null;
@@ -463,6 +491,7 @@ async function streamCloudCode(
         outputTokens: number | null;
         totalTokens: number | null;
         cacheReadTokens: number | null;
+        reasoningTokens: number | null;
       } | null = null;
 
       for await (const line of response.lines) {
@@ -509,6 +538,9 @@ async function streamCloudCode(
               : null,
             totalTokens: typeof usage.totalTokenCount === "number" ? usage.totalTokenCount : null,
             cacheReadTokens: cachedTokens,
+            reasoningTokens: typeof usage.thoughtsTokenCount === "number"
+              ? usage.thoughtsTokenCount
+              : null,
           };
         }
 
@@ -623,7 +655,7 @@ async function streamCloudCode(
                 totalTokens: finalUsage.totalTokens,
                 cacheReadTokens: finalUsage.cacheReadTokens,
                 cacheWriteTokens: null,
-                reasoningTokens: null,
+                reasoningTokens: finalUsage.reasoningTokens,
               },
             });
             finalUsage = null;

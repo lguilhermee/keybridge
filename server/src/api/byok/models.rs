@@ -17,6 +17,7 @@ pub(crate) struct ListedModel {
     pub provider_name: String,
     pub display_name: String,
     pub context_window: Option<u64>,
+    pub max_output_tokens: Option<u64>,
     pub images: bool,
     /// Effort levels and Fast tier the model offers callers.
     pub options: ModelOptions,
@@ -190,6 +191,7 @@ pub(crate) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
                 provider_name,
                 display_name: model.display_name,
                 context_window: model.context_window_tokens,
+                max_output_tokens: model.max_completion_tokens.or(model.anthropic_max_tokens),
                 // A manually configured model does not declare its modalities.
                 images: true,
                 options: ModelOptions::manual(),
@@ -208,6 +210,7 @@ pub(crate) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
                 provider_name: model.provider_name,
                 display_name: model.display_name,
                 context_window: model.context_window,
+                max_output_tokens: model.max_output_tokens,
                 images: model.images,
                 options: model.options,
             });
@@ -217,15 +220,31 @@ pub(crate) async fn list(store: &Store, providers: &ProviderRegistry) -> Result<
 }
 
 pub(super) fn response(models: &[ListedModel]) -> Value {
-    json!({"object":"list","data":models.iter().map(|model| json!({
-        "id":model.public_id,
-        "object":"model",
-        "created":0,
-        "owned_by":model.provider_name,
-        "name":model.labeled_display_name(),
-        "display_name":model.labeled_display_name(),
-        "description":format!("Keybridge · {}", model.provider_name),
-    })).collect::<Vec<_>>()})
+    json!({"object":"list","data":models.iter().map(|model| {
+        let mut entry = json!({
+            "id": model.public_id,
+            "object": "model",
+            "created": 0,
+            "owned_by": model.provider_name,
+            "name": model.labeled_display_name(),
+            "display_name": model.labeled_display_name(),
+            "description": format!("Keybridge · {}", model.provider_name),
+            "capabilities": { "images": model.images },
+        });
+        if let Some(window) = model.context_window {
+            entry["context_window"] = json!(window);
+        }
+        if let Some(max_output) = model.max_output_tokens {
+            entry["max_output_tokens"] = json!(max_output);
+        }
+        if !model.options.efforts.is_empty() {
+            entry["supported_efforts"] = json!(model.options.efforts);
+        }
+        if model.options.fast {
+            entry["fast"] = json!(true);
+        }
+        entry
+    }).collect::<Vec<_>>()})
 }
 
 #[cfg(test)]
@@ -277,6 +296,7 @@ mod tests {
             provider_name: "Codex".into(),
             display_name: "6.1".into(),
             context_window: None,
+            max_output_tokens: None,
             images: true,
             options: ModelOptions::default(),
         };

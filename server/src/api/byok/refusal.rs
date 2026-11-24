@@ -51,7 +51,7 @@ impl Fallback {
         // Discard primary effort, Fast tier, token limits and extra parameters.
         parsed.request.model = ModelSpec::new(&self.model_id);
         tracing::warn!(to = %self.model_id, "external API primary refused; using its refusal model");
-        super::respond(&self.state, parsed, self.protocol, None).await
+        super::respond(&self.state, parsed, self.protocol, None, None).await
     }
 
     pub(super) async fn inspect_native(self, response: Response) -> Result<Response> {

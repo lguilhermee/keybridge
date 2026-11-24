@@ -17,32 +17,50 @@ export const ANTIGRAVITY_ENDPOINTS = [
 ];
 
 const FETCH_AVAILABLE_MODELS_PATH = "/v1internal:fetchAvailableModels";
-// Google gates newer models by this client version: Gemini 4 Carbon/Argon are
-// only listed and served for antigravity/hub >= 2.15.5.
+// Google gates newer models by this client version: Antigravity 2.34.0 exposes
+// Gemini 4 Neon/Hydrogen/Carbon/Argon (with xhigh), Claude 5.5 (1M), and groupedModels.
 export const ANTIGRAVITY_USER_AGENT =
-  "antigravity/hub/2.31.0 (aidev_client; os_type=darwin; arch=arm64; cl=975423596)";
+  "antigravity/hub/2.34.0 (aidev_client; os_type=darwin; arch=arm64; cl=1012564305)";
 
 export const ANTIGRAVITY_CLIENT_HEADERS: Record<string, string> = {};
 
-const ANTIGRAVITY_DENYLIST = new Set(["chat_20706", "chat_23310"]);
+const ANTIGRAVITY_DENYLIST = new Set([
+  "chat_20706",
+  "chat_23310",
+  "tab_flash_lite_preview",
+  "tab_jump_flash_lite_preview",
+]);
+
+function isInternalHelperModel(id: string): boolean {
+  const lower = id.trim().toLowerCase();
+  return ANTIGRAVITY_DENYLIST.has(lower) ||
+    lower.startsWith("tab_") ||
+    lower.endsWith("-tiered") ||
+    lower.includes("-tiered-") ||
+    lower.endsWith("-sonar");
+}
 
 /** Gemini 4 families serve priority inference; matches both base and tiered IDs. */
-const GEMINI_4 = /^(gemini-4-(?:carbon|argon))(?:-(?:low|medium|high))?$/;
+const GEMINI_4 = /^(gemini-4-(?:neon|hydrogen|carbon|argon))(?:-(?:low|medium|high|xhigh))?$/;
 
-/** Returns the Gemini 4 family (`gemini-4-carbon` / `gemini-4-argon`) of a base or tiered ID. */
+/** Returns the Gemini 4 family (`gemini-4-neon` / `hydrogen` / `carbon` / `argon`) of an ID. */
 export function gemini4Family(id: string): string | null {
   return GEMINI_4.exec(id.trim().toLowerCase())?.[1] ?? null;
 }
 
 /**
- * Antigravity lists thinking tiers as separate wire IDs (`<base>-low`, `-medium`, `-high`).
- * Keybridge publishes one model per base and Cursor's Effort picks the tier.
+ * Antigravity lists thinking tiers as separate wire IDs (`<base>-low`, `-medium`, `-high`,
+ * `-xhigh`, `-max`). Keybridge publishes one model per base and Effort picks the tier.
  */
-const TIER_SUFFIX = /^(.+)-(low|medium|high)$/;
-const TIERS = ["low", "medium", "high"] as const;
+const TIER_SUFFIX = /^(.+)-(low|medium|high|xhigh|max)$/;
+const TIERS = ["low", "medium", "high", "xhigh", "max"] as const;
 type Tier = typeof TIERS[number];
 
-/** Maps Cursor's Effort onto the three wire tiers; no effort means medium. */
+function isTier(value: string): value is Tier {
+  return (TIERS as readonly string[]).includes(value);
+}
+
+/** Maps Effort onto the wire tiers; no effort means medium. */
 function effortTier(effort: string | null): Tier {
   switch (effort?.toLowerCase()) {
     case "none":
@@ -50,21 +68,36 @@ function effortTier(effort: string | null): Tier {
     case "low":
       return "low";
     case "high":
+      return "high";
     case "xhigh":
+      return "xhigh";
     case "max":
     case "ultra":
-      return "high";
+      return "max";
     default:
       return "medium";
   }
 }
 
+type GroupMetadata = {
+  displayName?: string;
+  tiers?: Tier[];
+  defaultEffort?: Tier;
+};
+
 /** Collapses tier siblings into one model; a standalone `<base>` model is replaced by its tiers. */
-export function groupTiers(models: ModelDefinition[]): ModelDefinition[] {
+export function groupTiers(
+  models: ModelDefinition[],
+  groups?: Map<string, GroupMetadata>,
+): ModelDefinition[] {
   const tiers = new Map<string, Tier[]>();
   for (const model of models) {
     const match = TIER_SUFFIX.exec(model.id);
-    if (match) tiers.set(match[1], [...(tiers.get(match[1]) ?? []), match[2] as Tier]);
+    if (match) {
+      const existing = tiers.get(match[1]) ?? [];
+      const tier = match[2] as Tier;
+      if (!existing.includes(tier)) tiers.set(match[1], [...existing, tier]);
+    }
   }
   const familyOf = (id: string): string | null => {
     const base = TIER_SUFFIX.exec(id)?.[1];
@@ -81,14 +114,31 @@ export function groupTiers(models: ModelDefinition[]): ModelDefinition[] {
     }
     if (emitted.has(family)) continue;
     emitted.add(family);
-    const levels = TIERS.filter((tier) => tiers.get(family)!.includes(tier));
-    const first = models.find((candidate) => candidate.id === `${family}-${levels[0]}`) ?? model;
+    const meta = groups?.get(family);
+    const detected = tiers.get(family)!;
+    const levels = meta?.tiers?.length
+      ? meta.tiers.filter((tier) => detected.includes(tier))
+      : TIERS.filter((tier) => detected.includes(tier));
+    const orderedLevels = levels.length > 0
+      ? levels
+      : TIERS.filter((tier) => detected.includes(tier));
+    const first = models.find((candidate) => candidate.id === `${family}-${orderedLevels[0]}`) ??
+      model;
+    const displayName = meta?.displayName ??
+      first.displayName.replace(/\s*\((?:low|medium|high|xhigh|extra high|max)\)\s*$/i, "");
+    const defaultEffort = meta?.defaultEffort && orderedLevels.includes(meta.defaultEffort)
+      ? meta.defaultEffort
+      : undefined;
     grouped.push({
       ...first,
       id: family,
-      displayName: first.displayName.replace(/\s*\((?:low|medium|high)\)\s*$/i, ""),
-      options: { efforts: [...levels], ...(gemini4Family(family) !== null ? { fast: true } : {}) },
-      privateData: { tiers: [...levels] },
+      displayName,
+      options: {
+        efforts: [...orderedLevels],
+        ...(defaultEffort ? { defaultEffort } : {}),
+        ...(gemini4Family(family) !== null ? { fast: true } : {}),
+      },
+      privateData: { tiers: [...orderedLevels] },
     });
   }
   return grouped;
@@ -109,11 +159,12 @@ export function tierModelId(model: ModelSnapshot, effort: string | null): string
 
 /**
  * Context windows by model family as documented by each upstream vendor
- * (Gemini 1M, Claude 200K, GPT-4o 128K, gpt-oss-120b 128K). Unknown families
- * report no window rather than a guess.
+ * (Gemini 1M, Claude 5.x 1M, Claude 3/4 200K, GPT-4o 128K, gpt-oss-120b 128K).
+ * Unknown families report no window rather than a guess.
  */
 function contextWindowFor(id: string): number | undefined {
   if (id.startsWith("gemini")) return 1_048_576;
+  if (id.startsWith("claude-opus-5") || id.startsWith("claude-sonnet-5")) return 1_000_000;
   if (id.startsWith("claude")) return 200_000;
   if (id.startsWith("gpt-4o")) return 128_000;
   if (id.startsWith("gpt-oss")) return 131_072;
@@ -121,42 +172,102 @@ function contextWindowFor(id: string): number | undefined {
 }
 
 const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
-  // Gemini 4 Series
+  // Gemini 4 Neon Series
+  {
+    id: "gemini-4-neon-low",
+    displayName: "Gemini 4 Neon (Low)",
+    description: "For most deep reasoning and complex problems",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+  {
+    id: "gemini-4-neon-medium",
+    displayName: "Gemini 4 Neon (Medium)",
+    description: "For most deep reasoning and complex problems",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+  {
+    id: "gemini-4-neon-high",
+    displayName: "Gemini 4 Neon (High)",
+    description: "For most deep reasoning and complex problems",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+  {
+    id: "gemini-4-neon-xhigh",
+    displayName: "Gemini 4 Neon (XHigh)",
+    description: "For most deep reasoning and complex problems",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+
+  // Gemini 4 Carbon Series
   {
     id: "gemini-4-carbon-low",
     displayName: "Gemini 4 Carbon (Low)",
+    description: "For your hardest, long-horizon tasks",
     capabilities: { images: true },
-    maxOutputTokens: 65536,
+    maxOutputTokens: 262144,
   },
-
   {
     id: "gemini-4-carbon-medium",
     displayName: "Gemini 4 Carbon (Medium)",
+    description: "For your hardest, long-horizon tasks",
     capabilities: { images: true },
-    maxOutputTokens: 65536,
+    maxOutputTokens: 262144,
   },
-
   {
     id: "gemini-4-carbon-high",
     displayName: "Gemini 4 Carbon (High)",
+    description: "For your hardest, long-horizon tasks",
     capabilities: { images: true },
-    maxOutputTokens: 65536,
+    maxOutputTokens: 262144,
   },
 
+  // Gemini 4 Hydrogen Series
+  {
+    id: "gemini-4-hydrogen-low",
+    displayName: "Gemini 4 Hydrogen (Low)",
+    description: "For speed and efficiency in execution tasks",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+  {
+    id: "gemini-4-hydrogen-medium",
+    displayName: "Gemini 4 Hydrogen (Medium)",
+    description: "For speed and efficiency in execution tasks",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+  {
+    id: "gemini-4-hydrogen-high",
+    displayName: "Gemini 4 Hydrogen (High)",
+    description: "For speed and efficiency in execution tasks",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+  {
+    id: "gemini-4-hydrogen-xhigh",
+    displayName: "Gemini 4 Hydrogen (XHigh)",
+    description: "For speed and efficiency in execution tasks",
+    capabilities: { images: true },
+    maxOutputTokens: 262144,
+  },
+
+  // Gemini 4 Argon Series
   {
     id: "gemini-4-argon-low",
     displayName: "Gemini 4 Argon (Low)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
   },
-
   {
     id: "gemini-4-argon-medium",
     displayName: "Gemini 4 Argon (Medium)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
   },
-
   {
     id: "gemini-4-argon-high",
     displayName: "Gemini 4 Argon (High)",
@@ -183,12 +294,6 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     capabilities: { images: true },
     maxOutputTokens: 65536,
   },
-  {
-    id: "gemini-3.8-flash-tiered",
-    displayName: "Gemini 3.8 Flash (Tiered)",
-    capabilities: { images: true },
-    maxOutputTokens: 65536,
-  },
 
   // Gemini 3.7 Series
   {
@@ -212,12 +317,6 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
   {
     id: "gemini-3.7-flash-low",
     displayName: "Gemini 3.7 Flash (Low)",
-    capabilities: { images: true },
-    maxOutputTokens: 65536,
-  },
-  {
-    id: "gemini-3.7-flash-tiered",
-    displayName: "Gemini 3.7 Flash (Tiered)",
     capabilities: { images: true },
     maxOutputTokens: 65536,
   },
@@ -312,7 +411,45 @@ const STATIC_ANTIGRAVITY_CATALOG: ModelDefinition[] = [
     maxOutputTokens: 65536,
   },
 
-  // Claude Series (via Antigravity)
+  // Claude 5.5 Series (1M context, 128K output via Antigravity)
+  {
+    id: "claude-opus-5-5-low",
+    displayName: "Claude Opus 5.5 (Low)",
+    capabilities: { images: true },
+    maxOutputTokens: 128000,
+  },
+  {
+    id: "claude-opus-5-5-medium",
+    displayName: "Claude Opus 5.5 (Medium)",
+    capabilities: { images: true },
+    maxOutputTokens: 128000,
+  },
+  {
+    id: "claude-opus-5-5-high",
+    displayName: "Claude Opus 5.5 (High)",
+    capabilities: { images: true },
+    maxOutputTokens: 128000,
+  },
+  {
+    id: "claude-sonnet-5-5-low",
+    displayName: "Claude Sonnet 5.5 (Low)",
+    capabilities: { images: true },
+    maxOutputTokens: 128000,
+  },
+  {
+    id: "claude-sonnet-5-5-medium",
+    displayName: "Claude Sonnet 5.5 (Medium)",
+    capabilities: { images: true },
+    maxOutputTokens: 128000,
+  },
+  {
+    id: "claude-sonnet-5-5-high",
+    displayName: "Claude Sonnet 5.5 (High)",
+    capabilities: { images: true },
+    maxOutputTokens: 128000,
+  },
+
+  // Claude 4.6 / 3.x Series (via Antigravity)
   {
     id: "claude-sonnet-4-6",
     displayName: "Claude Sonnet 4.6 (Antigravity)",
@@ -403,10 +540,61 @@ function positiveInteger(value: unknown): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : null;
 }
 
+function parseGroupMetadata(root: Record<string, unknown>): Map<string, GroupMetadata> {
+  const groups = new Map<string, GroupMetadata>();
+  const rawGrouped = object(root.groupedModels);
+  if (rawGrouped) {
+    for (const [familyId, rawGroup] of Object.entries(rawGrouped)) {
+      const group = object(rawGroup);
+      if (!group) continue;
+      const displayName = text(group.displayName) ?? undefined;
+      const rawLevels = Array.isArray(group.supportedThinkingLevels)
+        ? group.supportedThinkingLevels
+        : [];
+      const tiers = rawLevels
+        .map((entry) => text(object(entry)?.thinkingSuffix)?.toLowerCase())
+        .filter((suffix): suffix is Tier => typeof suffix === "string" && isTier(suffix));
+      groups.set(familyId.trim(), {
+        ...(displayName ? { displayName } : {}),
+        ...(tiers.length > 0 ? { tiers } : {}),
+      });
+    }
+  }
+  const defaultModelId = text(root.defaultAgentModelId);
+  if (defaultModelId) {
+    const match = TIER_SUFFIX.exec(defaultModelId);
+    if (match && isTier(match[2])) {
+      const existing = groups.get(match[1]) ?? {};
+      groups.set(match[1], { ...existing, defaultEffort: match[2] });
+    }
+  }
+  return groups;
+}
+
+function parseSortRank(root: Record<string, unknown>): Map<string, number> {
+  const rank = new Map<string, number>();
+  const sorts = Array.isArray(root.agentModelSorts) ? root.agentModelSorts : [];
+  let cursor = 0;
+  for (const sort of sorts) {
+    const groups = Array.isArray(object(sort)?.groups) ? object(sort)!.groups as unknown[] : [];
+    for (const group of groups) {
+      const ids = Array.isArray(object(group)?.modelIds) ? object(group)!.modelIds as unknown[] : [];
+      for (const rawId of ids) {
+        const id = text(rawId);
+        if (!id) continue;
+        const family = TIER_SUFFIX.exec(id)?.[1] ?? id;
+        if (!rank.has(family)) rank.set(family, cursor++);
+        if (!rank.has(id)) rank.set(id, cursor++);
+      }
+    }
+  }
+  return rank;
+}
+
 export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
   const root = object(payload);
   const rawModels = object(root?.models);
-  if (!rawModels) return [];
+  if (!root || !rawModels) return [];
 
   const models: ModelDefinition[] = [];
   const seen = new Set<string>();
@@ -419,15 +607,16 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
       if (prefix) disabledPrefixes.push(prefix);
       continue;
     }
-    if (ANTIGRAVITY_DENYLIST.has(modelId)) continue;
+    if (isInternalHelperModel(modelId)) continue;
     const model = object(raw);
-    if (!model) continue;
+    if (!model || model.disabled === true || model.isInternal === true) continue;
 
     const id = modelId.trim();
     if (!id || seen.has(id)) continue;
     seen.add(id);
 
     const displayName = text(model.displayName) ?? id;
+    const description = text(model.tagDescription) ?? text(model.description) ?? undefined;
     const maxOutputTokens = typeof model.maxOutputTokens === "number" && model.maxOutputTokens > 0
       ? model.maxOutputTokens
       : 65_536;
@@ -438,6 +627,7 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
     models.push({
       id,
       displayName,
+      ...(description ? { description } : {}),
       capabilities: {
         images: model.supportsImages === true || id.includes("gemini") || id.includes("claude"),
       },
@@ -453,7 +643,16 @@ export function parseAntigravityModels(payload: unknown): ModelDefinition[] {
       models.push({ ...staticModel, contextWindow: contextWindowFor(staticModel.id) });
     }
   }
-  return groupTiers(models);
+  const grouped = groupTiers(models, parseGroupMetadata(root));
+  const sortRank = parseSortRank(root);
+  if (sortRank.size > 0) {
+    grouped.sort((left, right) => {
+      const leftRank = sortRank.get(left.id) ?? Number.MAX_SAFE_INTEGER;
+      const rightRank = sortRank.get(right.id) ?? Number.MAX_SAFE_INTEGER;
+      return leftRank - rightRank;
+    });
+  }
+  return grouped;
 }
 
 async function fetchModelsForAccount(

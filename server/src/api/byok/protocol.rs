@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use axum::http::HeaderMap;
 use base64::Engine;
 use serde_json::Value;
 
@@ -98,8 +99,34 @@ pub(super) fn parse(protocol: ApiProtocol, body: &Value) -> Result<ParsedRequest
     })
 }
 
+/// Extracts a stable per-session identifier from caller headers or body so multi-turn
+/// external API requests (Claude Code, Codex, OpenAI clients) preserve upstream prefix caching.
+pub(super) fn session_id(headers: &HeaderMap, body: &Value) -> Option<String> {
+    let from_body = body
+        .get("prompt_cache_key")
+        .or_else(|| body.pointer("/metadata/user_id"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    if let Some(value) = from_body {
+        return Some(value.to_owned());
+    }
+    for name in ["x-claude-code-session-id", "session-id", "thread-id"] {
+        if let Some(value) = headers
+            .get(name)
+            .and_then(|value| value.to_str().ok())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            return Some(value.to_owned());
+        }
+    }
+    None
+}
+
 /// Reasoning effort and Fast tier a caller picks per request: Chat `reasoning_effort`, Responses
-/// `reasoning.effort`, Messages `output_config.effort`, and the OpenAI `service_tier: "priority"`.
+/// `reasoning.effort`, Messages `output_config.effort` / `thinking`, OpenAI `service_tier: "priority"`,
+/// and Anthropic `speed: "fast"` / `service_tier: "priority"`.
 fn apply_selected_settings(protocol: ApiProtocol, body: &Value, model: &mut ModelSpec) {
     let effort = match protocol {
         ApiProtocol::Chat => body.get("reasoning_effort"),
@@ -119,8 +146,25 @@ fn apply_selected_settings(protocol: ApiProtocol, body: &Value, model: &mut Mode
             effort: Some(effort.to_owned()),
         };
     }
-    let openai = matches!(protocol, ApiProtocol::Chat | ApiProtocol::Responses);
-    if openai && body.get("service_tier").and_then(Value::as_str) == Some("priority") {
+    if matches!(protocol, ApiProtocol::Messages) {
+        match body
+            .pointer("/thinking/type")
+            .and_then(Value::as_str)
+            .map(str::trim)
+        {
+            Some("adaptive" | "enabled") => {
+                model.reasoning.enabled = true;
+            }
+            Some("disabled") => {
+                model.reasoning = ReasoningSpec::default();
+            }
+            _ => {}
+        }
+    }
+    let priority = body.get("service_tier").and_then(Value::as_str) == Some("priority");
+    let fast_speed = matches!(protocol, ApiProtocol::Messages)
+        && body.get("speed").and_then(Value::as_str) == Some("fast");
+    if priority || fast_speed {
         model.latency = ModelLatency::Fast;
     }
 }
@@ -456,9 +500,19 @@ fn parse_anthropic_messages(
         }
         if let Some(blocks) = content.as_array() {
             let mut text_parts = Vec::new();
+            let mut thinking = String::new();
             let mut calls = Vec::new();
             for (block_index, block) in blocks.iter().enumerate() {
                 match block.get("type").and_then(Value::as_str) {
+                    Some("thinking") => {
+                        if let Some(text) = block.get("thinking").and_then(Value::as_str) {
+                            if !thinking.is_empty() && !text.is_empty() {
+                                thinking.push('\n');
+                            }
+                            thinking.push_str(text);
+                        }
+                    }
+                    Some("redacted_thinking") => {}
                     Some("tool_use") => calls.push(ToolCallContent {
                         index: calls.len(),
                         call_id: required_string(block, "id")?.into(),
@@ -482,19 +536,28 @@ fn parse_anthropic_messages(
                             });
                         }
                         let call_id = required_string(block, "tool_use_id")?;
+                        let content = block.get("content");
+                        let provider_parts = parse_parts(content)
+                            .ok()
+                            .filter(|parts| {
+                                parts
+                                    .iter()
+                                    .any(|part| matches!(part, ContentPart::Image { .. }))
+                            })
+                            .unwrap_or_default();
                         history.push(ProjectedMessage {
                             message_id: format!("external:{index}:{block_index}:tool"),
                             role: Role::Tool,
                             content: ProjectedContent::ToolResult(ToolResultContent {
                                 call_id: call_id.into(),
                                 name: tool_name(history, call_id).unwrap_or_else(|| "tool".into()),
-                                content: text_content(block.get("content")).unwrap_or_default(),
+                                content: text_content(content).unwrap_or_default(),
                                 is_error: block
                                     .get("is_error")
                                     .and_then(Value::as_bool)
                                     .unwrap_or(false),
                                 image: None,
-                                provider_parts: Vec::new(),
+                                provider_parts,
                             }),
                         });
                     }
@@ -518,7 +581,7 @@ fn parse_anthropic_messages(
                     role: Role::Assistant,
                     content: ProjectedContent::Assistant {
                         text,
-                        thinking: String::new(),
+                        thinking,
                         replay_state: None,
                         calls,
                     },
@@ -670,17 +733,102 @@ mod tests {
     }
 
     #[test]
-    fn messages_requests_carry_selected_effort() {
+    fn messages_requests_carry_selected_effort_thinking_and_fast_speed() {
         let body = json!({
             "model": "m",
             "max_tokens": 16,
             "messages": [{"role": "user", "content": "hi"}],
             "thinking": {"type": "adaptive"},
             "output_config": {"effort": "xhigh"},
+            "speed": "fast",
         });
         let model = parse(ApiProtocol::Messages, &body).unwrap().request.model;
         assert!(model.reasoning.enabled);
         assert_eq!(model.reasoning.effort.as_deref(), Some("xhigh"));
+        assert_eq!(model.latency, ModelLatency::Fast);
+
+        let adaptive_only = json!({
+            "model": "m",
+            "max_tokens": 16,
+            "messages": [{"role": "user", "content": "hi"}],
+            "thinking": {"type": "adaptive"},
+            "service_tier": "priority",
+        });
+        let model = parse(ApiProtocol::Messages, &adaptive_only)
+            .unwrap()
+            .request
+            .model;
+        assert!(model.reasoning.enabled);
+        assert_eq!(model.reasoning.effort, None);
+        assert_eq!(model.latency, ModelLatency::Fast);
+    }
+
+    #[test]
+    fn messages_history_preserves_thinking_blocks_and_tool_result_images() {
+        let body = json!({
+            "model": "m",
+            "max_tokens": 16,
+            "messages": [
+                {"role": "user", "content": "inspect"},
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "thinking", "thinking": "step 1", "signature": "sig"},
+                        {"type": "redacted_thinking", "data": "abc"},
+                        {"type": "tool_use", "id": "tu_1", "name": "screenshot", "input": {}}
+                    ]
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "tu_1",
+                            "content": [
+                                {"type": "text", "text": "captured"},
+                                {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "AA=="}}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        });
+        let parsed = parse(ApiProtocol::Messages, &body).unwrap();
+        let ProjectedContent::Assistant {
+            thinking, calls, ..
+        } = &parsed.request.history[1].content
+        else {
+            panic!("expected assistant");
+        };
+        assert_eq!(thinking, "step 1");
+        assert_eq!(calls.len(), 1);
+        let ProjectedContent::ToolResult(result) = &parsed.request.history[2].content else {
+            panic!("expected tool result");
+        };
+        assert_eq!(result.provider_parts.len(), 2);
+    }
+
+    #[test]
+    fn session_id_reads_cache_keys_and_client_session_headers() {
+        let headers = HeaderMap::new();
+        assert_eq!(
+            session_id(&headers, &json!({"prompt_cache_key": "conv-1"})).as_deref(),
+            Some("conv-1")
+        );
+        assert_eq!(
+            session_id(
+                &headers,
+                &json!({"metadata": {"user_id": "user_x_session_y"}})
+            )
+            .as_deref(),
+            Some("user_x_session_y")
+        );
+        let mut with_header = HeaderMap::new();
+        with_header.insert("x-claude-code-session-id", "sess-42".parse().unwrap());
+        assert_eq!(
+            session_id(&with_header, &json!({})).as_deref(),
+            Some("sess-42")
+        );
     }
 
     #[test]

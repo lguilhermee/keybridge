@@ -14,7 +14,7 @@ function catalogModel(id: string) {
   return STATIC_ANTIGRAVITY_MODELS.find((model) => model.id === id) ??
     { id, displayName: id, privateData: {} };
 }
-import { queryAccountQuota, refreshAccount, RESOURCE_TYPE } from "./resources.ts";
+import { presentAccount, queryAccountQuota, refreshAccount, RESOURCE_TYPE } from "./resources.ts";
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
   if (!condition) throw new Error(message);
@@ -280,12 +280,20 @@ Deno.test("Carbon and Antigravity Claude replay tool calls with matching IDs", a
 
 Deno.test("Cursor Effort selects the Gemini 4 wire tier", async () => {
   const cases: Array<[string, string | null, string]> = [
+    ["gemini-4-neon", "low", "gemini-4-neon-low"],
+    ["gemini-4-neon", "medium", "gemini-4-neon-medium"],
+    ["gemini-4-neon", "high", "gemini-4-neon-high"],
+    ["gemini-4-neon", "xhigh", "gemini-4-neon-xhigh"],
+    ["gemini-4-neon", "max", "gemini-4-neon-xhigh"],
+    ["gemini-4-hydrogen", "xhigh", "gemini-4-hydrogen-xhigh"],
     ["gemini-4-carbon", "low", "gemini-4-carbon-low"],
     ["gemini-4-carbon", "medium", "gemini-4-carbon-medium"],
     ["gemini-4-carbon", "high", "gemini-4-carbon-high"],
     ["gemini-4-carbon", "max", "gemini-4-carbon-high"],
     ["gemini-4-argon", "xhigh", "gemini-4-argon-high"],
     ["gemini-4-argon", null, "gemini-4-argon-medium"],
+    ["claude-opus-5-5", "high", "claude-opus-5-5-high"],
+    ["claude-sonnet-5-5", "low", "claude-sonnet-5-5-low"],
   ];
   for (const [model, effort, wire] of cases) {
     const { body } = await captureCall(model, {
@@ -295,14 +303,217 @@ Deno.test("Cursor Effort selects the Gemini 4 wire tier", async () => {
   }
 });
 
-Deno.test("Fast latency requests priority inference only on Gemini 4", async () => {
-  const fast = await captureCall("gemini-4-argon", { latency: "fast" });
-  assertEquals(fast.body.request.serviceTier, "SERVICE_TIER_PRIORITY");
-  assertEquals(fast.headers["X-Vertex-AI-LLM-Shared-Request-Type"], "priority");
+Deno.test("Fast latency requests priority inference across all Gemini 4 families", async () => {
+  for (const model of ["gemini-4-neon", "gemini-4-hydrogen", "gemini-4-carbon", "gemini-4-argon"]) {
+    const fast = await captureCall(model, { latency: "fast" });
+    assertEquals(fast.body.request.serviceTier, "SERVICE_TIER_PRIORITY");
+    assertEquals(fast.headers["X-Vertex-AI-LLM-Shared-Request-Type"], "priority");
+  }
 
   const other = await captureCall("gemini-3.7-flash-medium", { latency: "fast" });
   assert(!("serviceTier" in other.body.request), "priority was requested on an unverified model");
   assert(!("X-Vertex-AI-LLM-Shared-Request-Type" in other.headers));
+});
+
+Deno.test("thinkingConfig, dynamic maxOutputTokens, thoughtsTokenCount, and Claude 5.5 beta headers", async () => {
+  const neon = await captureCall("gemini-4-neon", {
+    reasoning: { enabled: true, effort: "xhigh" },
+    maxOutputTokens: null,
+  });
+  const neonGen = neon.body.request.generationConfig as Record<string, unknown>;
+  assertEquals(neonGen.maxOutputTokens, 262144);
+  assertEquals(neonGen.thinkingConfig, { includeThoughts: true });
+
+  const noThink = await captureCall("gemini-4-neon", {
+    reasoning: { enabled: false, effort: null },
+    maxOutputTokens: 4096,
+  });
+  const noThinkGen = noThink.body.request.generationConfig as Record<string, unknown>;
+  assertEquals(noThinkGen.maxOutputTokens, 4096);
+  assert(!("thinkingConfig" in noThinkGen));
+
+  const claude = await captureCall("claude-opus-5-5", {
+    reasoning: { enabled: true, effort: "high" },
+    maxOutputTokens: null,
+  });
+  const claudeGen = claude.body.request.generationConfig as Record<string, unknown>;
+  assertEquals(claudeGen.maxOutputTokens, 128000);
+  assert(
+    claude.headers["anthropic-beta"]?.includes("thinking-binding-controls-2026-08-01"),
+    `missing v2.34 beta header: ${claude.headers["anthropic-beta"]}`,
+  );
+});
+
+Deno.test("tool results with image parts forward inlineData alongside functionResponse", async () => {
+  const messages: LlmRequest["messages"] = [
+    { role: "user", content: [{ type: "text", text: "Take screenshot" }] },
+    {
+      role: "assistant",
+      text: "",
+      thinking: "",
+      replayState: null,
+      toolCalls: [{ index: 0, callId: "call_img", name: "screenshot", arguments: {} }],
+    },
+    {
+      role: "tool",
+      callId: "call_img",
+      name: "screenshot",
+      content: "captured",
+      isError: false,
+      parts: [
+        { type: "text", text: "screen ok" },
+        { type: "image", mediaType: "image/png", dataBase64: "iVBORw0=" },
+      ],
+    },
+  ];
+  const { body } = await captureCall("gemini-4-neon", { messages });
+  const contents = body.request.contents as Array<{ role: string; parts: Array<Record<string, unknown>> }>;
+  assertEquals(contents[2].parts, [
+    { functionResponse: { id: "call_img", name: "screenshot", response: { result: "screen ok" } } },
+    { inlineData: { mimeType: "image/png", data: "iVBORw0=" } },
+  ]);
+});
+
+Deno.test("parseAntigravityModels groups xhigh families via groupedModels, respects sorts, and filters internal helpers", () => {
+  const models = parseAntigravityModels({
+    defaultAgentModelId: "gemini-4-neon-high",
+    agentModelSorts: [
+      {
+        displayName: "Recommended",
+        groups: [
+          {
+            modelIds: [
+              "gemini-4-neon-high",
+              "gemini-4-neon-xhigh",
+              "claude-opus-5-5-high",
+            ],
+          },
+        ],
+      },
+    ],
+    groupedModels: {
+      "gemini-4-neon": {
+        displayName: "Gemini 4 Neon",
+        supportedThinkingLevels: [
+          { thinkingSuffix: "low", thinkingDisplayName: "Low" },
+          { thinkingSuffix: "medium", thinkingDisplayName: "Medium" },
+          { thinkingSuffix: "high", thinkingDisplayName: "High" },
+          { thinkingSuffix: "xhigh", thinkingDisplayName: "Extra High" },
+        ],
+      },
+      "claude-opus-5-5": {
+        displayName: "Claude Opus 5.5",
+        supportedThinkingLevels: [
+          { thinkingSuffix: "low", thinkingDisplayName: "Low" },
+          { thinkingSuffix: "medium", thinkingDisplayName: "Medium" },
+          { thinkingSuffix: "high", thinkingDisplayName: "High" },
+        ],
+      },
+    },
+    models: {
+      "gemini-4-neon-low": { displayName: "Gemini 4 Neon (Low)", maxTokens: 1048576, maxOutputTokens: 262144, tagDescription: "Deep reasoning" },
+      "gemini-4-neon-medium": { displayName: "Gemini 4 Neon (Medium)", maxTokens: 1048576, maxOutputTokens: 262144 },
+      "gemini-4-neon-high": { displayName: "Gemini 4 Neon (High)", maxTokens: 1048576, maxOutputTokens: 262144 },
+      "gemini-4-neon-xhigh": { displayName: "Gemini 4 Neon (XHigh)", maxTokens: 1048576, maxOutputTokens: 262144 },
+      "claude-opus-5-5-low": { displayName: "Claude Opus 5.5 (Low)", maxTokens: 1000000, maxOutputTokens: 128000 },
+      "claude-opus-5-5-medium": { displayName: "Claude Opus 5.5 (Medium)", maxTokens: 1000000, maxOutputTokens: 128000 },
+      "claude-opus-5-5-high": { displayName: "Claude Opus 5.5 (High)", maxTokens: 1000000, maxOutputTokens: 128000 },
+      "tab_flash_lite_preview": { displayName: "" },
+      "gemini-4-hydrogen-tiered-xhigh": { displayName: "Gemini 4 Hydrogen (XHigh)" },
+      "gemini-4-hydrogen-sonar": { displayName: "" },
+    },
+  });
+  const ids = models.map((m) => m.id);
+  assertEquals(ids[0], "gemini-4-neon");
+  assertEquals(ids[1], "claude-opus-5-5");
+  assert(!ids.includes("gemini-4-neon-xhigh"), "xhigh must collapse into family");
+  assert(!ids.includes("tab_flash_lite_preview"), "tab helper must be filtered");
+  assert(!ids.includes("gemini-4-hydrogen-tiered-xhigh"), "tiered helper must be filtered");
+  assert(!ids.includes("gemini-4-hydrogen-sonar"), "sonar helper must be filtered");
+  const neon = models[0];
+  assertEquals(neon.options, { efforts: ["low", "medium", "high", "xhigh"], defaultEffort: "high", fast: true });
+  assertEquals(neon.maxOutputTokens, 262144);
+  assertEquals(neon.contextWindow, 1_048_576);
+  const opus = models[1];
+  assertEquals(opus.options, { efforts: ["low", "medium", "high"] });
+  assertEquals(opus.contextWindow, 1_000_000);
+  assertEquals(opus.maxOutputTokens, 128_000);
+});
+
+Deno.test("thoughtsTokenCount maps to reasoningTokens in usage event", async () => {
+  const events: ModelEvent[] = [];
+  await antigravityChannel.invoke(
+    {
+      model: catalogModel("gemini-4-neon"),
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: request(),
+    },
+    { emit: (event) => events.push(event) },
+    context({
+      stream: () => ({
+        status: 200,
+        headers: {},
+        lines: sse([
+          'data: {"response":{"candidates":[{"content":{"parts":[{"text":"391"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":50,"candidatesTokenCount":5,"thoughtsTokenCount":120,"totalTokenCount":175}}}',
+        ]),
+      }),
+    }),
+  );
+  const usageEvent = events.find((e) => e.type === "usage");
+  assert(usageEvent?.type === "usage");
+  assertEquals(usageEvent.usage.reasoningTokens, 120);
+});
+
+Deno.test("queryAccountQuota reads 5h and weekly buckets from retrieveUserQuotaSummary", async () => {
+  const result = await queryAccountQuota("token", context({
+    fetch: (url) => {
+      if (url.includes("retrieveUserQuotaSummary")) {
+        return {
+          status: 200,
+          headers: {},
+          body: JSON.stringify({
+            groups: [
+              {
+                displayName: "Gemini Models",
+                buckets: [
+                  { bucketId: "gemini-5h", window: "5h", remainingFraction: 0.8, resetTime: "2026-11-24T06:00:00Z" },
+                  { bucketId: "gemini-weekly", window: "weekly", remainingFraction: 0.87, resetTime: "2026-11-30T20:00:00Z" },
+                ],
+              },
+              {
+                displayName: "Claude and GPT models",
+                buckets: [
+                  { bucketId: "3p-5h", window: "5h", remainingFraction: 1.0, resetTime: "2026-11-24T11:00:00Z" },
+                  { bucketId: "3p-weekly", window: "weekly", remainingFraction: 0.17, resetTime: "2026-11-25T02:00:00Z" },
+                ],
+              },
+            ],
+          }),
+        };
+      }
+      if (url.includes("loadCodeAssist")) {
+        return { status: 200, headers: {}, body: JSON.stringify({ cloudaicompanionProject: "p1", paidTier: { name: "Google AI Ultra" } }) };
+      }
+      return { status: 200, headers: {}, body: JSON.stringify({ models: {} }) };
+    },
+  }).network);
+  assertEquals(result.quota?.planLabel, "ULTRA");
+  assertEquals(result.quota?.gemini?.remainingPercent, 80);
+  assertEquals(result.quota?.geminiWeekly?.remainingPercent, 87);
+  assertEquals(result.quota?.claude?.remainingPercent, 100);
+  assertEquals(result.quota?.claudeWeekly?.remainingPercent, 17);
+  const view = presentAccount(snapshot({ accessToken: "t", refreshToken: null, displayName: "u@e.com", quota: result.quota }));
+  assertEquals(view.metrics?.map((m) => [m.id, m.value]), [
+    ["claude", 100],
+    ["claude-weekly", 17],
+    ["gemini", 80],
+    ["gemini-weekly", 87],
+  ]);
 });
 
 Deno.test("sessionId is stable per cacheKey and omitted without one", async () => {
