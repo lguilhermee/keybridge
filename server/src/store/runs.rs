@@ -158,9 +158,20 @@ impl Store {
         .bind(run_id.as_str())
         .fetch_optional(&self.pool)
         .await?;
-        index
-            .map(|index| index as u64)
-            .ok_or_else(|| Error::Store(format!("run is not active: {run_id}")))
+        if let Some(index) = index {
+            return Ok(index as u64);
+        }
+        // A run replaced by a newer one is cancelled on claim, so a stale run
+        // reaching this point is the cancellation, not a store failure.
+        let status: Option<String> = sqlx::query_scalar("SELECT status FROM runs WHERE run_id = ?")
+            .bind(run_id.as_str())
+            .fetch_optional(&self.pool)
+            .await?;
+        match status.as_deref() {
+            Some("running") => Err(Error::Store(format!("run is not active: {run_id}"))),
+            Some(_) => Err(Error::Cancelled),
+            None => Err(Error::RunNotFound(run_id.to_string())),
+        }
     }
 
     pub async fn finish_run(

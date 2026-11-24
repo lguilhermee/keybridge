@@ -62,7 +62,11 @@ Credentials are never bundled in source or shown in account cards.
   the call to the model's refusal model.
 - Only an authentication rejection before output may renew and retry once.
   Interrupted generation is never replayed automatically. Rate/quota errors mark
-  the account cooling for one minute; authentication expiry marks it invalid.
+  the account cooling; authentication expiry marks it invalid.
+- If SWE-2 Fast exhausts the account's weekly quota before output, the same
+  request retries once at standard speed on that account. Standard SWE-2 remains
+  available under Devin's free Desktop/CLI promotion; a failed standard retry
+  follows the usual quota handling.
 - Binary requests are recorded by size, avoiding opaque credential-bearing
   request bodies in diagnostic logs. HTTPS host allowlists and cancellation use
   the existing sandbox host.

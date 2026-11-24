@@ -231,6 +231,53 @@ async function captureCall(modelId: string, overrides: Partial<LlmRequest>): Pro
   return { body: JSON.parse(requestBody), headers };
 }
 
+Deno.test("Carbon and Antigravity Claude replay tool calls with matching IDs", async () => {
+  const messages: LlmRequest["messages"] = [
+    { role: "user", content: [{ type: "text", text: "Read two files" }] },
+    {
+      role: "assistant",
+      text: "",
+      thinking: "",
+      replayState: null,
+      toolCalls: [
+        { index: 0, callId: "call_first", name: "read_file", arguments: { path: "a" } },
+        { index: 1, callId: "call_second", name: "read_file", arguments: { path: "b" } },
+      ],
+    },
+    {
+      role: "tool",
+      callId: "call_first",
+      name: "read_file",
+      content: "a",
+      isError: false,
+      parts: [],
+    },
+    {
+      role: "tool",
+      callId: "call_second",
+      name: "read_file",
+      content: "b",
+      isError: false,
+      parts: [],
+    },
+    { role: "user", content: [{ type: "text", text: "Continue" }] },
+  ];
+
+  for (const model of ["gemini-4-carbon", "claude-sonnet-5-5"]) {
+    const { body } = await captureCall(model, { messages });
+    const contents = body.request.contents as Array<{
+      role: string;
+      parts: Array<Record<string, unknown>>;
+    }>;
+    const calls = contents[1].parts.map((part) => part.functionCall as Record<string, unknown>);
+    const results = contents[2].parts.flatMap((part) =>
+      part.functionResponse ? [part.functionResponse as Record<string, unknown>] : []
+    );
+    assertEquals(calls.map((call) => call.id), ["call_first", "call_second"]);
+    assertEquals(results.map((result) => result.id), ["call_first", "call_second"]);
+  }
+});
+
 Deno.test("Cursor Effort selects the Gemini 4 wire tier", async () => {
   const cases: Array<[string, string | null, string]> = [
     ["gemini-4-carbon", "low", "gemini-4-carbon-low"],
@@ -389,10 +436,13 @@ Deno.test("thinking without an answer finishes as a refusal", async () => {
 Deno.test("a tool-only response stays a tool round", async () => {
   for (const finish of [[], ['data: {"response":{"candidates":[{"finishReason":"STOP"}]}}']]) {
     const events = await blockedEvents([
-      'data: {"response":{"candidates":[{"content":{"parts":[{"functionCall":{"name":"read_file","args":{"path":"test.txt"}}}]}}]}}',
+      'data: {"response":{"candidates":[{"content":{"parts":[{"functionCall":{"id":"toolu_existing","name":"read_file","args":{"path":"test.txt"}}}]}}]}}',
       ...finish,
     ]);
-    assert(events.some((event) => event.type === "tool-call-start"));
+    assertEquals(
+      events.find((event) => event.type === "tool-call-start")?.callId,
+      "toolu_existing",
+    );
     assertEquals(events.at(-1), { type: "done", reason: "tool-use" });
   }
 });

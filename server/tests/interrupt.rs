@@ -212,6 +212,10 @@ async fn a_replaced_run_cannot_overwrite_its_cancelled_status() {
     .await
     .unwrap();
     store.claim_run(&second).await.unwrap();
+    assert!(matches!(
+        store.begin_provider_call(&first.run_id).await,
+        Err(cursor_server::Error::Cancelled)
+    ));
     assert!(!store
         .finish_run(&first.run_id, RunStatus::Completed, None, None,)
         .await

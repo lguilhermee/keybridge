@@ -160,14 +160,24 @@ fn refusal_pattern() -> &'static Regex {
             r"|(?:bypass(?:ing)?|disabl(?:e|ing)|evad(?:e|ing))\s+(?:[a-z'-]+\s+){0,7}(?:checks|protections|safeguards)",
             r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass)\b)",
             // Provider policy notices and "not this one" declines are written in
-            // the third person and carry no subject to match on.
-            r"|\b(?:this|the|your)\s+(?:request|prompt|message|turn)\s+",
+            // the third person and carry no subject to match on. A block notice
+            // often continues into "they can trigger by mistake, rephrase": the
+            // first sentence already decided, so the follow-up stands alone.
+            r"|\b(?:this|the|your)\s+(?:request|prompt|message|turn|answer|reply)\s+",
             r"(?:was|is|got|gets?|has\s+been|'s\s+been)\s+(?:blocked|flagged|rejected)\s+by\s+",
             r"(?:[a-z'’-]+\s+){0,3}(?:filters?|safety|safeguards?|polic(?:y|ies)|content\s+filter|moderation|guardrails?)\b",
+            r"|\b(?:blocked|flagged|rejected|filtered)\s+by\s+(?:(?:their|its|our|the)\s+)?",
+            r"(?:[a-z'’-]+\s+){0,3}(?:filters?|safety|safeguards?|polic(?:y|ies)|moderation|guardrails?)\b",
             r"|\b(?:content\s+filter|safety\s+filters?|safeguards?|guardrails?|moderation)\s+",
-            r"(?:blocked|flagged|rejected)\b",
+            r"(?:blocked|flagged|rejected|filtered)\b",
             r"|\b(?:gemini(?:'s|’s)?|copilot|chatgpt|openai(?:'s|’s)?|claude(?:'s|’s)?)\s+",
             r"(?:safety\s+|content\s+)?filters?\s+(?:blocked|flagged|rejected|declined)\b",
+            // A notice states the block may be wrong and asks for a rephrase.
+            r"|\b(?:they|it)\s+(?:can|may|might|sometimes)\s+(?:occasionally\s+)?(?:trigger|fire|happen)\s+",
+            r"(?:by\s+mistake|wrongly|incorrectly)\b",
+            r"|\b(?:false\s+positives?|by\s+mistake)\s+(?:on|with)\s+(?:safe|ordinary|benign)\b",
+            r"|\bplease\s+(?:try\s+)?rephrasing\s+(?:(?:your|the|this)\s+)?(?:prompt|request|message|question)\b",
+            r"|\b(?:try|rephrase)\s+(?:again\s+)?(?:with\s+)?(?:a\s+)?(?:rephras\w+|different\s+wording)\b",
             r"|\b(?:i|we)(?:\s+(?:won't|will\s+not)|'ll\s+not|'m\s+not\s+going\s+to)\s+",
             r"take\s+(?:this|that)\s+one\s+on\b",
             r"|\b(?:i|we)(?:'ll|\s+will)\s+sit\s+(?:this|that)\s+one\s+out\b",
@@ -633,15 +643,49 @@ mod tests {
             "The request got flagged by the moderation layer.",
             "Gemini's filters blocked this request.",
             "The content filter rejected this turn.",
+            // The notice continues past the block into how it can misfire and
+            // asks for a rephrase; each sentence stands alone.
+            "This request was blocked by Gemini's filters. They can occasionally trigger by mistake on safe coding, security, or biology-related queries. Please try rephrasing your prompt. You can send feedback or read more about our policies here.",
+            "This request was blocked by Gemini's filters. Please try rephrasing your prompt.",
+            "It was blocked by the safety filters and can occasionally trigger by mistake.",
+            "This request was blocked by Gemini's filters. You can send feedback.",
+            "The answer was filtered by the safety filters.",
+            "Your message was blocked by the content policy.",
+            "The response was blocked by our content policy.",
+            "The turn was rejected by the moderation layer.",
+            "The prompt was filtered by the content filter.",
+            "This request was blocked by our content policy.",
+            "The request was filtered by the safety policy.",
+            "The question was rejected by the guardrails.",
+            "The prompt was blocked by the policy layer.",
+            "The request was flagged by the safety policy.",
+            "That request was blocked by the content filters.",
+            "The prompt was blocked by Gemini's filters.",
+            // Subject only through the provider name.
+            "Gemini's filters blocked it.",
+            "Gemini’s safety filters rejected the turn.",
+            "The Claude safety filter flagged this turn.",
+            "OpenAI's moderation rejected the request.",
         ] {
             assert!(is_refusal(text), "{text}");
         }
         for text in [
+            "The filters here are the rate limiter, so I added a backoff.",
             "This request was blocked by the rate limiter, so I added a backoff.",
             "The blocked request path now retries and the tests pass.",
             "The sample notice is: `This request was blocked by Gemini's filters.`",
             "> This request was blocked by Gemini's filters.",
             "The fixture says: «The content filter rejected this turn.»",
+            "I added a filter for the moderation list.",
+            // Ordinary engineering prose that uses the same words.
+            "The cache is filtered by the key prefix.",
+            "Requests are rejected by the validator before parsing.",
+            "The turn was blocked by the rate limiter.",
+            "They can fail on a missing host.",
+            "Try again with a different model.",
+            "The response was rejected by the schema check.",
+            "The payload is flagged by the linter.",
+            "The answer was blocked by the timeout budget.",
         ] {
             assert!(!is_refusal(text), "{text}");
         }

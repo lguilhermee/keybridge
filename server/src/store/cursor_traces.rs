@@ -40,7 +40,7 @@ impl Store {
         if !self.detailed_logging().await? {
             return Ok(false);
         }
-        let _write = self.writes.lock().await;
+        let _write = self.writes.lock_background().await;
         sqlx::query(
             "INSERT OR IGNORE INTO cursor_run_traces(
                 request_id, conversation_id, route, model_id, status, received_at_ms
@@ -75,7 +75,7 @@ impl Store {
     ) -> Result<()> {
         let metadata_json = serde_json::to_string(metadata)?;
         let blob_id = BlobId::digest(data);
-        let _write = self.writes.lock().await;
+        let _write = self.writes.lock_background().await;
         let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
         Self::put_blob_tx(&mut tx, &blob_id, data, &[]).await?;
         Self::link_cursor_trace_artifact_tx(
@@ -109,7 +109,7 @@ impl Store {
     ) -> Result<()> {
         let metadata_json = serde_json::to_string(metadata)?;
         let blob_id = BlobId::digest(data);
-        let _write = self.writes.lock().await;
+        let _write = self.writes.lock_background().await;
         let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
         Self::put_blob_tx(&mut tx, &blob_id, data, &[]).await?;
         Self::link_cursor_trace_artifact_tx(
@@ -134,7 +134,7 @@ impl Store {
         metadata: &serde_json::Value,
     ) -> Result<()> {
         let metadata_json = serde_json::to_string(metadata)?;
-        let _write = self.writes.lock().await;
+        let _write = self.writes.lock_background().await;
         let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
         Self::link_cursor_trace_artifact_tx(
             &mut tx,
@@ -183,7 +183,7 @@ impl Store {
 
     pub async fn start_cursor_trace_response(&self, request_id: &str, status: u16) -> Result<()> {
         let now = now_ms();
-        let _write = self.writes.lock().await;
+        let _write = self.writes.lock_background().await;
         sqlx::query(
             "UPDATE cursor_run_traces
              SET status = 'running', http_status = ?,
@@ -221,7 +221,7 @@ impl Store {
             return Ok(());
         }
         let response_bytes = chunks.iter().map(|chunk| chunk.data.len()).sum::<usize>();
-        let _write = self.writes.lock().await;
+        let _write = self.writes.lock_background().await;
         let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
         for chunk in chunks {
             let metadata_json =
@@ -256,7 +256,7 @@ impl Store {
     }
 
     pub async fn finish_cursor_trace(&self, request_id: &str, error: Option<&str>) -> Result<()> {
-        let _write = self.writes.lock().await;
+        let _write = self.writes.lock_background().await;
         sqlx::query(
             "UPDATE cursor_run_traces
              SET status = ?, finished_at_ms = ?, error_message = ?

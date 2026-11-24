@@ -33,9 +33,11 @@ export const devinChannel: ChannelSupport = {
       };
     }
     const data = { ...accountData(input.resource) };
-    const model = requestModelId(input.model, input.request);
+    let model = requestModelId(input.model, input.request);
     let emitted = false;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    let renewed = false;
+    let standardFallback = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
       let decoder: ResponseDecoder | undefined;
       try {
         const { body, originalNames } = await buildRequest(
@@ -90,7 +92,7 @@ export const devinChannel: ChannelSupport = {
         decoder.finish();
         return {
           status: "completed",
-          ...(attempt ? { patch: { privateData: data } } : {}),
+          ...(renewed ? { patch: { privateData: data } } : {}),
         };
       } catch (error) {
         const redact = (text: string) => {
@@ -108,9 +110,10 @@ export const devinChannel: ChannelSupport = {
           return { status: "completed" };
         }
         if (error instanceof ConnectError && error.code === "unauthenticated") {
-          if (!emitted && attempt === 0 && data.apiKey) {
+          if (!emitted && !renewed && data.apiKey) {
             try {
               data.token = await mintSession(data.apiKey, context);
+              renewed = true;
               continue;
             } catch (refreshError) {
               message = refreshError instanceof Error
@@ -136,6 +139,20 @@ export const devinChannel: ChannelSupport = {
           return { status: "resource-error", message, patch: {} };
         }
         if (isDevinQuotaError(error)) {
+          if (
+            !emitted && !standardFallback && input.model.id === "swe-2" &&
+            input.request.latency === "fast"
+          ) {
+            const standardModel = requestModelId(input.model, {
+              ...input.request,
+              latency: "standard",
+            });
+            if (standardModel !== model) {
+              model = standardModel;
+              standardFallback = true;
+              continue;
+            }
+          }
           return {
             status: "resource-error",
             message,

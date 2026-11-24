@@ -683,6 +683,68 @@ Deno.test("Provider maps account quota exhaustion into bounded cooling", async (
   equal(result.patch?.state?.status, "cooling");
 });
 
+Deno.test("SWE-2 Fast quota exhaustion retries the free standard model", async () => {
+  const selected: string[] = [];
+  const context: ProviderContext = {
+    signal: new AbortController().signal,
+    network: {
+      fetch: () => Promise.reject(new Error("fetch is not used")),
+      stream: () => Promise.reject(new Error("SSE is not used")),
+      streamBytes: async (_url, init) => {
+        const bytes = Uint8Array.from(atob(init?.bodyBase64 ?? ""), (char) => char.charCodeAt(0));
+        const body = JSON.parse(new TextDecoder().decode(bytes.subarray(5)));
+        selected.push(body.chatModelUid);
+        const reply = selected.length === 1
+          ? endFrame({
+            error: {
+              code: "failed_precondition",
+              message: "Your weekly usage quota has been exhausted.",
+            },
+          })
+          : join(
+            encodeFrame({ deltaText: "OK", stopReason: "STOP_REASON_STOP_PATTERN" }),
+            endFrame(),
+          );
+        return { status: 200, headers: {}, chunks: chunks(reply, 3) };
+      },
+    },
+  };
+  const fastRequest = {
+    ...request(),
+    latency: "fast" as const,
+    reasoning: { enabled: true, effort: "max" },
+  };
+  const events: ModelEvent[] = [];
+  const result = await devinChannel.invoke(
+    {
+      model: {
+        id: "swe-2",
+        displayName: "SWE-2",
+        privateData: {
+          defaultId: "swe-2-high",
+          members: [
+            { id: "swe-2-max-lightning", effort: "max", fast: true, contextWindow: 262144 },
+            { id: "swe-2-max", effort: "max", fast: false, contextWindow: 262000 },
+          ],
+        },
+      },
+      resource: {
+        id: "r",
+        type: "devin-account",
+        key: "account",
+        privateData: { token: "devin-session-token$test", apiKey: null, displayName: "Account" },
+        state: { status: "ready" },
+      },
+      request: fastRequest,
+    },
+    { emit: (event) => events.push(event) },
+    context,
+  );
+  equal(result.status, "completed");
+  equal(selected, ["swe-2-max-lightning", "swe-2-max"]);
+  equal(events.some((event) => event.type === "text-delta" && event.text === "OK"), true);
+});
+
 Deno.test("Unavailable model on one Devin account can move to another account", async () => {
   const context: ProviderContext = {
     signal: new AbortController().signal,

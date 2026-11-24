@@ -278,6 +278,7 @@ function convertToCloudCodeContents(
       for (const call of msg.toolCalls) {
         parts.push({
           functionCall: {
+            id: call.callId,
             name: call.name,
             args: typeof call.arguments === "object" && call.arguments !== null
               ? call.arguments
@@ -296,6 +297,7 @@ function convertToCloudCodeContents(
         parts: [
           {
             functionResponse: {
+              id: msg.callId,
               name: msg.name || "function",
               response: { result: msg.content },
             },
@@ -552,7 +554,9 @@ async function streamCloudCode(
               }
             }
 
-            const fnCall = part.functionCall as { name: string; args: unknown } | undefined;
+            const fnCall = part.functionCall as
+              | { id?: string; name: string; args: unknown }
+              | undefined;
             if (fnCall) {
               hasEmittedAnyChunk = true;
               if (thinkingStarted) {
@@ -565,7 +569,9 @@ async function streamCloudCode(
               }
               hasTools = true;
               const currentIdx = toolIndex++;
-              const callId = `call_${Date.now()}_${currentIdx}`;
+              const callId = typeof fnCall.id === "string" && fnCall.id
+                ? fnCall.id
+                : `call_${Date.now()}_${currentIdx}`;
               output.emit({
                 type: "tool-call-start",
                 index: currentIdx,
