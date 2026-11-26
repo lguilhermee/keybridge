@@ -85,6 +85,9 @@ impl Protocol for AnthropicProtocol {
             apply_model(&mut body, &request.model)?;
             merge_extra_params(&mut body, &request.model.extra_params)?;
             let mut send_headers = config.custom_headers.clone();
+            if displays_thinking(&body) {
+                strip_redact_thinking_beta(&mut send_headers);
+            }
             if let Some(route) = &config.headroom {
                 crate::headroom::compress_body(&client, route, &mut body, &mut send_headers).await;
             }
@@ -192,7 +195,9 @@ impl Protocol for AnthropicProtocol {
                             "text_delta" => if let Some(text) = delta.get("text").and_then(Value::as_str) { yield ModelEvent::TextDelta(text.into()); },
                             "thinking_delta" => if let Some(text) = delta.get("thinking").and_then(Value::as_str) {
                                 thinking_text.entry(index).or_default().push_str(text);
-                                yield ModelEvent::ThinkingDelta(text.into());
+                                if !text.is_empty() {
+                                    yield ModelEvent::ThinkingDelta(text.into());
+                                }
                             },
                             "signature_delta" => if let Some(signature) = delta.get("signature").and_then(Value::as_str) {
                                 thinking_signatures.entry(index).or_default().push_str(signature);
@@ -306,6 +311,39 @@ fn close_anthropic_block(
         }
         "tool_use" => vec![ModelEvent::ToolCallEnd { index }],
         _ => Vec::new(),
+    }
+}
+
+const REDACT_THINKING_BETA: &str = "redact-thinking-2026-02-12";
+
+fn displays_thinking(body: &Value) -> bool {
+    matches!(
+        body.pointer("/thinking/display").and_then(Value::as_str),
+        Some(display) if display != "omitted"
+    )
+}
+
+/// Anthropic lets `redact-thinking-2026-02-12` override `thinking.display: "summarized"` and
+/// return empty thinking blocks, so remove it whenever thinking display is requested.
+fn strip_redact_thinking_beta(headers: &mut reqwest::header::HeaderMap) {
+    let header_name = reqwest::header::HeaderName::from_static("anthropic-beta");
+    let values = headers
+        .get_all(&header_name)
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .flat_map(|value| value.split(','))
+        .map(str::trim)
+        .filter(|flag| !flag.is_empty() && *flag != REDACT_THINKING_BETA)
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    if !headers.contains_key(&header_name) {
+        return;
+    }
+    headers.remove(&header_name);
+    if !values.is_empty() {
+        if let Ok(joined) = reqwest::header::HeaderValue::from_str(&values.join(",")) {
+            headers.insert(header_name, joined);
+        }
     }
 }
 
@@ -633,5 +671,37 @@ mod tests {
         assert_eq!(usage.context_input_tokens, Some(100_766));
         assert_eq!(usage.output_tokens, Some(191));
         assert_eq!(usage.total_tokens, Some(100_957));
+    }
+
+    #[test]
+    fn strip_redact_thinking_beta_removes_only_redaction_flag() {
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(
+            "anthropic-beta",
+            "claude-code-20250219,redact-thinking-2026-02-12,interleaved-thinking-2025-05-14"
+                .parse()
+                .unwrap(),
+        );
+        strip_redact_thinking_beta(&mut headers);
+        assert_eq!(
+            headers.get("anthropic-beta").unwrap().to_str().unwrap(),
+            "claude-code-20250219,interleaved-thinking-2025-05-14"
+        );
+
+        let mut only_redact = reqwest::header::HeaderMap::new();
+        only_redact.insert(
+            "anthropic-beta",
+            "redact-thinking-2026-02-12".parse().unwrap(),
+        );
+        strip_redact_thinking_beta(&mut only_redact);
+        assert!(only_redact.get("anthropic-beta").is_none());
+
+        assert!(displays_thinking(
+            &json!({"thinking": {"type": "adaptive", "display": "summarized"}})
+        ));
+        assert!(!displays_thinking(
+            &json!({"thinking": {"type": "adaptive", "display": "omitted"}})
+        ));
+        assert!(!displays_thinking(&json!({})));
     }
 }

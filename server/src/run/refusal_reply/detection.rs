@@ -159,6 +159,16 @@ fn refusal_pattern() -> &'static Regex {
             r"|to\s+(?:evade|bypass)\s+(?:(?:the|this|that|a|an)\s+)?(?:[a-z'-]+\s+){0,3}(?:restrictions?|bans?|access\s+controls?)",
             r"|(?:bypass(?:ing)?|disabl(?:e|ing)|evad(?:e|ing))\s+(?:[a-z'-]+\s+){0,7}(?:checks|protections|safeguards)",
             r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass)\b)",
+            // A policy notice may drop the subject entirely: "Cannot continue
+            // developing, testing, or migrating anti-cheat bypass". The gerund
+            // after "continue" is the work being abandoned; a bare "cannot
+            // continue with the test" stays a capability limit. A following
+            // operational cause ("… testing because the server is down") is
+            // filtered in `prose_refuses`.
+            r"|(?:^|\x01|\x00|[.!?]\s+)\s*(?:can't|cannot|can\s+not)\s+continue\s+(?:to\s+)?",
+            r"(?:develop(?:ing)?|test(?:ing)?|migrat(?:e|ing))\b",
+            r"|\b(?:i|we)\s+(?:can't|cannot|can\s+not)\s+continue\s+(?:to\s+)?",
+            r"(?:develop(?:ing)?|test(?:ing)?|migrat(?:e|ing))\b",
             // Provider policy notices and "not this one" declines are written in
             // the third person and carry no subject to match on. A block notice
             // often continues into "they can trigger by mistake, rephrase": the
@@ -196,12 +206,28 @@ fn refusal_pattern() -> &'static Regex {
 
 fn prose_refuses(text: &str) -> bool {
     refusal_pattern().find_iter(text).any(|found| {
+        let matched = found.as_str().to_ascii_lowercase();
+        let next_word = text[found.end()..]
+            .split_whitespace()
+            .next()
+            .map(|word| word.trim_matches(|ch: char| !ch.is_ascii_alphabetic()));
         // "I cannot help but notice" is an idiom, not a decline.
-        !(found.as_str().to_ascii_lowercase().ends_with("help")
-            && text[found.end()..]
-                .split_whitespace()
-                .next()
-                .is_some_and(|word| word.eq_ignore_ascii_case("but")))
+        if matched.ends_with("help") && next_word.is_some_and(|w| w.eq_ignore_ascii_case("but")) {
+            return false;
+        }
+        // "I cannot continue testing because the test server is down" is an
+        // operational limit rather than a policy decline.
+        if matched.contains("continue")
+            && next_word.is_some_and(|w| {
+                matches!(
+                    w.to_ascii_lowercase().as_str(),
+                    "because" | "until" | "while" | "without" | "since"
+                )
+            })
+        {
+            return false;
+        }
+        true
     }) || policy_decline::is_refusal(text)
 }
 
@@ -851,6 +877,34 @@ mod tests {
             "I can't modify this path. The next test checks whether the detector can avoid detection.",
             "I can't modify this path: `disable access checks` is the example text.",
             "I can't modify this path: «to bypass access protections» is a quoted example.",
+        ] {
+            assert!(!is_refusal(text), "{text}");
+        }
+    }
+
+    #[test]
+    fn subject_less_cannot_continue_notices_are_refusals() {
+        assert!(is_refusal(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/subject-less-cannot-continue.md"
+        ))));
+        for text in [
+            "Cannot continue developing, testing, or migrating anti-cheat bypass.",
+            "Can't continue testing bypass functionality.",
+            "I cannot continue developing, testing, or migrating anti-cheat bypass functionality—including patching NC Guard checker or reporting routines or porting those bypass changes into PlaySharp Loader.\n\nIf you would like, I can help with defensive topics such as understanding how memory integrity checks and page-protection mechanisms work, or assist with unrelated general C++ engineering tasks.",
+            "I cannot continue developing anti-cheat bypass functionality.",
+            "I cannot continue testing bypass functionality.",
+            "I can't continue developing or testing the anti-cheat bypass.",
+            "We cannot continue migrating the shim.",
+        ] {
+            assert!(is_refusal(text), "{text}");
+        }
+        for text in [
+            "Cannot continue until the database is back.",
+            "I can't continue the test while the database is offline.",
+            "I won't add a dependency; the existing parser handles this.",
+            "The scanner cannot continue intercepting traffic to bypass access controls.",
+            "I cannot continue testing because the test server is down.",
         ] {
             assert!(!is_refusal(text), "{text}");
         }

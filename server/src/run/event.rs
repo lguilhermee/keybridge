@@ -108,6 +108,10 @@ pub enum RunEvent {
     AutoCompactionStarted,
     AutoCompactionCompleted,
     CycleInterrupted,
+    ModelSwitched {
+        from: String,
+        to: String,
+    },
     ModelAttemptFailed {
         attempt: u32,
         message: String,

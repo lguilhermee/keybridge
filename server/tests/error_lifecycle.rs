@@ -14,8 +14,9 @@ use cursor_server::{
         proto::{agent::v1 as pb, aiserver::v1 as ai},
     },
     cursor::{TransportCommand, TransportParent, TransportRegistry},
-    model::{MessageContent, Role},
+    model::{MessageContent, RefusalFallback, Role},
     protocol::{FinishReason, ModelEvent},
+    store::BlobId,
     Error,
 };
 use prost::Message;
@@ -135,6 +136,10 @@ async fn provider_failure_retries_from_the_current_checkpoint_without_hiding_par
             Some(pb::agent_server_message::Message::InteractionUpdate(update)) => {
                 match update.message {
                     Some(pb::interaction_update::Message::TextDelta(delta)) => {
+                        assert!(
+                            !delta.is_server_notice,
+                            "a transient retry must not emit a server notice"
+                        );
                         text.push_str(&delta.text);
                     }
                     Some(pb::interaction_update::Message::ToolCallCompleted(completed))
@@ -784,6 +789,457 @@ async fn assert_run_starts_without_parent_dependency(
     .await
     .unwrap();
     assert_eq!(row, ("root".into(), None, None));
+}
+
+#[tokio::test]
+async fn refusal_switch_drops_notice_emits_server_notice_and_reattributes_checkpoint() {
+    let (_directory, store) = fixtures::temp_store().await;
+    store
+        .replace_refusal_fallbacks(&[RefusalFallback {
+            model_id: "test-model".into(),
+            fallback_model_id: "refusal-model".into(),
+        }])
+        .await
+        .unwrap();
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_results(vec![
+        Ok(ModelEvent::Start {
+            model_call_id: "refused-attempt".into(),
+        }),
+        Ok(ModelEvent::TextStart),
+        Ok(ModelEvent::TextDelta("I cannot help with that.".into())),
+        Ok(ModelEvent::TextEnd),
+        Ok(ModelEvent::ToolCallStart {
+            index: 0,
+            call_id: "refused-tool".into(),
+            name: "Read".into(),
+        }),
+        Ok(ModelEvent::ToolCallArgumentsDelta {
+            index: 0,
+            delta: "{\"path\":".into(),
+        }),
+        Err(Error::Refusal("policy decline".into())),
+    ]);
+    protocol.push(vec![
+        ModelEvent::Start {
+            model_call_id: "refusal-model-attempt".into(),
+        },
+        ModelEvent::ThinkingStart,
+        ModelEvent::ThinkingDelta("thinking on refusal model".into()),
+        ModelEvent::ThinkingEnd,
+        ModelEvent::TextStart,
+        ModelEvent::TextDelta("Answer from refusal model.".into()),
+        ModelEvent::TextEnd,
+        ModelEvent::Done(FinishReason::Stop),
+    ]);
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let registry = TransportRegistry::new(
+        store.clone(),
+        Arc::new(protocol.clone()),
+        PromptCompiler::new(assets),
+    );
+    let handle = registry
+        .get_or_create("refusal-switch-request")
+        .await
+        .unwrap();
+    let mut output = handle.subscribe();
+    handle
+        .command(TransportCommand::Append {
+            seqno: 0,
+            message: Box::new(protocol_client_run("do the task", "refusal-user")),
+        })
+        .await
+        .unwrap();
+
+    let mut seqno = 1;
+    let mut deltas = Vec::<(bool, String)>::new();
+    let mut failed_tool_completed = false;
+    let mut checkpoints = Vec::new();
+    loop {
+        let frame = tokio::time::timeout(std::time::Duration::from_secs(5), output.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        let (flags, payload) = connect::decode_frames(&frame).unwrap().pop().unwrap();
+        if flags & connect::END_STREAM_FLAG != 0 {
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(&payload).unwrap(),
+                serde_json::json!({})
+            );
+            break;
+        }
+        let server = pb::AgentServerMessage::decode(payload).unwrap();
+        match server.message {
+            Some(pb::agent_server_message::Message::KvServerMessage(kv)) => {
+                handle
+                    .command(TransportCommand::Append {
+                        seqno,
+                        message: Box::new(kv_ack(kv.id)),
+                    })
+                    .await
+                    .unwrap();
+                seqno += 1;
+            }
+            Some(pb::agent_server_message::Message::ConversationCheckpointUpdate(state)) => {
+                checkpoints.push(state);
+            }
+            Some(pb::agent_server_message::Message::InteractionUpdate(update)) => {
+                match update.message {
+                    Some(pb::interaction_update::Message::TextDelta(delta)) => {
+                        deltas.push((delta.is_server_notice, delta.text));
+                    }
+                    Some(pb::interaction_update::Message::ToolCallCompleted(completed))
+                        if completed.call_id == "refused-tool" =>
+                    {
+                        let tool = completed.tool_call.expect("failed tool completion");
+                        failed_tool_completed = tool.completed_at_ms.is_some();
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+
+    assert!(failed_tool_completed);
+    let notice_index = deltas
+        .iter()
+        .position(|(is_notice, text)| *is_notice && text.contains("refusal-model"))
+        .expect("server notice naming the new model must be emitted");
+    let answer_index = deltas
+        .iter()
+        .position(|(is_notice, text)| !*is_notice && text == "Answer from refusal model.")
+        .expect("refusal model answer must stream normally");
+    assert!(notice_index < answer_index);
+
+    let settled = checkpoints.last().expect("settled checkpoint");
+    let mut assistant_steps = Vec::new();
+    for raw_turn_id in &settled.turns {
+        let blob = store
+            .get_blob(&BlobId::from_bytes(raw_turn_id).unwrap())
+            .await
+            .unwrap()
+            .unwrap();
+        let turn = pb::ConversationTurnStructure::decode(blob.as_slice()).unwrap();
+        if let Some(pb::conversation_turn_structure::Turn::AgentConversationTurn(agent_turn)) =
+            turn.turn
+        {
+            for raw_step_id in &agent_turn.steps {
+                let step_blob = store
+                    .get_blob(&BlobId::from_bytes(raw_step_id).unwrap())
+                    .await
+                    .unwrap()
+                    .unwrap();
+                let step = pb::ConversationStep::decode(step_blob.as_slice()).unwrap();
+                if let Some(pb::conversation_step::Message::AssistantMessage(message)) =
+                    step.message
+                {
+                    assistant_steps.push(message.text);
+                }
+            }
+        }
+    }
+    assert_eq!(assistant_steps, ["Answer from refusal model."]);
+
+    let mut root_model_names = Vec::new();
+    for raw_root_id in &settled.root_prompt_messages_json {
+        let blob = store
+            .get_blob(&BlobId::from_bytes(raw_root_id).unwrap())
+            .await
+            .unwrap()
+            .unwrap();
+        let wire: serde_json::Value = serde_json::from_slice(&blob).unwrap();
+        if wire["role"] == "assistant" {
+            for part in wire["content"].as_array().unwrap() {
+                if let Some(model_name) = part
+                    .get("providerOptions")
+                    .and_then(|value| value.get("cursor"))
+                    .and_then(|value| value.get("modelName"))
+                    .and_then(serde_json::Value::as_str)
+                {
+                    root_model_names.push(model_name.to_owned());
+                }
+            }
+        }
+    }
+    assert_eq!(root_model_names, ["refusal-model"]);
+
+    let staged = checkpoints
+        .iter()
+        .rev()
+        .find(|checkpoint| !checkpoint.pending_tool_calls.is_empty())
+        .expect("staged final checkpoint");
+    let staged_wire: serde_json::Value =
+        serde_json::from_str(&staged.pending_tool_calls[0]).unwrap();
+    assert_eq!(
+        staged_wire["content"][0]["providerOptions"]["cursor"]["modelName"],
+        "refusal-model"
+    );
+}
+
+#[tokio::test]
+async fn refusal_switch_after_earlier_tool_round_preserves_prior_model_attribution() {
+    let (_directory, store) = fixtures::temp_store().await;
+    store
+        .replace_refusal_fallbacks(&[RefusalFallback {
+            model_id: "test-model".into(),
+            fallback_model_id: "refusal-model".into(),
+        }])
+        .await
+        .unwrap();
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push(vec![
+        ModelEvent::Start {
+            model_call_id: "first-call".into(),
+        },
+        ModelEvent::ThinkingStart,
+        ModelEvent::ThinkingDelta("thinking on primary model".into()),
+        ModelEvent::ThinkingEnd,
+        ModelEvent::ToolCallStart {
+            index: 0,
+            call_id: "call-1".into(),
+            name: "Read".into(),
+        },
+        ModelEvent::ToolCallArgumentsDelta {
+            index: 0,
+            delta: "{\"path\":\"/tmp/a\"}".into(),
+        },
+        ModelEvent::ToolCallEnd { index: 0 },
+        ModelEvent::Done(FinishReason::ToolUse),
+    ]);
+    protocol.push_results(vec![
+        Ok(ModelEvent::Start {
+            model_call_id: "second-call-refused".into(),
+        }),
+        Err(Error::Refusal("policy decline".into())),
+    ]);
+    protocol.push(vec![
+        ModelEvent::Start {
+            model_call_id: "second-call-fallback".into(),
+        },
+        ModelEvent::ThinkingStart,
+        ModelEvent::ThinkingDelta("thinking on refusal model".into()),
+        ModelEvent::ThinkingEnd,
+        ModelEvent::TextStart,
+        ModelEvent::TextDelta("Completed after fallback.".into()),
+        ModelEvent::TextEnd,
+        ModelEvent::Done(FinishReason::Stop),
+    ]);
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let registry = TransportRegistry::new(
+        store.clone(),
+        Arc::new(protocol.clone()),
+        PromptCompiler::new(assets),
+    );
+    let handle = registry
+        .get_or_create("refusal-after-tool-request")
+        .await
+        .unwrap();
+    let mut output = handle.subscribe();
+    handle
+        .command(TransportCommand::Append {
+            seqno: 0,
+            message: Box::new(protocol_client_run("read then answer", "multi-call-user")),
+        })
+        .await
+        .unwrap();
+
+    let mut seqno = 1;
+    let mut checkpoints = Vec::new();
+    loop {
+        let frame = tokio::time::timeout(std::time::Duration::from_secs(5), output.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        let (flags, payload) = connect::decode_frames(&frame).unwrap().pop().unwrap();
+        if flags & connect::END_STREAM_FLAG != 0 {
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(&payload).unwrap(),
+                serde_json::json!({})
+            );
+            break;
+        }
+        let server = pb::AgentServerMessage::decode(payload).unwrap();
+        match server.message {
+            Some(pb::agent_server_message::Message::KvServerMessage(kv)) => {
+                handle
+                    .command(TransportCommand::Append {
+                        seqno,
+                        message: Box::new(kv_ack(kv.id)),
+                    })
+                    .await
+                    .unwrap();
+                seqno += 1;
+            }
+            Some(pb::agent_server_message::Message::ExecServerMessage(exec)) => {
+                handle
+                    .command(TransportCommand::Append {
+                        seqno,
+                        message: Box::new(pb::AgentClientMessage {
+                            message: Some(pb::agent_client_message::Message::ExecClientMessage(
+                                pb::ExecClientMessage {
+                                    id: exec.id,
+                                    exec_id: String::new(),
+                                    message: Some(pb::exec_client_message::Message::ReadResult(
+                                        pb::ReadResult {
+                                            result: Some(pb::read_result::Result::Success(
+                                                pb::ReadSuccess {
+                                                    path: "/tmp/a".into(),
+                                                    output: Some(
+                                                        pb::read_success::Output::Content(
+                                                            "contents".into(),
+                                                        ),
+                                                    ),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            )),
+                        }),
+                    })
+                    .await
+                    .unwrap();
+                seqno += 1;
+            }
+            Some(pb::agent_server_message::Message::ConversationCheckpointUpdate(state)) => {
+                checkpoints.push(state);
+            }
+            _ => {}
+        }
+    }
+
+    let settled = checkpoints.last().expect("settled checkpoint");
+    let mut root_model_names = Vec::new();
+    for raw_root_id in &settled.root_prompt_messages_json {
+        let blob = store
+            .get_blob(&BlobId::from_bytes(raw_root_id).unwrap())
+            .await
+            .unwrap()
+            .unwrap();
+        let wire: serde_json::Value = serde_json::from_slice(&blob).unwrap();
+        if wire["role"] == "assistant" {
+            for part in wire["content"].as_array().unwrap() {
+                if let Some(model_name) = part
+                    .get("providerOptions")
+                    .and_then(|value| value.get("cursor"))
+                    .and_then(|value| value.get("modelName"))
+                    .and_then(serde_json::Value::as_str)
+                {
+                    root_model_names.push(model_name.to_owned());
+                }
+            }
+        }
+    }
+    assert_eq!(root_model_names, ["test-model", "refusal-model"]);
+}
+
+#[tokio::test]
+async fn terminal_failure_synthesizes_tool_completion_for_open_partial_tool_call() {
+    let (_directory, store) = fixtures::temp_store().await;
+    let protocol = fake_protocol::FakeProtocol::default();
+    protocol.push_results(vec![
+        Ok(ModelEvent::Start {
+            model_call_id: "terminal-refusal".into(),
+        }),
+        Ok(ModelEvent::ToolCallStart {
+            index: 0,
+            call_id: "dangling-tool".into(),
+            name: "Read".into(),
+        }),
+        Ok(ModelEvent::ToolCallArgumentsDelta {
+            index: 0,
+            delta: "{\"path\":".into(),
+        }),
+        Err(Error::Refusal("no fallback configured".into())),
+    ]);
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let registry = TransportRegistry::new(
+        store,
+        Arc::new(protocol.clone()),
+        PromptCompiler::new(assets),
+    );
+    let handle = registry
+        .get_or_create("dangling-tool-request")
+        .await
+        .unwrap();
+    let mut output = handle.subscribe();
+    handle
+        .command(TransportCommand::Append {
+            seqno: 0,
+            message: Box::new(client_run()),
+        })
+        .await
+        .unwrap();
+
+    let mut seqno = 1;
+    let mut saw_partial = false;
+    let mut saw_completed = false;
+    let error_json = loop {
+        let frame = tokio::time::timeout(std::time::Duration::from_secs(5), output.recv())
+            .await
+            .unwrap()
+            .expect("stream must emit terminal error frame");
+        let (flags, payload) = connect::decode_frames(&frame).unwrap().pop().unwrap();
+        if flags & connect::END_STREAM_FLAG != 0 {
+            break serde_json::from_slice::<serde_json::Value>(&payload).unwrap();
+        }
+        let server = pb::AgentServerMessage::decode(payload).unwrap();
+        match server.message {
+            Some(pb::agent_server_message::Message::KvServerMessage(kv)) => {
+                handle
+                    .command(TransportCommand::Append {
+                        seqno,
+                        message: Box::new(kv_ack(kv.id)),
+                    })
+                    .await
+                    .unwrap();
+                seqno += 1;
+            }
+            Some(pb::agent_server_message::Message::InteractionUpdate(update)) => {
+                match update.message {
+                    Some(pb::interaction_update::Message::PartialToolCall(partial))
+                        if partial.call_id == "dangling-tool" =>
+                    {
+                        saw_partial = true;
+                    }
+                    Some(pb::interaction_update::Message::ToolCallCompleted(completed))
+                        if completed.call_id == "dangling-tool" =>
+                    {
+                        let tool = completed.tool_call.expect("synthesized tool completion");
+                        saw_completed = tool.completed_at_ms.is_some();
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    };
+
+    assert!(saw_partial);
+    assert!(
+        saw_completed,
+        "terminal failure must emit ToolCallCompleted for open partial tool calls"
+    );
+    assert_eq!(error_json["error"]["code"], "invalid_argument");
+    assert_eq!(protocol.requests().len(), 1);
 }
 
 fn client_run() -> pb::AgentClientMessage {

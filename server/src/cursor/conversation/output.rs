@@ -8,10 +8,9 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     cursor::{
-        checkpoint::StepBuffer,
         checkpoint::{
             worker::{CheckpointJob, CheckpointKind, CheckpointWorker, FinalCheckpoints},
-            CheckpointBuilder,
+            CheckpointBuilder, PendingSteps, StepBuffer,
         },
         compile::{
             compile_injection, compile_user_message_action, ensure_user_message_id,
@@ -172,6 +171,7 @@ impl ConversationOutput {
         let mut context_tokens = None::<u64>;
         let mut ready = VecDeque::new();
         let mut presentation = StepBuffer::default();
+        let mut switched_from = None::<(String, Option<u64>)>;
 
         'output: loop {
             if self.superseded.is_cancelled() {
@@ -265,28 +265,53 @@ impl ConversationOutput {
                         calls.clear();
                         streams.clear();
                         presentation.discard_model_output();
+                        if let Some((model_id, max_context_tokens)) = switched_from.take() {
+                            self.reconfigure_checkpoint(&worker, model_id, max_context_tokens)
+                                .await?;
+                        }
+                    }
+                    RunEvent::ModelSwitched { from, to } => {
+                        tracing::warn!(
+                            run_id = %self.run.run_id(),
+                            %from,
+                            %to,
+                            "switching model for current call"
+                        );
+                        presentation.discard_model_output();
+                        response_text.clear();
+                        response_thinking.clear();
+                        let switched_model = self.store.model(&to).await.ok().flatten();
+                        let model_label = switched_model
+                            .as_ref()
+                            .map(|model| model.display_name.as_str())
+                            .filter(|name| !name.is_empty())
+                            .unwrap_or(to.as_str());
+                        if !self.context.compacting {
+                            self.handle.emit(&events::server_notice(format!(
+                                "Switched to {model_label}.\n\n"
+                            )))?;
+                        }
+                        switched_from
+                            .get_or_insert_with(|| (from, self.checkpoint.max_context_tokens()));
+                        let context_window_tokens = switched_model
+                            .as_ref()
+                            .and_then(|model| model.context_window_tokens);
+                        self.reconfigure_checkpoint(&worker, to, context_window_tokens)
+                            .await?;
                     }
                     RunEvent::ModelAttemptFailed { attempt, message } => {
                         tracing::warn!(
                             run_id = %self.run.run_id(),
                             attempt,
                             %message,
-                            "retrying model call from current checkpoint"
+                            "model attempt failed; continuing from current checkpoint"
                         );
                         presentation.finish_model_attempt();
-                        for call in calls.values_mut() {
-                            if call.arguments.is_null() {
-                                call.arguments = serde_json::from_str(&call.arguments_text)
-                                    .unwrap_or_else(|_| serde_json::json!({}));
-                            }
-                            let completion = compat::failure_with_message(
-                                call,
-                                format!("Model attempt failed before tool completion: {message}"),
-                            );
-                            self.handle
-                                .emit(&codec::tool_completed(call, &completion))?;
-                            presentation.tool_completed(&completion);
-                        }
+                        self.fail_open_tool_calls(
+                            &mut calls,
+                            &mut presentation,
+                            &format!("Model attempt failed before tool completion: {message}"),
+                        )?;
                         response_text.clear();
                         response_thinking.clear();
                         calls.clear();
@@ -683,6 +708,10 @@ impl ConversationOutput {
                             }
                             active_tool_calls.clear();
                             self.tool_runtime.clear_completed().await;
+                            if let Some((model_id, max_context_tokens)) = switched_from.take() {
+                                self.reconfigure_checkpoint(&worker, model_id, max_context_tokens)
+                                    .await?;
+                            }
                         } else if !matches!(&state.cause, CommitCause::ToolResult { .. })
                             && active_round.is_some()
                         {
@@ -776,11 +805,19 @@ impl ConversationOutput {
                                 Ok(RunFinish::Transport(TransportFinish::Cancelled))
                             }
                             RunOutcome::Failed(failure) => {
+                                let error = cursor_error(failure);
+                                let _ = self.fail_open_tool_calls(
+                                    &mut calls,
+                                    &mut presentation,
+                                    &format!(
+                                        "Model attempt failed before tool completion: {error}"
+                                    ),
+                                );
+                                calls.clear();
+                                streams.clear();
                                 worker.abort();
                                 self.abort_execs().await;
-                                Ok(RunFinish::Transport(TransportFinish::Failed(cursor_error(
-                                    failure,
-                                ))))
+                                Ok(RunFinish::Transport(TransportFinish::Failed(error)))
                             }
                         };
                     }
@@ -793,6 +830,46 @@ impl ConversationOutput {
         for id in self.tool_runtime.drain_running().await {
             let _ = self.handle.emit(&codec::abort(id));
         }
+    }
+
+    fn fail_open_tool_calls(
+        &self,
+        calls: &mut BTreeMap<usize, ToolCall>,
+        presentation: &mut StepBuffer,
+        reason: &str,
+    ) -> Result<()> {
+        for call in calls.values_mut() {
+            if call.arguments.is_null() {
+                call.arguments = serde_json::from_str(&call.arguments_text)
+                    .unwrap_or_else(|_| serde_json::json!({}));
+            }
+            let completion = compat::failure_with_message(call, reason.to_owned());
+            self.handle
+                .emit(&codec::tool_completed(call, &completion))?;
+            presentation.tool_completed(&completion);
+        }
+        Ok(())
+    }
+
+    async fn reconfigure_checkpoint(
+        &mut self,
+        worker: &CheckpointWorker,
+        model_id: String,
+        context_window_tokens: Option<u64>,
+    ) -> Result<()> {
+        let config =
+            super::runtime::checkpoint_config(model_id, context_window_tokens, &self.context);
+        self.checkpoint.configure(config.clone());
+        worker
+            .jobs
+            .send(CheckpointJob {
+                kind: CheckpointKind::Configure(Box::new(config)),
+                presentation: PendingSteps::default(),
+                context_tokens: None,
+                ready: None,
+            })
+            .await
+            .map_err(|_| Error::Protocol("checkpoint worker closed".into()))
     }
 
     async fn forward_completion(

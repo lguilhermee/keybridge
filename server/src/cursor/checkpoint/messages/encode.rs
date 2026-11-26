@@ -19,6 +19,16 @@ pub fn stable_messages(
     messages: &[CanonicalMessage],
     model: &str,
 ) -> Result<Vec<Vec<u8>>> {
+    stable_messages_for_models(instructions, messages, 0, &[], model)
+}
+
+pub fn stable_messages_for_models(
+    instructions: &str,
+    messages: &[CanonicalMessage],
+    base_count: usize,
+    generated_models: &[String],
+    current_model: &str,
+) -> Result<Vec<Vec<u8>>> {
     let mut projected = project_messages(messages)?;
     if !instructions.is_empty() {
         projected.insert(
@@ -34,7 +44,15 @@ pub fn stable_messages(
     }
     projected
         .iter()
-        .map(|message| serde_json::to_vec(&wire_message(message, model, None)?).map_err(Into::into))
+        .enumerate()
+        .map(|(wire_index, message)| {
+            let model = wire_index
+                .checked_sub(base_count)
+                .and_then(|index| generated_models.get(index))
+                .map(String::as_str)
+                .unwrap_or(current_model);
+            serde_json::to_vec(&wire_message(message, model, None)?).map_err(Into::into)
+        })
         .collect::<std::result::Result<_, _>>()
 }
 

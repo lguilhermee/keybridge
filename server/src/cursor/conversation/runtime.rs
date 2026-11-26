@@ -6,7 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     cursor::{
-        checkpoint::CheckpointBuilder,
+        checkpoint::{CheckpointBuilder, CheckpointConfig},
         compile,
         protocol::proto::agent::v1 as pb,
         services::{blob_sync::BlobSynchronizer, context_sync::RequestContextSynchronizer},
@@ -805,14 +805,11 @@ fn spawn_run_request(
                 return;
             }
         };
-        checkpoint.configure(
+        checkpoint.configure(checkpoint_config(
             prepared.model.model_id.clone(),
             prepared.model.context_window_tokens,
-            context.checkpoint_prompt.instructions.clone(),
-            context.checkpoint_prompt.tools.clone(),
-            context.dynamic_tools.keys().cloned().collect(),
-            context.turn_user.clone(),
-        );
+            &context,
+        ));
         if context.background_completion {
             let event_id = prepared
                 .initial_messages
@@ -1035,6 +1032,21 @@ fn spawn_run_request(
                 .await;
         }
     });
+}
+
+pub(super) fn checkpoint_config(
+    model_id: String,
+    context_window_tokens: Option<u64>,
+    context: &compile::CursorRunContext,
+) -> CheckpointConfig {
+    CheckpointConfig {
+        model: model_id,
+        max_context_tokens: context_window_tokens,
+        instructions: context.checkpoint_prompt.instructions.clone(),
+        tool_definitions: context.checkpoint_prompt.tools.clone(),
+        dynamic_tools: context.dynamic_tools.keys().cloned().collect(),
+        turn_user: context.turn_user.clone(),
+    }
 }
 
 fn runtime_action_name(action: &pb::conversation_action::Action) -> &'static str {

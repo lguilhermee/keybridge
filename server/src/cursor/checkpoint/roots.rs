@@ -7,6 +7,7 @@ use super::CheckpointBuilder;
 pub(super) struct RootFrontier {
     pub(super) ids: Vec<BlobId>,
     pub(super) generated: Vec<Vec<u8>>,
+    pub(super) models: Vec<String>,
     pub(super) base_count: usize,
 }
 
@@ -15,8 +16,20 @@ impl CheckpointBuilder {
         &mut self,
         messages: &[CanonicalMessage],
     ) -> Result<Vec<BlobId>> {
-        let wire_messages = messages::stable_messages(&self.instructions, messages, &self.model)?;
         self.ensure_roots()?;
+        let (base_count, models) = {
+            let roots = self.roots.as_ref().ok_or_else(|| {
+                Error::Protocol("Cursor root frontier was not initialized".into())
+            })?;
+            (roots.base_count, roots.models.as_slice())
+        };
+        let wire_messages = messages::stable_messages_for_models(
+            &self.instructions,
+            messages,
+            base_count,
+            models,
+            &self.model,
+        )?;
         let replacement = self
             .roots
             .as_ref()
@@ -50,6 +63,7 @@ impl CheckpointBuilder {
         for message in wire_messages.iter().skip(roots.ids.len()) {
             roots.ids.push(self.sync.persist(message, &[]).await?);
             roots.generated.push(message.clone());
+            roots.models.push(self.model.clone());
         }
         Ok(roots.ids.clone())
     }
@@ -68,6 +82,7 @@ impl CheckpointBuilder {
             base_count: ids.len(),
             ids,
             generated: Vec::new(),
+            models: Vec::new(),
         });
         Ok(())
     }
@@ -99,6 +114,7 @@ impl CheckpointBuilder {
             base_count: ids.len(),
             ids: ids.clone(),
             generated: Vec::new(),
+            models: Vec::new(),
         });
         Ok(ids)
     }

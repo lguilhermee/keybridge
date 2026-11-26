@@ -45,9 +45,16 @@ fn model_input(base_url: &str, model_id: &str, effort: Option<&str>) -> ModelCon
     }
 }
 
-async fn run(store: &Store, protocol: Arc<ProtocolRouter>, model: ModelSpec, index: usize) {
+async fn run(
+    store: &Store,
+    protocol: Arc<ProtocolRouter>,
+    model: ModelSpec,
+    expected_fallback: &str,
+    index: usize,
+) {
     let conversation_id = ConversationId::new("refusal-settings");
     let base_checkpoint_id = store.ensure_conversation(&conversation_id).await.unwrap();
+    let expected_from = model.model_id.clone();
     let prepared = PreparedRun {
         run_id: RunId::new(format!("run-{index}")),
         cursor_request_id: None,
@@ -66,12 +73,19 @@ async fn run(store: &Store, protocol: Arc<ProtocolRouter>, model: ModelSpec, ind
     let engine = RunEngine::new(store.clone(), protocol);
     let task = tokio::spawn(async move { engine.run(prepared, port, handle.cancellation()).await });
     let mut text = String::new();
+    let mut lifecycle = Vec::new();
     loop {
         let event = tokio::time::timeout(Duration::from_secs(5), session.events.recv())
             .await
             .unwrap()
             .unwrap();
         match event {
+            RunEvent::ModelSwitched { from, to } => {
+                assert_eq!(from, expected_from);
+                assert_eq!(to, expected_fallback);
+                lifecycle.push("switched");
+            }
+            RunEvent::ModelAttemptFailed { .. } => lifecycle.push("failed"),
             RunEvent::TextDelta(delta) => text.push_str(&delta),
             RunEvent::MessagesCommitted(committed) => committed.barrier.complete(Ok(())),
             RunEvent::Ended(outcome) => {
@@ -82,6 +96,7 @@ async fn run(store: &Store, protocol: Arc<ProtocolRouter>, model: ModelSpec, ind
         }
     }
     assert_eq!(task.await.unwrap(), RunOutcome::Completed);
+    assert_eq!(lifecycle, ["switched", "failed"]);
     assert_eq!(text, "Answer from refusal model.");
 }
 
@@ -188,7 +203,7 @@ async fn verify_refusal(saved_effort: Option<&str>, reply: Option<&str>) {
     store
         .replace_refusal_fallbacks(&[RefusalFallback {
             model_id: original.model_hash.clone(),
-            fallback_model_id: refusal.model_hash,
+            fallback_model_id: refusal.model_hash.clone(),
         }])
         .await
         .unwrap();
@@ -216,7 +231,14 @@ async fn verify_refusal(saved_effort: Option<&str>, reply: Option<&str>) {
         selected.latency = ModelLatency::Fast;
         selected.max_output_tokens = Some(32_000);
         selected.context_window_tokens = Some(1_000_000);
-        run(&store, protocol.clone(), selected, index).await;
+        run(
+            &store,
+            protocol.clone(),
+            selected,
+            &refusal.model_hash,
+            index,
+        )
+        .await;
 
         let original = received.try_recv().unwrap();
         let refusal = received.try_recv().unwrap();

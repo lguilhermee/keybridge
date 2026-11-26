@@ -18,6 +18,16 @@ use crate::{
 use super::{derived, roots::RootFrontier, turns::TurnFrontier, SubagentCompletions};
 
 #[derive(Clone)]
+pub struct CheckpointConfig {
+    pub model: String,
+    pub max_context_tokens: Option<u64>,
+    pub instructions: String,
+    pub tool_definitions: Vec<ToolDefinition>,
+    pub dynamic_tools: HashSet<String>,
+    pub turn_user: Option<pb::UserMessage>,
+}
+
+#[derive(Clone)]
 pub struct CheckpointBuilder {
     pub(super) store: Store,
     pub(super) sync: BlobSynchronizer,
@@ -85,25 +95,22 @@ impl CheckpointBuilder {
         }
     }
 
-    pub fn configure(
-        &mut self,
-        model: String,
-        max_context_tokens: Option<u64>,
-        instructions: String,
-        tool_definitions: Vec<ToolDefinition>,
-        dynamic_tools: HashSet<String>,
-        turn_user: Option<pb::UserMessage>,
-    ) {
-        self.model = model;
-        self.max_context_tokens = max_context_tokens;
-        self.instructions = instructions;
-        self.allowed_tools = tool_definitions
+    pub fn configure(&mut self, config: CheckpointConfig) {
+        self.model = config.model;
+        self.max_context_tokens = config.max_context_tokens;
+        self.instructions = config.instructions;
+        self.allowed_tools = config
+            .tool_definitions
             .iter()
             .map(|tool| tool.name.clone())
             .collect();
-        self.tool_definitions = tool_definitions;
-        self.dynamic_tools = dynamic_tools;
-        self.turn_user = turn_user;
+        self.tool_definitions = config.tool_definitions;
+        self.dynamic_tools = config.dynamic_tools;
+        self.turn_user = config.turn_user;
+    }
+
+    pub fn max_context_tokens(&self) -> Option<u64> {
+        self.max_context_tokens
     }
 
     pub fn finished_subagents_state(&self) -> pb::ConversationStateStructure {

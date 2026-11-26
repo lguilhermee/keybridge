@@ -312,6 +312,10 @@ Deno.test("Request building injects Claude Code identity and cloaks tool names",
     headers["anthropic-beta"].includes("oauth-2025-04-20"),
     "oauth beta flag required",
   );
+  assert(
+    !headers["anthropic-beta"].includes("redact-thinking-2026-02-12"),
+    "redact-thinking beta must not override summarized thinking display",
+  );
   equal(parsed.model, "claude-sonnet-5-5");
   equal(parsed.max_tokens, 256);
   equal(parsed.temperature, 1);
@@ -322,6 +326,22 @@ Deno.test("Request building injects Claude Code identity and cloaks tool names",
   equal(decloakName("read_file_ide", nameMap), "read_file");
   equal(decloakName("Other", nameMap), "Other");
   assert(!("speed" in parsed), "standard latency must not request fast mode");
+});
+
+Deno.test("Haiku 4.5 uses budgeted summarized thinking and omits effort", async () => {
+  const { body, headers } = await buildRequest(
+    { ...request(), maxOutputTokens: 4096, reasoning: { enabled: true, effort: "high" } },
+    "claude-haiku-4-5-20251001",
+    4096,
+    account(),
+  );
+  const parsed = JSON.parse(body);
+  assert(
+    !headers["anthropic-beta"].includes("redact-thinking-2026-02-12"),
+    "redact-thinking beta must not be sent",
+  );
+  equal(parsed.thinking, { type: "enabled", budget_tokens: 4095, display: "summarized" });
+  assert(!("output_config" in parsed), "Haiku 4.5 does not accept output_config.effort");
 });
 
 Deno.test("Tool schemas drop top-level oneOf/anyOf/allOf that Anthropic rejects", () => {

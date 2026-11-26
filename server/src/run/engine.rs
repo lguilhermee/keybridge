@@ -473,20 +473,38 @@ impl RunEngine {
                             let failed_model = request.model.model_id.clone();
                             // A refusal goes to the refused model's refusal model when one
                             // is set; a failing refusal model hands back to the combo.
-                            let Some(member) =
-                                refusal.switch(&failed_model, &cycle_failure).or_else(|| {
+                            let (member, refusal_switched) = match refusal
+                                .switch(&failed_model, &cycle_failure)
+                            {
+                                Some(member) => (member, true),
+                                None => {
                                     refusal.release();
-                                    combo
+                                    let Some(member) = combo
                                         .as_mut()
                                         .and_then(|combo| combo.fallback(&cycle_failure))
                                         .map(str::to_owned)
-                                })
-                            else {
-                                return (RunOutcome::Failed(cycle_failure.failure), usage);
+                                    else {
+                                        return (RunOutcome::Failed(cycle_failure.failure), usage);
+                                    };
+                                    (member, false)
+                                }
                             };
                             request.model = refusal.apply(run_model(prepared, combo.as_ref()));
                             retries = 0;
                             attempts += 1;
+                            if refusal_switched
+                                && emit(
+                                    client,
+                                    RunEvent::ModelSwitched {
+                                        from: failed_model.clone(),
+                                        to: member.clone(),
+                                    },
+                                )
+                                .await
+                                .is_err()
+                            {
+                                return (client_failure(), usage);
+                            }
                             let message = format!(
                                 "{failed_model} failed ({}); falling back to {member}",
                                 failure_message(&cycle_failure.failure)

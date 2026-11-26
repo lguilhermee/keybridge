@@ -242,7 +242,8 @@ impl Drop for CancelOnDrop {
 struct StreamState {
     next_index: usize,
     thinking_index: Option<usize>,
-    thinking_closed: bool,
+    thinking_blocks_opened: usize,
+    thinking_block_text: String,
     text_index: Option<usize>,
     text_closed: bool,
     tool_indices: HashMap<usize, usize>,
@@ -256,8 +257,23 @@ impl StreamState {
         }
         let idx = self.next_index;
         self.next_index += 1;
+        self.thinking_blocks_opened += 1;
+        self.thinking_block_text.clear();
         self.thinking_index = Some(idx);
         Some(idx)
+    }
+
+    fn thinking_item_id(&self, id: &str) -> String {
+        if self.thinking_blocks_opened <= 1 {
+            format!("rs_{id}")
+        } else {
+            format!("rs_{id}_{}", self.thinking_blocks_opened)
+        }
+    }
+
+    fn close_thinking(&mut self) -> Option<(usize, String)> {
+        let idx = self.thinking_index.take()?;
+        Some((idx, std::mem::take(&mut self.thinking_block_text)))
     }
 
     fn open_text(&mut self) -> Option<usize> {
@@ -309,12 +325,10 @@ pub(super) fn streamed(
                     }
                     if matches!(event, ModelEvent::TextStart | ModelEvent::TextDelta(_) | ModelEvent::ToolCallStart { .. } | ModelEvent::Done(_))
                         && state.thinking_index.is_some()
-                        && !state.thinking_closed
                     {
                         for (name, value) in stream_events(protocol, &ModelEvent::ThinkingEnd, &id, &model, &output, &mut state) {
                             yield Ok(Event::default().event(name).data(value.to_string()));
                         }
-                        state.thinking_closed = true;
                     }
                     if matches!(event, ModelEvent::TextDelta(_)) && state.text_index.is_none() && !matches!(protocol, ApiProtocol::Chat) {
                         for (name, value) in stream_events(protocol, &ModelEvent::TextStart, &id, &model, &output, &mut state) {
@@ -338,9 +352,6 @@ pub(super) fn streamed(
                     output.update(&event);
                     for (name, value) in stream_events(protocol, &event, &id, &model, &output, &mut state) {
                         yield Ok(Event::default().event(name).data(value.to_string()));
-                    }
-                    if matches!(event, ModelEvent::ThinkingEnd) && state.thinking_index.is_some() {
-                        state.thinking_closed = true;
                     }
                     if matches!(event, ModelEvent::TextEnd | ModelEvent::Done(_)) && state.text_index.is_some() {
                         state.text_closed = true;
@@ -438,7 +449,7 @@ fn stream_events(
                 let Some(idx) = state.open_thinking() else {
                     return Vec::new();
                 };
-                let item_id = format!("rs_{id}");
+                let item_id = state.thinking_item_id(id);
                 vec![
                     (
                         "response.output_item.added",
@@ -454,28 +465,29 @@ fn stream_events(
                 let Some(idx) = state.thinking_index else {
                     return Vec::new();
                 };
+                state.thinking_block_text.push_str(delta);
                 vec![(
                     "response.reasoning_summary_text.delta",
-                    json!({"type":"response.reasoning_summary_text.delta","item_id":format!("rs_{id}"),"output_index":idx,"summary_index":0,"delta":delta}),
+                    json!({"type":"response.reasoning_summary_text.delta","item_id":state.thinking_item_id(id),"output_index":idx,"summary_index":0,"delta":delta}),
                 )]
             }
             ModelEvent::ThinkingEnd => {
-                let Some(idx) = state.thinking_index.filter(|_| !state.thinking_closed) else {
+                let item_id = state.thinking_item_id(id);
+                let Some((idx, text)) = state.close_thinking() else {
                     return Vec::new();
                 };
-                let item_id = format!("rs_{id}");
                 vec![
                     (
                         "response.reasoning_summary_text.done",
-                        json!({"type":"response.reasoning_summary_text.done","item_id":item_id,"output_index":idx,"summary_index":0,"text":output.thinking}),
+                        json!({"type":"response.reasoning_summary_text.done","item_id":item_id,"output_index":idx,"summary_index":0,"text":text}),
                     ),
                     (
                         "response.reasoning_summary_part.done",
-                        json!({"type":"response.reasoning_summary_part.done","item_id":item_id,"output_index":idx,"summary_index":0,"part":{"type":"summary_text","text":output.thinking}}),
+                        json!({"type":"response.reasoning_summary_part.done","item_id":item_id,"output_index":idx,"summary_index":0,"part":{"type":"summary_text","text":text}}),
                     ),
                     (
                         "response.output_item.done",
-                        json!({"type":"response.output_item.done","output_index":idx,"item":{"id":item_id,"type":"reasoning","status":"completed","summary":[{"type":"summary_text","text":output.thinking}]}}),
+                        json!({"type":"response.output_item.done","output_index":idx,"item":{"id":item_id,"type":"reasoning","status":"completed","summary":[{"type":"summary_text","text":text}]}}),
                     ),
                 ]
             }
@@ -576,7 +588,7 @@ fn stream_events(
                 )]
             }
             ModelEvent::ThinkingEnd => {
-                let Some(idx) = state.thinking_index.filter(|_| !state.thinking_closed) else {
+                let Some((idx, _)) = state.close_thinking() else {
                     return Vec::new();
                 };
                 vec![(
@@ -663,5 +675,52 @@ fn stream_events(
             }
             _ => Vec::new(),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multiple_thinking_blocks_open_distinct_indices() {
+        let output = Output::new(NamespacedTools::default());
+        let mut messages_state = StreamState::default();
+        let events = [
+            ModelEvent::ThinkingStart,
+            ModelEvent::ThinkingDelta("first".into()),
+            ModelEvent::ThinkingEnd,
+            ModelEvent::ThinkingStart,
+            ModelEvent::ThinkingDelta("second".into()),
+            ModelEvent::ThinkingEnd,
+        ];
+        let emitted: Vec<_> = events
+            .iter()
+            .flat_map(|event| {
+                stream_events(
+                    ApiProtocol::Messages,
+                    event,
+                    "msg_1",
+                    "claude-opus-5-5",
+                    &output,
+                    &mut messages_state,
+                )
+            })
+            .collect();
+        let indices: Vec<_> = emitted
+            .iter()
+            .map(|(name, value)| (*name, value["index"].as_u64().unwrap()))
+            .collect();
+        assert_eq!(
+            indices,
+            vec![
+                ("content_block_start", 0),
+                ("content_block_delta", 0),
+                ("content_block_stop", 0),
+                ("content_block_start", 1),
+                ("content_block_delta", 1),
+                ("content_block_stop", 1),
+            ]
+        );
     }
 }

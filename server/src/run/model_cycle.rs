@@ -221,8 +221,9 @@ pub async fn consume_model_cycle(
                             },
                             ended: false,
                         });
-                        // A reply that calls tools is not a refusal.
-                        let mut events = hold.release();
+                        // The tool round needs the text now, but a notice can
+                        // arrive in the same answer, so the watch stays armed.
+                        let mut events = hold.flush();
                         events.push(RunEvent::ToolCallStart {
                             index,
                             call_id,
@@ -360,8 +361,14 @@ pub async fn consume_model_cycle(
             usage,
         ));
     }
-    // The reply refused in its own words; none of it was shown.
-    if finish_reason == FinishReason::Stop && hold.is_refusing(&text) {
+    // The reply refused in its own words; none of it was shown. Included texts
+    // usually arrive with a tool call, so a flushed answer is judged the same
+    // way. `Length` is judged too: a truncated refusal is still a refusal.
+    if matches!(
+        finish_reason,
+        FinishReason::Stop | FinishReason::ToolUse | FinishReason::Length
+    ) && hold.is_refusing(&text)
+    {
         return Err(failure(
             RunFailure::Refusal("declined the request in its reply".into()),
             text,
@@ -369,10 +376,7 @@ pub async fn consume_model_cycle(
             usage,
         ));
     }
-    if send_all(client, cancellation, hold.release())
-        .await
-        .is_err()
-    {
+    if send_all(client, cancellation, hold.flush()).await.is_err() {
         return Err(failure(
             RunFailure::Client("client event channel closed".into()),
             text,
@@ -783,7 +787,80 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn refusal_wording_before_a_tool_call_is_delivered() {
+    async fn a_notice_with_a_tool_call_is_a_refusal_even_after_the_flush() {
+        // 62 of 62 real Gemini notices carry a tool call, so a tool call must
+        // not end the watch. The text is flushed for the tool round, but the
+        // call still fails as a refusal so the answer is not committed.
+        let notice = "Cannot continue developing, testing, or migrating anti-cheat bypass.";
+        let stream = Box::pin(tokio_stream::iter(vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "reply".into(),
+            }),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta(notice.into())),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::ToolCallStart {
+                index: 0,
+                call_id: "tool-call".into(),
+                name: "read_file".into(),
+            }),
+            Ok(ModelEvent::ToolCallEnd { index: 0 }),
+            Ok(ModelEvent::Done(FinishReason::ToolUse)),
+        ]));
+        let (sender, mut receiver) = mpsc::channel(16);
+
+        let failure = consume_model_cycle(stream, &sender, &CancellationToken::new(), true)
+            .await
+            .unwrap_err();
+
+        assert_eq!(failure.kind, FailureKind::Refusal);
+        assert_eq!(failure.partial_text, notice);
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextStart)));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextDelta(_))));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextEnd)));
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(RunEvent::ToolCallStart { .. })
+        ));
+    }
+
+    #[tokio::test]
+    async fn an_ordinary_reply_before_a_tool_call_stays_a_normal_round() {
+        let stream = Box::pin(tokio_stream::iter(vec![
+            Ok(ModelEvent::Start {
+                model_call_id: "reply".into(),
+            }),
+            Ok(ModelEvent::TextStart),
+            Ok(ModelEvent::TextDelta(
+                "Reading the parser module first.".into(),
+            )),
+            Ok(ModelEvent::TextEnd),
+            Ok(ModelEvent::ToolCallStart {
+                index: 0,
+                call_id: "tool-call".into(),
+                name: "read_file".into(),
+            }),
+            Ok(ModelEvent::ToolCallEnd { index: 0 }),
+            Ok(ModelEvent::Done(FinishReason::ToolUse)),
+        ]));
+        let (sender, mut receiver) = mpsc::channel(16);
+
+        let result = consume_model_cycle(stream, &sender, &CancellationToken::new(), true)
+            .await
+            .unwrap();
+
+        assert_eq!(result.text, "Reading the parser module first.");
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextStart)));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextDelta(_))));
+        assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextEnd)));
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(RunEvent::ToolCallStart { index: 0, .. })
+        ));
+    }
+
+    #[tokio::test]
+    async fn refusal_wording_before_a_tool_call_is_a_refusal() {
         let stream = Box::pin(tokio_stream::iter(vec![
             Ok(ModelEvent::Start {
                 model_call_id: "reply".into(),
@@ -803,11 +880,11 @@ mod tests {
         ]));
         let (sender, mut receiver) = mpsc::channel(16);
 
-        let result = consume_model_cycle(stream, &sender, &CancellationToken::new(), true)
+        let failure = consume_model_cycle(stream, &sender, &CancellationToken::new(), true)
             .await
-            .unwrap();
+            .unwrap_err();
 
-        assert_eq!(result.calls.len(), 1);
+        assert_eq!(failure.kind, FailureKind::Refusal);
         assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextStart)));
         assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextDelta(_))));
         assert!(matches!(receiver.try_recv(), Ok(RunEvent::TextEnd)));

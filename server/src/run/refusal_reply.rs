@@ -1,10 +1,11 @@
 //! Catches a model that refuses in its own words.
 //!
-//! Some refusals arrive as an ordinary answer (finish reason `end_turn`), so
-//! only the text shows them. For a model with a refusal model configured, the
-//! entire reply text is held back until the call finishes. This lets a refusal
-//! anywhere in the final answer switch models without showing the refused text.
-//! Thinking still streams; tool calls release the text for the tool round.
+//! Some refusals arrive as an ordinary answer, so only the text shows them. For
+//! a model with a refusal model configured, the entire reply text is held back
+//! until the call finishes. This lets a refusal anywhere in the final answer
+//! switch models without showing the refused text. Thinking still streams; a
+//! tool call flushes the text so the tool round can start, but the watch stays
+//! armed because the notice and its tool calls arrive in the same answer.
 
 mod detection;
 
@@ -12,9 +13,13 @@ pub(crate) use detection::is_refusal;
 
 use super::RunEvent;
 
-/// Text events held back from the client while the reply may be a refusal.
+/// Watches a reply for a refusal and keeps its text away from the client
+/// until the answer is judged.
 #[derive(Debug)]
 pub(super) struct ReplyHold {
+    /// `Some` while the answer may still turn out to be a refusal. The buffer
+    /// is the text not yet handed to the client; it is separate from the watch
+    /// so a flush does not end it.
     held: Option<Vec<RunEvent>>,
 }
 
@@ -35,9 +40,9 @@ impl ReplyHold {
         Vec::new()
     }
 
-    /// Stops holding; returns the events held so far, in order.
-    pub(super) fn release(&mut self) -> Vec<RunEvent> {
-        self.held.take().unwrap_or_default()
+    /// Hands the text held so far to the client, in order, and keeps watching.
+    pub(super) fn flush(&mut self) -> Vec<RunEvent> {
+        self.held.as_mut().map(std::mem::take).unwrap_or_default()
     }
 
     /// Inspect the completed answer once, including all its text blocks.
@@ -73,14 +78,44 @@ mod tests {
     }
 
     #[test]
-    fn an_ordinary_reply_stays_held_until_the_call_releases_it() {
+    fn an_ordinary_reply_stays_held_until_the_call_judges_it() {
         let mut hold = ReplyHold::new(true);
         assert!(hold.text(RunEvent::TextStart).is_empty());
         let text = "Helpful background. ".repeat(1_000);
         assert!(hold.text(RunEvent::TextDelta(text.clone())).is_empty());
         assert!(hold.text(RunEvent::TextEnd).is_empty());
         assert!(!hold.is_refusing(&text));
-        assert_eq!(hold.release().len(), 3);
-        assert!(hold.release().is_empty());
+        assert!(hold.has_held_text());
+        assert_eq!(hold.flush().len(), 3);
+        assert!(hold.flush().is_empty());
+        assert!(!hold.has_held_text());
+    }
+
+    #[test]
+    fn a_notice_with_a_tool_call_stays_watched_after_the_flush() {
+        let mut hold = ReplyHold::new(true);
+        hold.text(RunEvent::TextStart);
+        let notice = "I cannot continue developing anti-cheat bypass functionality.";
+        hold.text(RunEvent::TextDelta(notice.into()));
+        hold.text(RunEvent::TextEnd);
+        assert!(hold.has_held_text());
+
+        // The tool call hands the buffered text to the client but the answer
+        // is still judged.
+        assert_eq!(hold.flush().len(), 3);
+        assert!(!hold.has_held_text());
+        assert!(hold.is_refusing(notice));
+        assert!(hold.flush().is_empty());
+    }
+
+    #[test]
+    fn an_ordinary_reply_before_a_tool_call_is_still_not_a_refusal() {
+        let mut hold = ReplyHold::new(true);
+        hold.text(RunEvent::TextStart);
+        let text = "Reading the parser module first.";
+        hold.text(RunEvent::TextDelta(text.into()));
+        hold.text(RunEvent::TextEnd);
+        hold.flush();
+        assert!(!hold.is_refusing(text));
     }
 }

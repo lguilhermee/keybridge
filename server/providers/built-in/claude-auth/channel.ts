@@ -173,7 +173,7 @@ async function streamMessages(
           emit({ type: "text-delta", text: delta.text });
         } else if (deltaKind === "thinking_delta" && typeof delta.thinking === "string") {
           thinkingText.set(index, (thinkingText.get(index) ?? "") + delta.thinking);
-          emit({ type: "thinking-delta", text: delta.thinking });
+          if (delta.thinking) emit({ type: "thinking-delta", text: delta.thinking });
         } else if (
           deltaKind === "signature_delta" && typeof delta.signature === "string"
         ) {

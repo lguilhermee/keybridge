@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 
-const ACTION: &str = r"(?:operate|run|launch|start|execute|use|test|continue|proceed|click)";
+const ACTION: &str = r"(?:(?:continue|proceed)\s+(?:develop(?:ing)?|test(?:ing)?|migrat(?:e|ing))|operate|run|launch|start|execute|use|test|continue|proceed|click)";
 const CONTROL: &str =
     r"(?:anti[- ]cheat|VM[- ](?:detection|checks?)|security\s+(?:controls?|protections?|checks?))";
 

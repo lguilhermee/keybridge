@@ -18,9 +18,14 @@ export const TOOL_SUFFIX = "_ide";
 const CLAUDE_CODE_PROMPT =
   "You are Claude Code, Anthropic's official CLI for Claude.";
 const DEFAULT_MAX_OUTPUT_TOKENS = 64_000;
+const DEFAULT_THINKING_BUDGET_TOKENS = 16_000;
+const MIN_THINKING_BUDGET_TOKENS = 1_024;
 
 // Claude Code's own chat headers; OAuth subscription tokens are bound to this
 // client identity, so the request must present it end to end.
+// `redact-thinking-2026-02-12` is intentionally omitted: Anthropic's API lets
+// that beta override `thinking.display: "summarized"` and strip all thinking
+// text (Claude Code itself strips it whenever `thinking.display` is set).
 const BETA_FLAGS = [
   "claude-code-20250219",
   "oauth-2025-04-20",
@@ -29,9 +34,23 @@ const BETA_FLAGS = [
   "prompt-caching-scope-2026-01-05",
   "structured-outputs-2025-12-15",
   "fast-mode-2026-02-01",
-  "redact-thinking-2026-02-12",
   "token-efficient-tools-2026-03-28",
 ];
+
+function supportsAdaptiveThinking(model: string): boolean {
+  const lower = model.toLowerCase();
+  return !lower.includes("haiku") && !lower.includes("claude-3-") &&
+    !lower.startsWith("claude-opus-4-0") && !lower.startsWith("claude-opus-4-1") &&
+    !lower.startsWith("claude-opus-4-5") && !lower.startsWith("claude-sonnet-4-0") &&
+    !lower.startsWith("claude-sonnet-4-5");
+}
+
+function supportsEffort(model: string): boolean {
+  const lower = model.toLowerCase();
+  return !lower.includes("haiku") && !lower.includes("claude-3-") &&
+    !lower.startsWith("claude-opus-4-0") && !lower.startsWith("claude-opus-4-1") &&
+    !lower.startsWith("claude-sonnet-4-0") && !lower.startsWith("claude-sonnet-4-5");
+}
 
 type Block = Record<string, unknown>;
 
@@ -255,11 +274,12 @@ export async function buildRequest(
   markCacheBreakpoint(messages);
   const { tools, nameMap } = toolsFromRequest(request);
 
+  const maxTokens = request.maxOutputTokens ?? maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const body: Record<string, unknown> = {
     model,
     system,
     messages,
-    max_tokens: request.maxOutputTokens ?? maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
+    max_tokens: maxTokens,
     stream: true,
     temperature: 1,
     metadata: {
@@ -272,9 +292,20 @@ export async function buildRequest(
   };
   if (tools.length) body.tools = tools;
   if (request.reasoning.enabled) {
-    body.thinking = { type: "adaptive", display: "summarized" };
+    if (supportsAdaptiveThinking(model)) {
+      body.thinking = { type: "adaptive", display: "summarized" };
+    } else if (maxTokens > MIN_THINKING_BUDGET_TOKENS) {
+      body.thinking = {
+        type: "enabled",
+        budget_tokens: Math.max(
+          MIN_THINKING_BUDGET_TOKENS,
+          Math.min(maxTokens - 1, DEFAULT_THINKING_BUDGET_TOKENS),
+        ),
+        display: "summarized",
+      };
+    }
   }
-  if (request.reasoning.effort) {
+  if (request.reasoning.effort && supportsEffort(model)) {
     body.output_config = { effort: request.reasoning.effort };
   }
   if (request.latency === "fast" && FAST_MODE_MODELS.has(model)) {

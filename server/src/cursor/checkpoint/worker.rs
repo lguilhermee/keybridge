@@ -10,7 +10,7 @@ use crate::{
     Error, Result,
 };
 
-use super::CheckpointBuilder;
+use super::{CheckpointBuilder, CheckpointConfig};
 
 pub(crate) struct CheckpointJob {
     pub kind: CheckpointKind,
@@ -20,6 +20,7 @@ pub(crate) struct CheckpointJob {
 }
 
 pub(crate) enum CheckpointKind {
+    Configure(Box<CheckpointConfig>),
     Settled(CheckpointId),
     ToolStarted {
         round_id: ToolRoundId,
@@ -59,63 +60,77 @@ impl CheckpointWorker {
         let (failures, failure_receiver) = mpsc::channel(1);
         let task = tokio::spawn(async move {
             while let Some(job) = receiver.recv().await {
-                builder.record_context_tokens(job.context_tokens);
                 let presentation = job.presentation;
                 let ready = job.ready;
                 let result = match job.kind {
-                    CheckpointKind::Settled(checkpoint_id)
-                    | CheckpointKind::ToolSettled(checkpoint_id) => {
-                        publish_settled(
-                            &store,
-                            &mut builder,
-                            &handle,
-                            mode,
-                            checkpoint_id,
-                            &presentation,
-                        )
-                        .await
-                    }
-                    CheckpointKind::ToolStarted {
-                        round_id,
-                        stable_checkpoint_id,
-                    } => {
-                        publish_started(
-                            &store,
-                            &mut builder,
-                            &handle,
-                            mode,
-                            round_id,
-                            stable_checkpoint_id,
-                            &presentation,
-                        )
-                        .await
-                    }
-                    CheckpointKind::Final {
-                        checkpoint_id,
-                        result,
-                    } => {
-                        let checkpoints =
-                            build_final(&store, &mut builder, mode, checkpoint_id, &presentation)
-                                .await;
-                        let _ = result.send(checkpoints);
+                    CheckpointKind::Configure(config) => {
+                        builder.configure(*config);
                         Ok(())
                     }
-                    CheckpointKind::Compaction {
-                        checkpoint_id,
-                        summary,
-                        result,
-                    } => {
-                        let messages = store.load_checkpoint_messages(checkpoint_id).await;
-                        let checkpoint = match messages {
-                            Ok(messages) => {
-                                builder
-                                    .compacted(&messages, mode, &summary, &presentation)
-                                    .await
+                    kind => {
+                        builder.record_context_tokens(job.context_tokens);
+                        match kind {
+                            CheckpointKind::Configure(_) => unreachable!(),
+                            CheckpointKind::Settled(checkpoint_id)
+                            | CheckpointKind::ToolSettled(checkpoint_id) => {
+                                publish_settled(
+                                    &store,
+                                    &mut builder,
+                                    &handle,
+                                    mode,
+                                    checkpoint_id,
+                                    &presentation,
+                                )
+                                .await
                             }
-                            Err(error) => Err(error),
-                        };
-                        let _ = result.send(checkpoint);
-                        Ok(())
+                            CheckpointKind::ToolStarted {
+                                round_id,
+                                stable_checkpoint_id,
+                            } => {
+                                publish_started(
+                                    &store,
+                                    &mut builder,
+                                    &handle,
+                                    mode,
+                                    round_id,
+                                    stable_checkpoint_id,
+                                    &presentation,
+                                )
+                                .await
+                            }
+                            CheckpointKind::Final {
+                                checkpoint_id,
+                                result,
+                            } => {
+                                let checkpoints = build_final(
+                                    &store,
+                                    &mut builder,
+                                    mode,
+                                    checkpoint_id,
+                                    &presentation,
+                                )
+                                .await;
+                                let _ = result.send(checkpoints);
+                                Ok(())
+                            }
+                            CheckpointKind::Compaction {
+                                checkpoint_id,
+                                summary,
+                                result,
+                            } => {
+                                let messages = store.load_checkpoint_messages(checkpoint_id).await;
+                                let checkpoint = match messages {
+                                    Ok(messages) => {
+                                        builder
+                                            .compacted(&messages, mode, &summary, &presentation)
+                                            .await
+                                    }
+                                    Err(error) => Err(error),
+                                };
+                                let _ = result.send(checkpoint);
+                                Ok(())
+                            }
+                        }
                     }
                 };
 

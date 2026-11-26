@@ -49,6 +49,15 @@ pub fn response_event(
     Ok(Some(server_interaction(message)))
 }
 
+pub fn server_notice(text: String) -> pb::AgentServerMessage {
+    server_interaction(pb::interaction_update::Message::TextDelta(
+        pb::TextDeltaUpdate {
+            text,
+            is_server_notice: true,
+        },
+    ))
+}
+
 pub fn thinking_completed(elapsed: Duration) -> pb::AgentServerMessage {
     let milliseconds = elapsed.as_millis().clamp(1, i32::MAX as u128) as i32;
     server_interaction(pb::interaction_update::Message::ThinkingCompleted(
@@ -168,5 +177,49 @@ pub fn server_interaction(message: pb::interaction_update::Message) -> pb::Agent
                 message: Some(message),
             },
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn server_notice_marks_text_delta_as_server_notice() {
+        let notice = server_notice("Switched to fallback.".into());
+        let Some(pb::agent_server_message::Message::InteractionUpdate(update)) = notice.message
+        else {
+            panic!("expected interaction update");
+        };
+        assert_eq!(
+            update.message,
+            Some(pb::interaction_update::Message::TextDelta(
+                pb::TextDeltaUpdate {
+                    text: "Switched to fallback.".into(),
+                    is_server_notice: true,
+                }
+            ))
+        );
+
+        let text = response_event(
+            &ModelEvent::TextDelta("answer".into()),
+            "",
+            &BTreeMap::new(),
+        )
+        .unwrap()
+        .unwrap();
+        let Some(pb::agent_server_message::Message::InteractionUpdate(update)) = text.message
+        else {
+            panic!("expected interaction update");
+        };
+        assert_eq!(
+            update.message,
+            Some(pb::interaction_update::Message::TextDelta(
+                pb::TextDeltaUpdate {
+                    text: "answer".into(),
+                    is_server_notice: false,
+                }
+            ))
+        );
     }
 }

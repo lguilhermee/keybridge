@@ -12,6 +12,6 @@ mod summary;
 mod turns;
 pub(crate) mod worker;
 
-pub use builder::CheckpointBuilder;
+pub use builder::{CheckpointBuilder, CheckpointConfig};
 pub use steps::{PendingSteps, StepBuffer};
 pub use subagents::SubagentCompletions;
