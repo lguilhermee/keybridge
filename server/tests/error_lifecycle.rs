@@ -792,7 +792,7 @@ async fn assert_run_starts_without_parent_dependency(
 }
 
 #[tokio::test]
-async fn refusal_switch_drops_notice_emits_server_notice_and_reattributes_checkpoint() {
+async fn refusal_switch_drops_notice_and_reattributes_checkpoint() {
     let (_directory, store) = fixtures::temp_store().await;
     store
         .replace_refusal_fallbacks(&[RefusalFallback {
@@ -907,15 +907,16 @@ async fn refusal_switch_drops_notice_emits_server_notice_and_reattributes_checkp
     }
 
     assert!(failed_tool_completed);
-    let notice_index = deltas
-        .iter()
-        .position(|(is_notice, text)| *is_notice && text.contains("refusal-model"))
-        .expect("server notice naming the new model must be emitted");
-    let answer_index = deltas
-        .iter()
-        .position(|(is_notice, text)| !*is_notice && text == "Answer from refusal model.")
-        .expect("refusal model answer must stream normally");
-    assert!(notice_index < answer_index);
+    assert!(
+        deltas.iter().all(|(is_notice, _)| !*is_notice),
+        "refusal switch must not emit a chat notice"
+    );
+    assert!(
+        deltas
+            .iter()
+            .any(|(is_notice, text)| !*is_notice && text == "Answer from refusal model."),
+        "refusal model answer must stream normally"
+    );
 
     let settled = checkpoints.last().expect("settled checkpoint");
     let mut assistant_steps = Vec::new();

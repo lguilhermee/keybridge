@@ -152,13 +152,16 @@ fn refusal_pattern() -> &'static Regex {
             r"(?:(?:(?:add|plan|install|connect|wire)\s+(?:this|that|these|those)|set\s+(?:this|that)\s+up",
             r"|(?:continue|proceed)\s+with\s+(?:(?:this|that|your|the)\s+)?(?:request|task))\s*(?:[.!?]|\x01|$)",
             // These actions also occur in ordinary tool failures and work choices.
-            // Only extend them when the same paragraph states the declined
-            // evasion purpose. Never borrow a reason from a later Markdown block.
-            r"|(?:add|spoof|modify|rename|disguise|(?:continue|proceed)\s+(?:with\s+)?(?:generating|renaming|developing|implementing|intercepting|spoofing))\b[^.!?\x01]{0,300}",
+            // Only extend them when the same sentence states the declined
+            // evasion or exploitation purpose. Never borrow a reason from a later Markdown block.
+            r"|(?:add|spoof|modify|rename|disguise|reverse[- ]engineer|debug|fix|commit|patch|maintain|automate|(?:continue|proceed)\s+(?:with\s+)?(?:generating|renaming|developing|implementing|intercepting|spoofing))\b[^.!?\x01]{0,300}",
             r"(?:to\s+(?:avoid|evade)\s+(?:(?:anti[- ]cheat|security|malware|fraud)\s+)?detection",
             r"|to\s+(?:evade|bypass)\s+(?:(?:the|this|that|a|an)\s+)?(?:[a-z'-]+\s+){0,3}(?:restrictions?|bans?|access\s+controls?)",
             r"|(?:bypass(?:ing)?|disabl(?:e|ing)|evad(?:e|ing))\s+(?:[a-z'-]+\s+){0,7}(?:checks|protections|safeguards)",
-            r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass)\b)",
+            r"|(?:improve|enable|facilitate)\s+(?:(?:a|the)\s+)?(?:protection|security)\s+bypass",
+            r"|exploit(?:s|ing)?\s+(?:(?:live|online|production|game|remote)\s+){0,3}(?:servers?|games?|clients?|systems?|services?)",
+            r"|(?:ban|detection|anti[- ]cheat)[- ]evasion",
+            r"|unauthorized\s+(?:automation|access|exploitation))\b)",
             // A policy notice may drop the subject entirely: "Cannot continue
             // developing, testing, or migrating anti-cheat bypass". The gerund
             // after "continue" is the work being abandoned; a bare "cannot
@@ -905,6 +908,47 @@ mod tests {
             "I won't add a dependency; the existing parser handles this.",
             "The scanner cannot continue intercepting traffic to bypass access controls.",
             "I cannot continue testing because the test server is down.",
+        ] {
+            assert!(!is_refusal(text), "{text}");
+        }
+    }
+
+    #[test]
+    fn reported_cannot_reverse_engineer_exploit_reply_is_detected() {
+        let reply = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/refusals/cannot-reverse-engineer-exploit.md"
+        ));
+        assert!(is_refusal(reply));
+        assert!(is_refusal(&format!(
+            "{}\n\n{reply}",
+            "I searched the workspace. ".repeat(100)
+        )));
+        let quoted = reply
+            .lines()
+            .map(|line| format!("> {line}\n"))
+            .collect::<String>();
+        for example in [
+            format!("```text\n{reply}\n```"),
+            quoted,
+            format!("A historical response said: «{reply}»"),
+        ] {
+            assert!(!is_refusal(&example), "{example}");
+        }
+        for text in [
+            "I can't debug, fix, or commit changes to tools that exploit live game servers.",
+            "I won't patch or maintain ban-evasion automation.",
+            "We cannot automate unauthorized access to remote services.",
+        ] {
+            assert!(is_refusal(text), "{text}");
+        }
+        for text in [
+            "I can't debug this crash without the PDB symbols.",
+            "I can't fix the build until the dependency is installed.",
+            "I can't commit changes while the git index is locked.",
+            "I cannot reverse engineer the binary because the dump is truncated.",
+            "I can't fix the parser.\n\nThe report describes tools that exploit live game servers.",
+            "The tool can't debug scripts that exploit live game servers.",
         ] {
             assert!(!is_refusal(text), "{text}");
         }

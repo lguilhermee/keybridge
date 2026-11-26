@@ -125,6 +125,7 @@ async fn reported_refusals_switch_with_the_refusal_models_own_settings() {
         include_str!("fixtures/refusals/did-not-run-policy.md"),
         include_str!("fixtures/refusals/stopped-before-launching-policy.md"),
         include_str!("fixtures/refusals/reason-before-stopping-policy.md"),
+        include_str!("fixtures/refusals/cannot-reverse-engineer-exploit.md"),
     ] {
         for saved_effort in [Some("high"), None] {
             verify_refusal(saved_effort, Some(reply)).await;

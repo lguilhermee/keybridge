@@ -281,16 +281,6 @@ impl ConversationOutput {
                         response_text.clear();
                         response_thinking.clear();
                         let switched_model = self.store.model(&to).await.ok().flatten();
-                        let model_label = switched_model
-                            .as_ref()
-                            .map(|model| model.display_name.as_str())
-                            .filter(|name| !name.is_empty())
-                            .unwrap_or(to.as_str());
-                        if !self.context.compacting {
-                            self.handle.emit(&events::server_notice(format!(
-                                "Switched to {model_label}.\n\n"
-                            )))?;
-                        }
                         switched_from
                             .get_or_insert_with(|| (from, self.checkpoint.max_context_tokens()));
                         let context_window_tokens = switched_model
